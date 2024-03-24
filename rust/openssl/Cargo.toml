@@ -1,0 +1,21 @@
+[package]
+name = "openssl"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "benches"
+harness = false
+
+[dev-dependencies]
+hex = "0.4.3"
+
+[dependencies]
+cpuid = { path = "../cpuid" }
+linkme = "0.3.17"
+nano-bench = { path = "../nano-bench" }
+openssl-sys = { version = "0.9.93", features = ["vendored"] }
+random = { path = "../random" }

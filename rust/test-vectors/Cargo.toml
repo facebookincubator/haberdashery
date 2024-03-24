@@ -1,0 +1,13 @@
+[package]
+name = "test-vectors"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+gen=[]
+
+[[bin]]
+name = "aead"
+
+[dependencies]
+cozybuf = { path = "../cozybuf" }

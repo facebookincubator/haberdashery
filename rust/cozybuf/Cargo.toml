@@ -1,0 +1,15 @@
+[package]
+name = "cozybuf"
+version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
+
+[dependencies]
+cozybuf-proc = { path = "cozybuf-proc" }
+itertools = "0.12.0"
+prettyplease = "0.2.15"
+proc-macro2 = "1.0.69"
+quote = { version = "1.0.33", default-features = false }
+syn = "2.0.39"

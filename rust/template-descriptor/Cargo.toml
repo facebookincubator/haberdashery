@@ -1,0 +1,12 @@
+[package]
+name = "haberdashery-template-descriptor"
+version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
+
+[dependencies]
+anyhow = "1.0.75"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_yaml = "0.9.25"

@@ -1,0 +1,9 @@
+# @generated
+prefix: haberdashery
+algorithm: sivmac
+profile: haswell
+struct_name: SivMac
+struct_members:
+- name: value
+  ty: __m128i
+  len: '23'

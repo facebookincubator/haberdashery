@@ -1,0 +1,5 @@
+# @generated
+- name: KEY_LEN
+  value: '32'
+- name: TAG_LEN
+  value: '16'

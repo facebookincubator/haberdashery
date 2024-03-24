@@ -1,0 +1,13 @@
+[package]
+name = "aes256gcmdndk"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+haswell = ["haberdashery-asm-gen/haswell"]
+skylake = ["haberdashery-asm-gen/skylake"]
+
+[dependencies]
+ffi-util = { path = "../../ffi-util" }
+haberdashery-asm-gen = { path = ".." }
+haberdashery-template-proc = { path = "../../template-proc" }

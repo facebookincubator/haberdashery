@@ -1,0 +1,28 @@
+[package]
+name = "haberdashery-asm-gen"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+codegen-units = 1
+
+[features]
+haswell = []
+skylake = []
+
+# disable some tests for buck2
+buck2 = []
+
+[dependencies]
+cpuid = { path = "../cpuid" }
+ffi-util = { path = "../ffi-util" }
+
+[dev-dependencies]
+aes-gcm = "0.10.2"
+aes-gcm-siv = "0.11.1"
+generic-array = "0.14.7"
+hex = "0.4.3"
+hex2 = { package = "hex", path = "../hex" }
+random = { path = "../random" }
+test-vectors = { path = "../test-vectors" }
+static-env = { path = "../static-env" }
