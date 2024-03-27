@@ -12,7 +12,11 @@ PROJECT_DIR="$( cd -P "$(dirname "${BASH_SOURCE[0]}")/.."; pwd )"
 readonly PROJECT_DIR
 
 main() {
-  local -r LIB_NAME="${1:-}"; shift
+  if [ $# -eq 0 ]; then
+      echo "usage: ${0} haberdashery"
+      exit 1
+  fi
+  local -r LIB_NAME="${1}"; shift
   EXTRA_FLAGS=
   case "${LIB_NAME}" in
     "haberdashery")

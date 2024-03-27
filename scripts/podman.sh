@@ -19,11 +19,15 @@ do_podman() {
 
 main() {
   cd "${PROJECT_DIR}"
-  do_podman assembly -v .:/src
-  do_podman bindings -v .:/src
-  do_podman test_c89
-  do_podman test_rust
-  do_podman test_rust_sys
+  if [ $# -eq 0 ]; then
+    do_podman assembly -v .:/src
+    do_podman bindings -v .:/src
+    do_podman test_c89
+    do_podman test_rust
+    do_podman test_rust_sys
+  else
+    do_podman "$@"
+  fi
 }
 
 main "$@"

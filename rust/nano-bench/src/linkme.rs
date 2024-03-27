@@ -194,7 +194,16 @@ impl Args {
         self.csv_out_path.as_ref().map(PathBuf::from)
     }
 }
+pub fn test_perf_event() -> anyhow::Result<()> {
+    use crate::measure::StartStop;
+    let perf = PerfEventCycles::start()?;
+    PerfEventCycles::stop(perf)?;
+    Ok(())
+}
 pub fn main(metadata_mod: Option<ReportMetadataMod>) {
+    test_perf_event().expect(
+        "Couldn't open perf event, perhaps you need to run: sysctl kernel.perf_event_paranoid=3",
+    );
     let args = Args::parse();
     let suite = suite(metadata_mod, &args.lengths());
     let suites = match args.group_by_path {

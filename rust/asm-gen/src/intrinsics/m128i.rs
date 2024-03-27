@@ -275,6 +275,11 @@ impl M128i {
         unsafe { _mm_unpacklo_epi64(*self, *other).into() }
     }
     #[inline(always)]
+    pub fn blend8(self, other: Self, mask: impl Into<Self>) -> Self {
+        let mask = mask.into();
+        unsafe { _mm_blendv_epi8(*self, *other, *mask).into() }
+    }
+    #[inline(always)]
     pub fn cmpgt32(self, other: M128i) -> Self {
         unsafe { _mm_cmpgt_epi32(*self, *other).into() }
     }
