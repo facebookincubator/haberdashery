@@ -25,7 +25,10 @@ mod constants {
     algorithm: aes256gcmdndk,
     prefix: haberdashery,
     profile: haswell,
+    profile: broadwell,
     profile: skylake,
+    profile: skylakex,
+    profile: tigerlake,
 )]
 pub struct Aes256GcmDndk([core::arch::x86_64::__m128i; 15]);
 impl Aead for Aes256GcmDndk {

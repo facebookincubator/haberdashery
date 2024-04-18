@@ -12,11 +12,14 @@ PROJECT_DIR="$( cd -P "$(dirname "${BASH_SOURCE[0]}")/.."; pwd )"
 readonly PROJECT_DIR
 
 main() {
+  mkdir -p "${PROJECT_DIR}/asm"
   cd "${PROJECT_DIR}/rust/asm-gen"
-  aes256gcm/generate.sh
-  aes256gcmdndk/generate.sh
-  aes256gcmsiv/generate.sh
-  sivmac/generate.sh
+  if [ $# -eq 0 ]; then
+    find . -name "generate.sh" -exec {} \;
+  else
+    local -r ALG="${1}"; shift
+    "${ALG}"/generate.sh "$@"
+  fi
   cd "${PROJECT_DIR}/rust/asm-checksums"
   cargo run > "${PROJECT_DIR}/asm/sha256sums.txt"
 }

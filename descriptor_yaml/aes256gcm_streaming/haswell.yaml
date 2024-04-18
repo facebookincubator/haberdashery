@@ -1,9 +1,0 @@
-# @generated
-prefix: haberdashery
-algorithm: aes256gcm_streaming
-profile: haswell
-struct_name: Aes256GcmState
-struct_members:
-- name: value
-  ty: __m128i
-  len: '7'

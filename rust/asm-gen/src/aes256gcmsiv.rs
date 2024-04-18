@@ -176,20 +176,20 @@ impl<const N: usize> Context<N> {
             self.polyval.keys(),
             polyval.result(),
         );
-        // 13 rounds of aes + 5 rounds of auth
-        state.crypt_cmul();
-        state.crypt();
-        state.crypt();
-        state.crypt_cmul();
-        state.crypt();
-        state.crypt_cmul();
-        state.crypt();
-        state.crypt();
-        state.crypt_cmul();
-        state.crypt();
-        state.crypt();
-        state.crypt_cmul();
-        state.crypt();
+        // 13 rounds of aes + 6 rounds of auth
+        state.step();
+        state.step();
+        state.step();
+        state.step();
+        state.step();
+        state.step();
+        state.step();
+        state.step();
+        state.step();
+        state.step();
+        state.step();
+        state.step();
+        state.step();
         // Performs last round of AES
         let (pads, new_hash) = state.finish();
         *polyval = PolyvalState::new(self.polyval, new_hash);
@@ -211,7 +211,6 @@ impl<const N: usize> Context<N> {
             while let Some((block, writer)) = data.read::<M128iArray<N>>() {
                 let counters = ctr.increment_traunch::<N>();
                 last_block = match N {
-                    #[cfg(feature = "skylake")]
                     6 => self.iteration_asm(last_block.into(), counters, block, &mut hash),
                     _ => {
                         hash.hash(last_block);

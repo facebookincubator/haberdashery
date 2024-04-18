@@ -8,9 +8,15 @@
 #[inline(always)]
 pub fn is_supported() -> bool {
     if cfg!(feature = "haswell") {
-        cpuid::has_haswell_support()
+        cpuid::haswell().is_supported()
+    } else if cfg!(feature = "broadwell") {
+        cpuid::broadwell().is_supported()
     } else if cfg!(feature = "skylake") {
-        cpuid::has_skylake_support()
+        cpuid::skylake().is_supported()
+    } else if cfg!(feature = "skylakex") {
+        cpuid::skylakex().is_supported()
+    } else if cfg!(feature = "tigerlake") {
+        cpuid::tigerlake().is_supported()
     } else {
         unimplemented!()
     }

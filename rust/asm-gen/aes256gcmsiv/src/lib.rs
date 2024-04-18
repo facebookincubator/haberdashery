@@ -13,10 +13,7 @@ use haberdashery_asm_gen::ffi::aead::Aead;
 use haberdashery_asm_gen::is_supported::is_supported;
 
 const ENCRYPT_LANES: usize = 8;
-#[cfg(feature = "skylake")]
 const DECRYPT_LANES: usize = 6;
-#[cfg(not(feature = "skylake"))]
-const DECRYPT_LANES: usize = 8;
 
 #[haberdashery_template_proc::constants(
     algorithm: aes256gcmsiv,
@@ -31,7 +28,10 @@ mod constants {
     algorithm: aes256gcmsiv,
     prefix: haberdashery,
     profile: haswell,
+    profile: broadwell,
     profile: skylake,
+    profile: skylakex,
+    profile: tigerlake,
 )]
 pub struct Aes256GcmSiv([core::arch::x86_64::__m128i; 15]);
 impl Aead for Aes256GcmSiv {

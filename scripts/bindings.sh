@@ -15,6 +15,9 @@ generate_aead() {
   local -r ALG="${1}"
 
   # rust sys
+  rm -f "${PROJECT_DIR}"/rust/sys/src/aead/"${ALG}".rs
+  rm -f "${PROJECT_DIR}"/rust/sys/benchmarks/src/aead/"${ALG}".rs
+  rm -f "${PROJECT_DIR}"/rust/sys/traits/src/aead/"${ALG}".rs
   rm -f "${PROJECT_DIR}"/rust/sys/src/aead/"${ALG}"/*.rs
   rm -f "${PROJECT_DIR}"/rust/sys/benchmarks/src/aead/"${ALG}"/*.rs
   rm -f "${PROJECT_DIR}"/rust/sys/traits/src/aead/"${ALG}"/*.rs
@@ -38,6 +41,9 @@ generate_mac() {
   local -r ALG="${1}"
 
   # rust sys
+  rm -f "${PROJECT_DIR}"/rust/sys/src/mac/"${ALG}".rs
+  rm -f "${PROJECT_DIR}"/rust/sys/benchmarks/src/mac/"${ALG}".rs
+  rm -f "${PROJECT_DIR}"/rust/sys/traits/src/mac/"${ALG}".rs
   rm -f "${PROJECT_DIR}"/rust/sys/src/mac/"${ALG}"/*.rs
   rm -f "${PROJECT_DIR}"/rust/sys/benchmarks/src/mac/"${ALG}"/*.rs
   rm -f "${PROJECT_DIR}"/rust/sys/traits/src/mac/"${ALG}"/*.rs

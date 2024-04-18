@@ -40,12 +40,12 @@ impl Default for Config {
 }
 #[cfg(not(debug_assertions))]
 impl Config {
-    pub fn warmup_time(mut self, warmup_time: Duration) -> Self {
-        self.warmup_time = warmup_time;
+    pub fn warmup_time(mut self, warmup_time: impl Into<Duration>) -> Self {
+        self.warmup_time = warmup_time.into();
         self
     }
-    pub fn benchmark_time(mut self, benchmark_time: Duration) -> Self {
-        self.benchmark_time = benchmark_time;
+    pub fn benchmark_time(mut self, benchmark_time: impl Into<Duration>) -> Self {
+        self.benchmark_time = benchmark_time.into();
         self
     }
     pub fn runs(mut self, runs: u64) -> Self {
@@ -59,10 +59,10 @@ impl Config {
 }
 #[cfg(debug_assertions)]
 impl Config {
-    pub fn warmup_time(self, _warmup_time: Duration) -> Self {
+    pub fn warmup_time(self, _warmup_time: impl Into<Duration>) -> Self {
         self
     }
-    pub fn benchmark_time(self, _benchmark_time: Duration) -> Self {
+    pub fn benchmark_time(self, _benchmark_time: impl Into<Duration>) -> Self {
         self
     }
     pub fn runs(self, _runs: u64) -> Self {

@@ -10,7 +10,8 @@ fn report_metadata_mod(metadata: &mut nano_bench::ReportMetadata) {
     let Some(path) = metadata.get("path") else {
         return;
     };
-    let path = [path, "_", profile].concat();
+    let path = path.replace("libsodium_benchmarks", "libsodium");
+    let path = [&path, "_", &profile].concat();
     let version = unsafe { core::ffi::CStr::from_ptr(libsodium_sys::sodium_version_string()) };
     let version = version.to_str().unwrap();
 
@@ -18,4 +19,4 @@ fn report_metadata_mod(metadata: &mut nano_bench::ReportMetadata) {
     metadata.put("profile", profile);
     metadata.put("version", version);
 }
-nano_bench::main! {libsodium, report_metadata_mod}
+nano_bench::main! {libsodium_benchmarks, report_metadata_mod}

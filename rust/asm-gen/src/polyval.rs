@@ -79,8 +79,8 @@ impl<const N: usize> core::ops::IndexMut<usize> for PolyvalKey<N> {
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PolyvalState<const N: usize> {
-    key: PolyvalKey<N>,
-    hash: M128i,
+    pub key: PolyvalKey<N>,
+    pub hash: M128i,
 }
 impl<const N: usize> From<PolyvalKey<N>> for PolyvalState<N> {
     #[inline(always)]
@@ -152,8 +152,18 @@ impl HashInput for &[u8] {
 impl HashInput for Reader<'_> {
     #[inline(always)]
     fn hash<const N: usize>(mut self, state: &mut PolyvalState<N>) {
-        while let Some(M128iArray::<N>(block)) = self.read() {
-            state.hash(block);
+        if cfg!(feature = "avx512f") {
+            while let Some(M128iArray::<N>(block)) = self.read() {
+                state.hash(block);
+            }
+        } else if let Some(M128iArray::<N>(mut block)) = self.read() {
+            block[0] ^= state.hash;
+            let mut hash = state.key.clmul_foil(block);
+            while let Some(M128iArray::<N>(mut block)) = self.read() {
+                block[0] ^= hash.reduce();
+                hash = state.key.clmul_foil(block);
+            }
+            state.hash = hash.reduce();
         }
         while let Some(block) = self.read::<M128i>() {
             state.hash(block);

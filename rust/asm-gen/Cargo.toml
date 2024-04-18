@@ -7,8 +7,16 @@ edition = "2021"
 codegen-units = 1
 
 [features]
-haswell = []
-skylake = []
+haswell = ["aes"]
+broadwell = ["aes"]
+skylake = ["aes"]
+skylakex = ["aes", "avx512f", "avx512vl"]
+tigerlake = ["aes", "avx512f", "avx512vl"]
+
+# features
+aes = []
+avx512f = []
+avx512vl = []
 
 # disable some tests for buck2
 buck2 = []

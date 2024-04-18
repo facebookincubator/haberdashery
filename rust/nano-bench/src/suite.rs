@@ -9,17 +9,25 @@ use std::collections::BTreeMap;
 
 use crate::benchmark::Benchmark;
 use crate::config::Config;
-use crate::measure::perf_event_cycles::PerfEventCycles;
+use crate::measure::Metric;
+use crate::measure::PerfEventCycles;
+use crate::measure::Rdtsc;
 use crate::report::Report;
 use crate::report::ReportMetadata;
 use crate::runner::Runner;
 use crate::thread_pool::ThreadPool;
 
-#[derive(Default)]
 pub struct Suite {
     runners: Vec<(ReportMetadata, Box<dyn Runner>)>,
+    metric: Metric,
 }
 impl Suite {
+    pub fn new(metric: Metric) -> Self {
+        Self {
+            runners: vec![],
+            metric,
+        }
+    }
     pub fn insert(&mut self, metadata: ReportMetadata, runner: Box<dyn Runner>) {
         self.runners.push((metadata, runner));
     }
@@ -31,13 +39,26 @@ impl Suite {
     ) {
         for (metadata, runner) in self.runners {
             if metadata.matches(filter) {
-                pool.add(move || {
-                    let mut benchmark = Benchmark::warmup(runner, &config)?;
-                    for _ in 0..config.runs {
-                        let _report = benchmark.run::<PerfEventCycles>();
+                match self.metric {
+                    Metric::Rdtsc => {
+                        pool.add(move || {
+                            let mut benchmark = Benchmark::warmup(runner, &config)?;
+                            for _ in 0..config.runs {
+                                let _report = benchmark.run::<Rdtsc>();
+                            }
+                            Some(benchmark.report(metadata))
+                        });
                     }
-                    Some(benchmark.report(metadata))
-                });
+                    _ => {
+                        pool.add(move || {
+                            let mut benchmark = Benchmark::warmup(runner, &config)?;
+                            for _ in 0..config.runs {
+                                let _report = benchmark.run::<PerfEventCycles>();
+                            }
+                            Some(benchmark.report(metadata))
+                        });
+                    }
+                }
             }
         }
     }
@@ -52,6 +73,7 @@ impl Suite {
                         value,
                         Suite {
                             runners: vec![(metadata, runner)],
+                            metric: self.metric,
                         },
                     )
                 }

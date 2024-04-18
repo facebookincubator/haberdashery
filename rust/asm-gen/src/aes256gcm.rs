@@ -10,8 +10,10 @@ use ffi_util::ReaderWriter;
 use ffi_util::Writer;
 
 use crate::aes256::Aes256;
+use crate::clmulfoil::ClMulFoil;
 use crate::counter128::CounterBe128;
 use crate::ghash::ghash_key;
+use crate::ghash::ByteReverse;
 use crate::ghash::GhashState;
 use crate::intrinsics::m128i::*;
 use crate::partial::PartialBlock;
@@ -169,8 +171,21 @@ impl<const N: usize> Aes256GcmState<N> {
         if let Some(block) = block {
             ghash.hash(block);
         }
-        while let Some(M128iArray::<N>(block)) = aad.read() {
-            ghash.hash(block);
+        if cfg!(feature = "avx512f") {
+            while let Some(M128iArray::<N>(block)) = aad.read() {
+                ghash.hash(block);
+            }
+        } else if let Some(M128iArray::<N>(block)) = aad.read() {
+            let mut block = block.byte_reverse();
+            block[0] ^= ghash.raw();
+            let mut hash = key.ghash.clmul_foil(block);
+            while let Some(M128iArray::<N>(block)) = aad.read() {
+                ghash.set_raw_hash(hash.reduce());
+                let mut block = block.byte_reverse();
+                block[0] ^= ghash.raw();
+                hash = key.ghash.clmul_foil(block);
+            }
+            ghash.set_raw_hash(hash.reduce());
         }
         while let Some(block) = aad.read::<M128i>() {
             ghash.hash(block);
@@ -204,17 +219,17 @@ impl<const N: usize> Aes256GcmState<N> {
         // Constructor performs first round of AES and auth
         let mut state =
             crate::aesgcm::RoundState::new(key.aes, counters, auth, hash.keys(), hash.raw());
-        // 13 rounds of aes + 5 rounds of auth
-        state.crypt_cmul();
-        state.crypt();
+        // 13 rounds of aes + 6 rounds of auth
         state.crypt();
         state.crypt_cmul();
         state.crypt();
         state.crypt_cmul();
         state.crypt();
+        state.crypt_cmul();
         state.crypt();
         state.crypt_cmul();
         state.crypt();
+        state.crypt_cmul();
         state.crypt();
         state.crypt_cmul();
         state.crypt();

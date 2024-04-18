@@ -10,10 +10,11 @@ fn report_metadata_mod(metadata: &mut nano_bench::ReportMetadata) {
     let Some(path) = metadata.get("path") else {
         return;
     };
-    let path = [path, "_", profile].concat();
+    let path = path.replace("openssl_benchmarks", "openssl");
+    let path = [&path, "_", profile].concat();
 
     metadata.put("path", path);
     metadata.put("profile", profile);
-    metadata.put("version", openssl::version());
+    metadata.put("version", openssl_benchmarks::version());
 }
-nano_bench::main! {openssl, report_metadata_mod}
+nano_bench::main! {openssl_benchmarks, report_metadata_mod}

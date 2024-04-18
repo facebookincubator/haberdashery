@@ -15,6 +15,7 @@ use units::bytes::*;
 use units::duration::*;
 
 use crate::csv::Csv;
+use crate::measure::Metric;
 use crate::*;
 
 #[distributed_slice]
@@ -37,52 +38,6 @@ pub struct LengthBenchmarkLink {
 }
 
 type ReportMetadataMod = fn(&mut ReportMetadata);
-
-pub fn suite(metadata_mod: Option<ReportMetadataMod>, lengths: &[usize]) -> Suite {
-    let mut suite = Suite::default();
-    let processor = cpuid::processor();
-    let cpu = format!("{:?} ({})", processor.model, processor.raw_model);
-    for BenchmarkLink {
-        path,
-        operation,
-        function,
-        metadata,
-    } in BENCHMARKS
-    {
-        let mut metadata = ReportMetadata::from(*metadata)
-            .add("path", path.replace("::", "_"))
-            .add("operation", operation)
-            .add("cpu", cpu.clone());
-        if let Some(metadata_mod) = metadata_mod {
-            metadata_mod(&mut metadata);
-        }
-        suite.insert(metadata, Box::new(function));
-    }
-    for length in lengths {
-        let length = *length;
-        for LengthBenchmarkLink {
-            path,
-            operation,
-            function,
-            metadata,
-        } in LENGTH_BENCHMARKS
-        {
-            let mut metadata = ReportMetadata::from(*metadata)
-                .add("path", path.replace("::", "_"))
-                .add("operation", operation)
-                .add("length", length)
-                .add("cpu", cpu.clone());
-            if let Some(metadata_mod) = metadata_mod {
-                metadata_mod(&mut metadata);
-            }
-            suite.insert(
-                metadata,
-                Box::new(move |iters, measure: &mut dyn Measure| function(length, iters, measure)),
-            );
-        }
-    }
-    suite
-}
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -112,6 +67,10 @@ struct Args {
     detect_profile: bool,
     #[arg(long)]
     group_by_path: bool,
+    #[arg(long)]
+    rdtsc: bool,
+    #[arg(long)]
+    perf: bool,
 }
 impl Args {
     fn config(&self) -> Config {
@@ -129,19 +88,23 @@ impl Args {
         }
         if let Some(runs) = self.runs {
             config = config.runs(runs);
+        } else if self.perf {
+            config = config.runs(1);
         }
         if let Some(start_iters) = self.start_iters {
             config = config.start_iters(start_iters);
         }
         if let Some(benchmark_time) = &self.benchmark_time {
             if let Ok(benchmark_time) = Duration::try_from(benchmark_time) {
-                config = config.benchmark_time(benchmark_time.into());
+                config = config.benchmark_time(benchmark_time);
             }
         }
         if let Some(warmup_time) = &self.warmup_time {
             if let Ok(warmup_time) = Duration::try_from(warmup_time) {
-                config = config.warmup_time(warmup_time.into());
+                config = config.warmup_time(warmup_time);
             }
+        } else if self.perf {
+            config = config.warmup_time(50.ms());
         } else {
             config = config.warmup_time(config.benchmark_time / config.runs as u32);
         }
@@ -193,6 +156,59 @@ impl Args {
     fn csv_out_path(&self) -> Option<PathBuf> {
         self.csv_out_path.as_ref().map(PathBuf::from)
     }
+    fn metric(&self) -> Metric {
+        if self.perf || self.rdtsc {
+            Metric::Rdtsc
+        } else {
+            Metric::PerfEventCycles
+        }
+    }
+    fn suite(&self, metadata_mod: Option<ReportMetadataMod>) -> Suite {
+        let mut suite = Suite::new(self.metric());
+        let processor = cpuid::processor();
+        let cpu = format!("{:?} ({})", processor.model, processor.raw_model);
+        for BenchmarkLink {
+            path,
+            operation,
+            function,
+            metadata,
+        } in BENCHMARKS
+        {
+            let mut metadata = ReportMetadata::from(*metadata)
+                .add("path", path.replace("::", "_"))
+                .add("operation", operation)
+                .add("cpu", cpu.clone());
+            if let Some(metadata_mod) = metadata_mod {
+                metadata_mod(&mut metadata);
+            }
+            suite.insert(metadata, Box::new(function));
+        }
+        for length in self.lengths() {
+            for LengthBenchmarkLink {
+                path,
+                operation,
+                function,
+                metadata,
+            } in LENGTH_BENCHMARKS
+            {
+                let mut metadata = ReportMetadata::from(*metadata)
+                    .add("path", path.replace("::", "_"))
+                    .add("operation", operation)
+                    .add("length", length)
+                    .add("cpu", cpu.clone());
+                if let Some(metadata_mod) = metadata_mod {
+                    metadata_mod(&mut metadata);
+                }
+                suite.insert(
+                    metadata,
+                    Box::new(move |iters, measure: &mut dyn Measure| {
+                        function(length, iters, measure)
+                    }),
+                );
+            }
+        }
+        suite
+    }
 }
 pub fn test_perf_event() -> anyhow::Result<()> {
     use crate::measure::StartStop;
@@ -201,11 +217,11 @@ pub fn test_perf_event() -> anyhow::Result<()> {
     Ok(())
 }
 pub fn main(metadata_mod: Option<ReportMetadataMod>) {
-    test_perf_event().expect(
-        "Couldn't open perf event, perhaps you need to run: sysctl kernel.perf_event_paranoid=3",
-    );
     let args = Args::parse();
-    let suite = suite(metadata_mod, &args.lengths());
+    if args.metric() == Metric::Rdtsc {
+        test_perf_event().expect("Couldn't open perf event, perhaps you need to run: sysctl kernel.perf_event_paranoid=3");
+    }
+    let suite = args.suite(metadata_mod);
     let suites = match args.group_by_path {
         true => suite.split_by("path"),
         false => vec![suite],

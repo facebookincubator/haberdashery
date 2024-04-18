@@ -42,9 +42,6 @@ impl core::fmt::Display for Processor {
             model = self.model,
             raw_model = self.raw_model
         )?;
-        writeln!(f, "\thaswell: {}", self.has_haswell_support())?;
-        writeln!(f, "\tskylake: {}", self.has_skylake_support())?;
-        writeln!(f, "\ttigerlake: {}", self.has_tigerlake_support())?;
         writeln!(f, "\tleaf1.eax: {eax:#010x}", eax = self.leaf1.eax)?;
         writeln!(f, "\tleaf1.ebx: {ebx:#010x}", ebx = self.leaf1.ebx)?;
         writeln!(f, "\tleaf1.ecx: {ecx:#010x}", ecx = self.leaf1.ecx)?;
@@ -67,87 +64,25 @@ impl Processor {
             Model::IntelHaswell => "haswell",
             Model::IntelBroadwell => "broadwell",
             Model::IntelSkylake => "skylake",
+            Model::IntelSkylakeX => "skylakex",
+            Model::IntelIcelake => "icelake",
+            Model::IntelKabylake => "kabylake",
+            Model::IntelCannonlake => "cannonlake",
+            Model::IntelCometlake => "cometlake",
+            Model::IntelRocketlake => "rocketlake",
             Model::IntelTigerlake => "tigerlake",
+            Model::IntelAlderlake => "alderlake",
+            Model::IntelRaptorlake => "raptorlake",
+            Model::IntelSapphireRapids => "sapphirerapids",
+            Model::IntelEmeraldRapids => "emeraldrapids",
+            Model::IntelMeteorlake => "meteorlake",
             _ => "unknown",
         }
     }
     #[inline(always)]
-    pub fn has_haswell_support(&self) -> bool {
-        self.has_support(Self::haswell_support())
-    }
-    #[inline(always)]
-    pub fn has_skylake_support(&self) -> bool {
-        self.has_support(Self::skylake_support())
-    }
-    #[inline(always)]
-    pub fn has_tigerlake_support(&self) -> bool {
-        self.has_support(Self::tigerlake_support())
-    }
-    #[inline(always)]
-    fn has_support(&self, features: FeatureSet) -> bool {
-        features.leaf1.is_supported(self.leaf1) && features.leaf7.is_supported(self.leaf7)
-    }
-    #[inline(always)]
-    fn haswell_support() -> FeatureSet {
-        // GCC's haswell extensions plus AES
-        // https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
-        MMX | SSE
-            | SSE2
-            | SSE3
-            | SSSE3
-            | SSE4_1
-            | SSE4_2
-            | POPCNT
-            | FXSR
-            | AVX
-            | XSAVE
-            | PCLMUL
-            | FSGSBASE
-            | RDRND
-            | F16C
-            | AVX2
-            | BMI
-            | BMI2
-            | FMA
-            | MOVBE
-            | AES
-    }
-    #[inline(always)]
-    fn skylake_support() -> FeatureSet {
-        // GCC's skylake-avx512 extensions minus xsavec, xsaves
-        // https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
-        Self::haswell_support()
-            | RDSEED
-            | ADX
-            | CLFLUSHOPT
-            | AVX512F
-            | CLWB
-            | AVX512VL
-            | AVX512BW
-            | AVX512DQ
-            | AVX512CD
-    }
-    #[inline(always)]
-    fn tigerlake_support() -> FeatureSet {
-        // GCC's tigerlake extensions minus xsavec, xsaves
-        // https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
-        Self::skylake_support()
-            | PKU
-            | AVX512VBMI
-            | AVX512IFMA
-            | SHA
-            | AVX512VNNI
-            | GFNI
-            | VAES
-            | AVX512VBMI2
-            | VPCLMULQDQ
-            | AVX512BITALG
-            | RDPID
-            | AVX512VPOPCNTDQ
-            | MOVDIRI
-            | MOVDIR64B
-            | AVX512VP2INTERSECT
-            | KL
+    pub(crate) fn is_supported(&self, features: FeatureSet) -> bool {
+        features.leaf1.is_cpuid_supported(self.leaf1)
+            && features.leaf7.is_cpuid_supported(self.leaf7)
     }
 }
 #[derive(Debug)]
@@ -155,7 +90,18 @@ pub enum Model {
     IntelHaswell,
     IntelBroadwell,
     IntelSkylake,
+    IntelSkylakeX,
+    IntelIcelake,
+    IntelKabylake,
+    IntelCannonlake,
+    IntelCometlake,
+    IntelRocketlake,
     IntelTigerlake,
+    IntelAlderlake,
+    IntelRaptorlake,
+    IntelSapphireRapids,
+    IntelEmeraldRapids,
+    IntelMeteorlake,
     Unknown,
 }
 impl From<RawModel> for Model {
@@ -172,10 +118,28 @@ impl From<RawModel> for Model {
             (0x6, 0x4, 0xf) => IntelBroadwell,
             (0x6, 0x5, 0x6) => IntelBroadwell,
             (0x6, 0x4, 0xe) => IntelSkylake,
-            (0x6, 0x5, 0x5) => IntelSkylake,
             (0x6, 0x5, 0xe) => IntelSkylake,
+            (0x6, 0x5, 0x5) => IntelSkylakeX,
+            (0x6, 0x6, 0xa) => IntelIcelake,
+            (0x6, 0x6, 0xc) => IntelIcelake,
+            (0x6, 0x8, 0xe) => IntelKabylake,
+            (0x6, 0x9, 0xe) => IntelKabylake,
+            (0x6, 0x6, 0x6) => IntelCannonlake,
+            (0x6, 0xa, 0x5) => IntelCometlake,
+            (0x6, 0xa, 0x6) => IntelCometlake,
+            (0x6, 0x7, 0xd) => IntelIcelake,
+            (0x6, 0x7, 0xe) => IntelIcelake,
+            (0x6, 0xa, 0x7) => IntelRocketlake,
             (0x6, 0x8, 0xc) => IntelTigerlake,
             (0x6, 0x8, 0xd) => IntelTigerlake,
+            (0x6, 0x9, 0x7) => IntelAlderlake,
+            (0x6, 0x9, 0xa) => IntelAlderlake,
+            (0x6, 0xb, 0xa) => IntelRaptorlake,
+            (0x6, 0xb, 0x7) => IntelRaptorlake,
+            (0x6, 0xb, 0xf) => IntelRaptorlake,
+            (0x6, 0x8, 0xf) => IntelSapphireRapids,
+            (0x6, 0xc, 0xf) => IntelEmeraldRapids,
+            (0x6, 0xa, 0xa) => IntelMeteorlake,
             _ => Unknown,
         }
     }
