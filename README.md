@@ -17,9 +17,9 @@ Test rust bindings: `scripts/cargo.sh sys`
 
 Test c89 bindings: `scripts/make.sh`
 
-Run benchmarks (dry run): `cargo bench --manifest-path=rust/sys/benchmarks/Cargo.toml -- --filter=profile=skylake --dry-run`
+Run benchmarks (dry run): `cargo bench --manifest-path=rust/sys/benchmarks/Cargo.toml -- --filter=profile=skylakex --dry-run`
 
-Run benchmarks: `cargo bench --manifest-path=rust/sys/benchmarks/Cargo.toml -- --filter=profile=skylake`
+Run benchmarks: `cargo bench --manifest-path=rust/sys/benchmarks/Cargo.toml -- --filter=profile=skylakex`
 
 Test asm-generation scripts `scripts/cargo.sh`
 
@@ -79,16 +79,17 @@ The rust code that generates the assembly/bindings/etc can be tested with
 `scripts/cargo.sh` or by manually invoking `cargo` on individual crates. Some
 optimizations in `rust/asm-gen` are feature-gated and may not be tested
 against by default. To test these features, an explicit call like
-`scripts/cargo.sh asm-gen --features=skylake` may be needed or the
-corresponding call `cargo --features=skylake` directly on the `asm-gen`
+`scripts/cargo.sh asm-gen --features=skylakex` may be needed or the
+corresponding call `cargo --features=skylakex` directly on the `asm-gen`
 crate.
 
 ### Benchmarks
 Benchmarks are found in `benchmark_data`, both csv and markdown. Currently,
-only benchmarks for skylake are present. Here, skylake means skylake-x and we
-take advantage of `vpternlogq` and `xmm16`-`xmm31`, but do not use
-instructions wider than 128-bit. Haswell assembly exists, but has not been as
-carefully optimized and we do not include benchmarks.
+only benchmarks for broadwell and skylakex are present. Skylakex is similar to
+skylake but uses some avx512 extensions. In particular, we take advantage of
+`vpternlogq` and `xmm16`-`xmm31` but do not use instructions wider than
+128-bit. Haswell, and tigerlake assembly exists, but has not been as carefully
+optimized and we do not include benchmarks.
 
 ## Algorithms and APIs
 We support three AEAD algorithms, aes256gcm, aes256gcmsiv, aes256gcmdndk, and
@@ -148,16 +149,20 @@ function will return true for a given (message, tag) pair if and only if the
 pair was produced by the `sign` function.
 
 ## Algorithms and platforms
-| primitive | algorithm | platform | optimized |
-|-----------|-----------|-----------|-----------|
-| AEAD | aes256gcm | skylake | &check; |
-| AEAD | aes256gcm | haswell | &cross; |
-| AEAD | aes256gcmsiv | skylake | &check; |
-| AEAD | aes256gcmsiv | haswell | &cross; |
-| AEAD | aes256gcmdndk | skylake | &check; |
-| AEAD | aes256gcmdndk | haswell | &cross; |
-| MAC | sivmac | skylake | &check; |
-| MAC | sivmac | haswell | &cross; |
+We produce assembly for the following micro-architectures, only some assembly
+has been optimized for the target platform and algorithm.
+ - HW = Haswell
+ - BW = Broadwell
+ - SL = Skylake
+ - SLX = SkylakeX
+ - TL = Tigerlake
+
+|primitive|algorithm    | HW | BW | SL | SLX | TL |
+|---------|-------------|:--:|:--:|:--:|:---:|:--:|
+|AEAD     |aes256gcm    |&cross;|&check;|&cross;|&check;|&cross;|
+|AEAD     |aes256gcmsiv |&cross;|&check;|&cross;|&check;|&cross;|
+|AEAD     |aes256gcmdndk|&cross;|&check;|&cross;|&check;|&cross;|
+|MAC      |sivmac       |&cross;|&check;|&cross;|&check;|&cross;|
 
 ## License
 Haberdashery is dual-licensed under either the MIT License or the Apache

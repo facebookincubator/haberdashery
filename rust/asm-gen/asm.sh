@@ -8,24 +8,38 @@
 
 set -eu -o pipefail
 
-gen_haswell() {
-  gen_asm "$@" "haswell" "haswell" "+aes"
-}
+main() {
+  local -r PROFILE="${1}"; shift
+  local -r TARGET="${1}"; shift
+  local -r BASE_DIR="${1}"; shift
 
-gen_skylake() {
-  gen_asm "$@" "skylake-avx512" "skylake" "-xsavec,-xsaves"
-}
+  case "${PROFILE}" in
+    "haswell")
+      CPU="haswell"
+      CPU_FEATURES="+aes"
+      ;;
+    "broadwell")
+      CPU="broadwell"
+      CPU_FEATURES="+aes"
+      ;;
+    "skylake")
+      CPU="skylake"
+      CPU_FEATURES="-xsavec,-xsaves"
+      ;;
+    "skylakex")
+      CPU="skylake-avx512"
+      CPU_FEATURES="-xsavec,-xsaves"
+      ;;
+    "tigerlake")
+      CPU="tigerlake"
+      CPU_FEATURES="-xsavec,-xsaves"
+      ;;
+    *)
+      echo "Unsupported profile: ${PROFILE}"
+      exit 1
+      ;;
+  esac
 
-gen_tigerlake() {
-  gen_asm "$@" "tigerlake" "tigerlake" "-xsavec,-xsaves"
-}
-
-gen_asm() {
-  local -r TARGET="${1}"
-  local -r BASE_DIR="${2}"
-  local -r CPU="${3}"
-  local -r PROFILE="${4}"
-  local -r CPU_FEATURES="${5}"
   local -r ASM_FILENAME="${TARGET}_${PROFILE}.s"
   local -r ASM_DIR="${BASE_DIR}/asm"
   local -r ASM_PATH="${ASM_DIR}/${ASM_FILENAME}"
@@ -49,3 +63,5 @@ gen_asm() {
 
   echo "Generated ${ASM_PATH}"
 }
+
+main "$@"

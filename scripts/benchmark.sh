@@ -17,7 +17,7 @@ main() {
       exit 1
   fi
   local -r LIB_NAME="${1}"; shift
-  EXTRA_FLAGS=
+  EXTRA_FLAGS=()
   case "${LIB_NAME}" in
     "haberdashery")
       LIB_DIR="${PROJECT_DIR}/rust/sys/benchmarks"

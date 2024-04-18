@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn compare_reference_impl() {
-        if !cpuid::has_haswell_support() {
+        if !cpuid::haswell().is_supported() {
             return;
         }
         fn compare_reference_impl<const N: usize>() {

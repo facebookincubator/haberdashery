@@ -46,7 +46,6 @@ impl From<Aes256> for AesRoundKeys<NUM_ROUNDS> {
     }
 }
 
-#[allow(unused)]
 impl Aes256 {
     #[inline(always)]
     pub fn zero() -> Self {
@@ -61,41 +60,31 @@ impl Aes256 {
         key: [M128i; 2],
         mut blocks: [M128i; N],
     ) -> (Self, [M128i; N]) {
-        match N {
-            #[cfg(feature = "skylake")]
-            1 | 6 => {
-                use crate::asm::vaesenc_expand_and_crypt::expand_and_crypt_step;
-                let mut rcon = M128i::from([1, 1, 1, 1]);
-                let mut aes = Self::zero();
-                aes.0[0] = key[0];
-                aes.0[1] = key[1];
-                aes.encrypt_round_first(&mut blocks);
-                aes.expand_step_aesenclast::<2>(&mut rcon);
-                aes.encrypt_round(&mut blocks, 1);
-                aes.expand_step_aesenclast::<3>(&mut rcon);
-                expand_and_crypt_step(&mut aes, 4, &mut rcon, &mut blocks);
-                expand_and_crypt_step(&mut aes, 5, &mut rcon, &mut blocks);
-                expand_and_crypt_step(&mut aes, 6, &mut rcon, &mut blocks);
-                expand_and_crypt_step(&mut aes, 7, &mut rcon, &mut blocks);
-                expand_and_crypt_step(&mut aes, 8, &mut rcon, &mut blocks);
-                expand_and_crypt_step(&mut aes, 9, &mut rcon, &mut blocks);
-                expand_and_crypt_step(&mut aes, 10, &mut rcon, &mut blocks);
-                expand_and_crypt_step(&mut aes, 11, &mut rcon, &mut blocks);
-                expand_and_crypt_step(&mut aes, 12, &mut rcon, &mut blocks);
-                aes.expand_step_aesenclast::<13>(&mut rcon);
-                aes.expand_step_aesenclast::<14>(&mut rcon);
-                aes.encrypt_round(&mut blocks, 11);
-                aes.encrypt_round(&mut blocks, 12);
-                aes.encrypt_round(&mut blocks, 13);
-                aes.encrypt_round_last(&mut blocks);
-                (aes, blocks)
-            }
-            _ => {
-                let aes = Self::new_aesenclast(key);
-                let blocks = aes.encrypt(blocks);
-                (aes, blocks)
-            }
-        }
+        use crate::asm::vaesenc_expand_and_crypt::expand_and_crypt_step;
+        let mut rcon = M128i::from([1, 1, 1, 1]);
+        let mut aes = Self::zero();
+        aes.0[0] = key[0];
+        aes.0[1] = key[1];
+        aes.encrypt_round_first(&mut blocks);
+        aes.expand_step_aesenclast::<2>(&mut rcon);
+        aes.encrypt_round(&mut blocks, 1);
+        aes.expand_step_aesenclast::<3>(&mut rcon);
+        expand_and_crypt_step(&mut aes, 4, &mut rcon, &mut blocks);
+        expand_and_crypt_step(&mut aes, 5, &mut rcon, &mut blocks);
+        expand_and_crypt_step(&mut aes, 6, &mut rcon, &mut blocks);
+        expand_and_crypt_step(&mut aes, 7, &mut rcon, &mut blocks);
+        expand_and_crypt_step(&mut aes, 8, &mut rcon, &mut blocks);
+        expand_and_crypt_step(&mut aes, 9, &mut rcon, &mut blocks);
+        expand_and_crypt_step(&mut aes, 10, &mut rcon, &mut blocks);
+        expand_and_crypt_step(&mut aes, 11, &mut rcon, &mut blocks);
+        expand_and_crypt_step(&mut aes, 12, &mut rcon, &mut blocks);
+        aes.expand_step_aesenclast::<13>(&mut rcon);
+        aes.expand_step_aesenclast::<14>(&mut rcon);
+        aes.encrypt_round(&mut blocks, 11);
+        aes.encrypt_round(&mut blocks, 12);
+        aes.encrypt_round(&mut blocks, 13);
+        aes.encrypt_round_last(&mut blocks);
+        (aes, blocks)
     }
     #[inline(always)]
     pub fn new_aesenclast(key: [M128i; 2]) -> Self {

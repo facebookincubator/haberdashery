@@ -10,14 +10,25 @@ use core::ops::BitOr;
 
 #[derive(Copy, Clone, Default)]
 pub struct FeatureLeaf<const L: u32> {
+    eax: u32,
     ebx: u32,
     ecx: u32,
     edx: u32,
 }
 impl<const L: u32> FeatureLeaf<L> {
     #[inline(always)]
+    const fn eax<const B: usize>() -> Self {
+        Self {
+            eax: 1 << B,
+            ebx: 0,
+            ecx: 0,
+            edx: 0,
+        }
+    }
+    #[inline(always)]
     const fn ebx<const B: usize>() -> Self {
         Self {
+            eax: 0,
             ebx: 1 << B,
             ecx: 0,
             edx: 0,
@@ -26,6 +37,7 @@ impl<const L: u32> FeatureLeaf<L> {
     #[inline(always)]
     const fn ecx<const B: usize>() -> Self {
         Self {
+            eax: 0,
             ebx: 0,
             ecx: 1 << B,
             edx: 0,
@@ -34,15 +46,19 @@ impl<const L: u32> FeatureLeaf<L> {
     #[inline(always)]
     const fn edx<const B: usize>() -> Self {
         Self {
+            eax: 0,
             ebx: 0,
             ecx: 0,
             edx: 1 << B,
         }
     }
     #[inline(always)]
-    pub fn is_supported(&self, cpuid: CpuidResult) -> bool {
-        if self.ebx == 0 && self.ecx == 0 && self.edx == 0 {
+    pub(crate) fn is_cpuid_supported(&self, cpuid: CpuidResult) -> bool {
+        if self.eax == 0 && self.ebx == 0 && self.ecx == 0 && self.edx == 0 {
             return true;
+        }
+        if cpuid.eax & self.eax != self.eax {
+            return false;
         }
         if cpuid.ebx & self.ebx != self.ebx {
             return false;
@@ -55,12 +71,17 @@ impl<const L: u32> FeatureLeaf<L> {
         }
         true
     }
+    #[inline(always)]
+    pub fn is_supported(self) -> bool {
+        FeatureSet::from(self).is_supported()
+    }
 }
 impl<const L: u32> BitOr for FeatureLeaf<L> {
     type Output = Self;
     #[inline(always)]
     fn bitor(self, rhs: Self) -> Self::Output {
         Self {
+            eax: self.eax | rhs.eax,
             ebx: self.ebx | rhs.ebx,
             ecx: self.ecx | rhs.ecx,
             edx: self.edx | rhs.edx,
@@ -69,8 +90,40 @@ impl<const L: u32> BitOr for FeatureLeaf<L> {
 }
 #[derive(Copy, Clone, Default)]
 pub struct FeatureSet {
-    pub leaf1: FeatureLeaf<1>,
-    pub leaf7: FeatureLeaf<7>,
+    pub(crate) leaf1: FeatureLeaf<1>,
+    pub(crate) leaf7: FeatureLeaf<7>,
+}
+impl FeatureSet {
+    #[inline(always)]
+    pub fn is_supported(self) -> bool {
+        crate::processor().is_supported(self)
+    }
+}
+impl<const N: u32> From<FeatureLeaf<N>> for FeatureSet {
+    #[inline(always)]
+    fn from(leaf: FeatureLeaf<N>) -> Self {
+        match N {
+            1 => Self {
+                leaf1: FeatureLeaf {
+                    eax: leaf.eax,
+                    ebx: leaf.ebx,
+                    ecx: leaf.ecx,
+                    edx: leaf.edx,
+                },
+                ..Self::default()
+            },
+            7 => Self {
+                leaf7: FeatureLeaf {
+                    eax: leaf.eax,
+                    ebx: leaf.ebx,
+                    ecx: leaf.ecx,
+                    edx: leaf.edx,
+                },
+                ..Self::default()
+            },
+            _ => unimplemented!(),
+        }
+    }
 }
 impl BitOr<FeatureLeaf<7>> for FeatureLeaf<1> {
     type Output = FeatureSet;
@@ -82,23 +135,14 @@ impl BitOr<FeatureLeaf<7>> for FeatureLeaf<1> {
         }
     }
 }
-impl BitOr<FeatureLeaf<1>> for FeatureSet {
-    type Output = Self;
+impl<T: Into<FeatureSet>> BitOr<T> for FeatureSet {
+    type Output = FeatureSet;
     #[inline(always)]
-    fn bitor(self, rhs: FeatureLeaf<1>) -> Self::Output {
+    fn bitor(self, rhs: T) -> Self::Output {
+        let rhs = rhs.into();
         FeatureSet {
-            leaf1: self.leaf1 | rhs,
-            leaf7: self.leaf7,
-        }
-    }
-}
-impl BitOr<FeatureLeaf<7>> for FeatureSet {
-    type Output = Self;
-    #[inline(always)]
-    fn bitor(self, rhs: FeatureLeaf<7>) -> Self::Output {
-        FeatureSet {
-            leaf1: self.leaf1,
-            leaf7: self.leaf7 | rhs,
+            leaf1: self.leaf1 | rhs.leaf1,
+            leaf7: self.leaf7 | rhs.leaf7,
         }
     }
 }
@@ -127,6 +171,7 @@ feature!(1, edx, 23, MMX);
 feature!(1, edx, 24, FXSR);
 feature!(1, edx, 25, SSE);
 feature!(1, edx, 26, SSE2);
+feature!(7, eax, 5, AVX512BF16);
 feature!(7, ebx, 0, FSGSBASE);
 feature!(7, ebx, 3, BMI);
 feature!(7, ebx, 4, HLE);

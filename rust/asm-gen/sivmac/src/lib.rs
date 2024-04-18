@@ -24,7 +24,10 @@ mod constants {
     algorithm: sivmac,
     prefix: haberdashery,
     profile: haswell,
+    profile: broadwell,
     profile: skylake,
+    profile: skylakex,
+    profile: tigerlake,
 )]
 pub struct SivMac([core::arch::x86_64::__m128i; 23]);
 impl Mac for SivMac {

@@ -15,12 +15,19 @@ ROOT_DIR="$( cd -P "$(dirname "${BASH_SOURCE[0]}")/../../../"; pwd )"
 readonly ROOT_DIR
 
 main() {
-  local -r TARGET="aes256gcmsiv"
-  # shellcheck disable=SC1091
-  source "${ROOT_DIR}/rust/asm-gen/asm.sh"
   cd "${SCRIPT_DIR}"
-  gen_skylake "${TARGET}" "${ROOT_DIR}"
-  gen_haswell "${TARGET}" "${ROOT_DIR}"
+  local -r TARGET="$(basename "${PWD}")"
+  local -r GEN="${ROOT_DIR}/rust/asm-gen/asm.sh"
+  if [ $# -eq 0 ]; then
+    "${GEN}" "tigerlake" "${TARGET}" "${ROOT_DIR}"
+    "${GEN}" "skylakex" "${TARGET}" "${ROOT_DIR}"
+    "${GEN}" "skylake" "${TARGET}" "${ROOT_DIR}"
+    "${GEN}" "broadwell" "${TARGET}" "${ROOT_DIR}"
+    "${GEN}" "haswell" "${TARGET}" "${ROOT_DIR}"
+  else
+    local -r PROFILE="${1}"; shift
+    "${GEN}" "${PROFILE}" "${TARGET}" "${ROOT_DIR}"
+  fi
 }
 
 main "$@"
