@@ -7,30 +7,37 @@ edition = "2021"
 codegen-units = 1
 
 [features]
-haswell = ["aes"]
-broadwell = ["aes"]
-skylake = ["aes"]
-skylakex = ["aes", "avx512f", "avx512vl"]
-tigerlake = ["aes", "avx512f", "avx512vl"]
+asm_gen =[]
+haswell = ["asm_gen", "aes"]
+broadwell = ["asm_gen", "aes"]
+skylake = ["asm_gen", "aes"]
+skylakex = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw"]
+tigerlake = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw", "vpclmulqdq"]
 
 # features
 aes = []
 avx512f = []
 avx512vl = []
+avx512bw = []
+vpclmulqdq = []
 
-# disable some tests for buck2
-buck2 = []
+# x25519 rfc test vectors take a particularly long time
+very_long_tests = []
 
 [dependencies]
 cpuid = { path = "../cpuid" }
-ffi-util = { path = "../ffi-util" }
+intrinsics = { path = "../intrinsics" }
+
+[build-dependencies]
+version_check = "0.9.4"
 
 [dev-dependencies]
 aes-gcm = "0.10.2"
 aes-gcm-siv = "0.11.1"
 generic-array = "0.14.7"
 hex = "0.4.3"
+hex-literal = "0.4.1"
 hex2 = { package = "hex", path = "../hex" }
 random = { path = "../random" }
-test-vectors = { path = "../test-vectors" }
 static-env = { path = "../static-env" }
+test-vectors = { path = "../test-vectors" }

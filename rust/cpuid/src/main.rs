@@ -6,5 +6,8 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 fn main() {
-    println!("{}", cpuid::processor());
+    match std::env::args().nth(1).as_ref().map(String::as_str) {
+        Some("canonical") => println!("{}", cpuid::processor().canonical_name()),
+        _ => println!("{}", cpuid::processor()),
+    }
 }

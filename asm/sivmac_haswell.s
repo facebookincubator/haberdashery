@@ -108,11 +108,11 @@ haberdashery_sivmac_haswell_init:
 	vpslldq	$8, %xmm4, %xmm1
 	vpxor	%xmm1, %xmm0, %xmm0
 	vpslldq	$12, %xmm4, %xmm1
+	vpshufb	.LCPI0_5(%rip), %xmm9, %xmm10
+	vaesenclast	.LCPI0_6(%rip), %xmm10, %xmm10
+	vpxor	%xmm4, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm0, %xmm0
-	vpshufb	.LCPI0_5(%rip), %xmm9, %xmm1
-	vaesenclast	.LCPI0_6(%rip), %xmm1, %xmm1
-	vpxor	%xmm4, %xmm0, %xmm0
-	vpxor	%xmm0, %xmm1, %xmm1
+	vpxor	%xmm0, %xmm10, %xmm1
 	#APP
 	vaesenc	%xmm9, %xmm4, %xmm4
 	vaesenc	%xmm9, %xmm5, %xmm5
@@ -123,15 +123,15 @@ haberdashery_sivmac_haswell_init:
 	#NO_APP
 	vpslldq	$4, %xmm9, %xmm0
 	vpslldq	$8, %xmm9, %xmm10
-	vpxor	%xmm0, %xmm10, %xmm0
-	vpslldq	$12, %xmm9, %xmm10
 	vpxor	%xmm0, %xmm10, %xmm10
-	vpshufd	$255, %xmm1, %xmm11
+	vpslldq	$12, %xmm9, %xmm11
+	vpshufd	$255, %xmm1, %xmm12
 	vpxor	%xmm0, %xmm0, %xmm0
-	vaesenclast	%xmm0, %xmm11, %xmm11
+	vaesenclast	%xmm0, %xmm12, %xmm12
 	vxorps	%xmm8, %xmm8, %xmm8
+	vpxor	%xmm9, %xmm11, %xmm9
 	vpxor	%xmm9, %xmm10, %xmm9
-	vpxor	%xmm9, %xmm11, %xmm10
+	vpxor	%xmm9, %xmm12, %xmm10
 	vbroadcastss	.LCPI0_15(%rip), %xmm0
 	vbroadcastss	.LCPI0_8(%rip), %xmm12
 	#APP
@@ -635,323 +635,512 @@ haberdashery_sivmac_haswell_sign:
 	.cfi_def_cfa_offset 24
 	pushq	%r14
 	.cfi_def_cfa_offset 32
-	pushq	%r12
+	pushq	%r13
 	.cfi_def_cfa_offset 40
-	pushq	%rbx
+	pushq	%r12
 	.cfi_def_cfa_offset 48
-	subq	$64, %rsp
-	.cfi_def_cfa_offset 112
-	.cfi_offset %rbx, -48
-	.cfi_offset %r12, -40
+	pushq	%rbx
+	.cfi_def_cfa_offset 56
+	subq	$72, %rsp
+	.cfi_def_cfa_offset 128
+	.cfi_offset %rbx, -56
+	.cfi_offset %r12, -48
+	.cfi_offset %r13, -40
 	.cfi_offset %r14, -32
 	.cfi_offset %r15, -24
 	.cfi_offset %rbp, -16
-	xorl	%ebp, %ebp
-	movabsq	$68719476736, %rax
-	cmpq	%rax, %rdx
-	ja	.LBB1_14
-	movq	%r8, %r14
 	movq	%rcx, %rbx
-	movq	%rdx, %r12
-	movq	%rdi, %r15
-	vmovdqa	(%rdi), %xmm10
+	cmpq	$16, %r8
+	sete	%al
+	movabsq	$68719476737, %rcx
+	cmpq	%rcx, %rdx
+	setb	%bpl
+	andb	%al, %bpl
+	cmpb	$1, %bpl
+	jne	.LBB1_32
+	movq	%rdx, %r15
+	movq	%rdi, %r14
+	leaq	(,%rdx,8), %rax
 	vpxor	%xmm1, %xmm1, %xmm1
 	cmpq	$128, %rdx
-	vmovdqa	%xmm10, 32(%rsp)
-	jae	.LBB1_15
-	movq	%r12, %rax
-	cmpq	$16, %rax
-	jae	.LBB1_4
-	jmp	.LBB1_9
-.LBB1_15:
-	vmovdqa	16(%r15), %xmm15
-	vmovdqa	32(%r15), %xmm3
-	vmovdqa	48(%r15), %xmm4
-	vmovdqu	112(%rsi), %xmm5
-	vpclmulqdq	$0, %xmm5, %xmm10, %xmm6
-	vmovdqa	64(%r15), %xmm1
-	vpclmulqdq	$1, %xmm5, %xmm10, %xmm7
-	vmovdqa	80(%r15), %xmm2
-	vpclmulqdq	$16, %xmm5, %xmm10, %xmm8
-	vmovdqu	64(%rsi), %xmm9
-	vpclmulqdq	$17, %xmm5, %xmm10, %xmm5
-	vmovdqu	96(%rsi), %xmm10
-	vpclmulqdq	$0, %xmm10, %xmm15, %xmm11
-	vmovdqu	80(%rsi), %xmm12
-	vpclmulqdq	$1, %xmm10, %xmm15, %xmm13
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$16, %xmm10, %xmm15, %xmm8
-	vpxor	%xmm6, %xmm11, %xmm6
-	vpclmulqdq	$17, %xmm10, %xmm15, %xmm10
-	vpxor	%xmm8, %xmm13, %xmm8
-	vpclmulqdq	$0, %xmm12, %xmm3, %xmm11
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$1, %xmm12, %xmm3, %xmm8
-	vpxor	%xmm5, %xmm10, %xmm10
-	vpclmulqdq	$16, %xmm12, %xmm3, %xmm5
-	vpxor	%xmm5, %xmm8, %xmm8
-	vpclmulqdq	$0, %xmm9, %xmm4, %xmm13
-	vmovdqa	96(%r15), %xmm5
-	vpxor	%xmm13, %xmm11, %xmm11
-	vmovdqu	32(%rsi), %xmm13
-	vpxor	%xmm6, %xmm11, %xmm6
-	vpclmulqdq	$1, %xmm9, %xmm4, %xmm11
-	vpxor	%xmm11, %xmm8, %xmm8
-	vmovdqu	48(%rsi), %xmm11
-	vpclmulqdq	$17, %xmm12, %xmm3, %xmm12
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$16, %xmm9, %xmm4, %xmm8
-	vpclmulqdq	$17, %xmm9, %xmm4, %xmm9
-	vpxor	%xmm9, %xmm12, %xmm9
-	vpxor	%xmm9, %xmm10, %xmm9
-	vpclmulqdq	$0, %xmm11, %xmm1, %xmm10
-	vpclmulqdq	$1, %xmm11, %xmm1, %xmm12
-	vpxor	%xmm12, %xmm8, %xmm8
-	vpclmulqdq	$16, %xmm11, %xmm1, %xmm12
-	vpxor	%xmm12, %xmm8, %xmm8
-	vpclmulqdq	$0, %xmm13, %xmm2, %xmm12
-	vpxor	%xmm12, %xmm10, %xmm10
-	vpclmulqdq	$1, %xmm13, %xmm2, %xmm12
-	vpxor	%xmm12, %xmm8, %xmm8
-	vmovdqu	16(%rsi), %xmm12
+	jb	.LBB1_6
+	vmovdqu	(%rsi), %xmm8
+	vmovdqu	16(%rsi), %xmm7
+	vmovdqu	32(%rsi), %xmm6
+	vmovdqu	112(%rsi), %xmm1
+	vmovdqa	(%r14), %xmm0
+	vpclmulqdq	$0, %xmm1, %xmm0, %xmm5
+	vmovdqu	64(%rsi), %xmm4
+	vpclmulqdq	$1, %xmm1, %xmm0, %xmm3
+	vmovdqu	80(%rsi), %xmm9
+	vpclmulqdq	$16, %xmm1, %xmm0, %xmm10
+	vmovdqu	96(%rsi), %xmm11
+	vpclmulqdq	$17, %xmm1, %xmm0, %xmm12
+	vmovdqa	16(%r14), %xmm1
+	vpclmulqdq	$0, %xmm11, %xmm1, %xmm13
+	vmovdqa	32(%r14), %xmm2
+	vpclmulqdq	$1, %xmm11, %xmm1, %xmm14
+	vpxor	%xmm3, %xmm10, %xmm10
+	vpclmulqdq	$16, %xmm11, %xmm1, %xmm15
+	vmovdqa	48(%r14), %xmm3
 	vpclmulqdq	$17, %xmm11, %xmm1, %xmm11
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$17, %xmm13, %xmm2, %xmm8
-	vpxor	%xmm8, %xmm11, %xmm8
-	vpclmulqdq	$0, %xmm12, %xmm5, %xmm11
-	vpxor	%xmm11, %xmm10, %xmm10
-	vpclmulqdq	$16, %xmm13, %xmm2, %xmm11
-	vpxor	%xmm6, %xmm10, %xmm10
-	vpclmulqdq	$1, %xmm12, %xmm5, %xmm6
-	vpxor	%xmm6, %xmm11, %xmm6
-	vpclmulqdq	$16, %xmm12, %xmm5, %xmm11
-	vpxor	%xmm6, %xmm11, %xmm11
-	vpclmulqdq	$17, %xmm12, %xmm5, %xmm12
-	vmovdqa	112(%r15), %xmm6
-	vpxor	%xmm12, %xmm8, %xmm8
-	vmovdqu	(%rsi), %xmm12
-	vpxor	%xmm8, %xmm9, %xmm9
-	vpclmulqdq	$0, %xmm12, %xmm6, %xmm8
-	vpxor	%xmm8, %xmm10, %xmm10
-	vpclmulqdq	$1, %xmm12, %xmm6, %xmm8
-	vpxor	%xmm8, %xmm11, %xmm8
-	vpclmulqdq	$16, %xmm12, %xmm6, %xmm11
-	vpxor	%xmm11, %xmm8, %xmm8
-	vpxor	%xmm7, %xmm8, %xmm8
-	vpclmulqdq	$17, %xmm12, %xmm6, %xmm7
-	vpxor	%xmm7, %xmm9, %xmm9
-	subq	$-128, %rsi
-	leaq	-128(%r12), %rax
-	cmpq	$128, %rax
-	jb	.LBB1_18
-	vmovdqa	%xmm1, 16(%rsp)
-	vmovdqa	%xmm2, 48(%rsp)
-	.p2align	4, 0x90
-.LBB1_17:
-	vmovdqu	32(%rsi), %xmm11
-	vmovdqu	64(%rsi), %xmm12
-	vpslldq	$8, %xmm8, %xmm13
-	vpxor	%xmm13, %xmm10, %xmm10
-	vpbroadcastq	.LCPI1_2(%rip), %xmm0
-	vpclmulqdq	$16, %xmm0, %xmm10, %xmm13
-	vpshufd	$78, %xmm10, %xmm10
-	vpxor	%xmm10, %xmm13, %xmm10
-	vpclmulqdq	$16, %xmm0, %xmm10, %xmm13
-	vmovdqu	96(%rsi), %xmm14
-	vmovdqa	%xmm6, %xmm2
-	vmovdqa	%xmm5, %xmm6
-	vmovdqa	%xmm4, %xmm5
-	vmovdqa	%xmm3, %xmm4
-	vmovdqa	%xmm15, %xmm3
-	vmovdqu	112(%rsi), %xmm15
-	vpxor	(%rsi), %xmm9, %xmm1
-	vpsrldq	$8, %xmm8, %xmm8
-	vmovdqa	32(%rsp), %xmm9
-	vpclmulqdq	$0, %xmm15, %xmm9, %xmm7
-	vpshufd	$78, %xmm10, %xmm10
-	vpclmulqdq	$1, %xmm15, %xmm9, %xmm0
-	vpxor	%xmm1, %xmm8, %xmm8
-	vpclmulqdq	$16, %xmm15, %xmm9, %xmm1
-	vpxor	%xmm10, %xmm8, %xmm8
-	vpclmulqdq	$17, %xmm15, %xmm9, %xmm10
-	vmovdqa	%xmm3, %xmm15
-	vmovdqa	%xmm4, %xmm3
-	vmovdqa	%xmm5, %xmm4
-	vmovdqa	%xmm6, %xmm5
-	vmovdqa	%xmm2, %xmm6
-	vpxor	%xmm13, %xmm8, %xmm9
-	vpclmulqdq	$0, %xmm14, %xmm15, %xmm8
-	vpxor	%xmm0, %xmm1, %xmm0
-	vpclmulqdq	$1, %xmm14, %xmm15, %xmm1
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$16, %xmm14, %xmm15, %xmm8
-	vmovdqu	80(%rsi), %xmm13
-	vpclmulqdq	$17, %xmm14, %xmm15, %xmm14
-	vpxor	%xmm1, %xmm8, %xmm1
-	vpclmulqdq	$0, %xmm13, %xmm3, %xmm8
-	vpxor	%xmm1, %xmm0, %xmm0
-	vpclmulqdq	$1, %xmm13, %xmm3, %xmm1
-	vpxor	%xmm10, %xmm14, %xmm10
-	vpclmulqdq	$16, %xmm13, %xmm3, %xmm14
-	vpxor	%xmm1, %xmm14, %xmm1
-	vpclmulqdq	$17, %xmm13, %xmm3, %xmm13
-	vpclmulqdq	$0, %xmm12, %xmm4, %xmm14
-	vpxor	%xmm14, %xmm8, %xmm8
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$1, %xmm12, %xmm4, %xmm8
-	vpxor	%xmm1, %xmm8, %xmm1
-	vpclmulqdq	$16, %xmm12, %xmm4, %xmm8
-	vmovdqu	48(%rsi), %xmm14
-	vpclmulqdq	$17, %xmm12, %xmm4, %xmm12
-	vpxor	%xmm1, %xmm0, %xmm0
-	vmovdqa	16(%rsp), %xmm2
-	vpclmulqdq	$0, %xmm14, %xmm2, %xmm1
-	vpxor	%xmm12, %xmm13, %xmm12
-	vpclmulqdq	$1, %xmm14, %xmm2, %xmm13
+	vpxor	%xmm5, %xmm13, %xmm5
+	vpclmulqdq	$0, %xmm9, %xmm2, %xmm13
+	vpxor	%xmm15, %xmm14, %xmm14
+	vpclmulqdq	$1, %xmm9, %xmm2, %xmm15
+	vpxor	%xmm14, %xmm10, %xmm10
+	vpclmulqdq	$16, %xmm9, %xmm2, %xmm14
+	vpxor	%xmm12, %xmm11, %xmm11
+	vpclmulqdq	$17, %xmm9, %xmm2, %xmm9
+	vpxor	%xmm14, %xmm15, %xmm12
+	vpclmulqdq	$0, %xmm4, %xmm3, %xmm14
+	vpxor	%xmm14, %xmm13, %xmm13
+	vpclmulqdq	$1, %xmm4, %xmm3, %xmm14
+	vpxor	%xmm5, %xmm13, %xmm13
+	vpclmulqdq	$16, %xmm4, %xmm3, %xmm15
+	vmovdqu	48(%rsi), %xmm5
+	vpclmulqdq	$17, %xmm4, %xmm3, %xmm4
+	vpxor	%xmm14, %xmm12, %xmm12
 	vpxor	%xmm12, %xmm10, %xmm10
-	vpclmulqdq	$16, %xmm14, %xmm2, %xmm12
-	vpxor	%xmm13, %xmm8, %xmm8
-	vpclmulqdq	$17, %xmm14, %xmm2, %xmm13
-	vpxor	%xmm12, %xmm8, %xmm8
-	vmovdqa	48(%rsp), %xmm2
-	vpclmulqdq	$0, %xmm11, %xmm2, %xmm12
-	vpxor	%xmm1, %xmm12, %xmm1
-	vpclmulqdq	$1, %xmm11, %xmm2, %xmm12
-	vpxor	%xmm12, %xmm8, %xmm8
-	vpclmulqdq	$16, %xmm11, %xmm2, %xmm12
-	vmovdqu	16(%rsi), %xmm14
-	vpclmulqdq	$17, %xmm11, %xmm2, %xmm11
-	vpxor	%xmm0, %xmm8, %xmm0
-	vpclmulqdq	$0, %xmm14, %xmm5, %xmm8
+	vpxor	%xmm4, %xmm9, %xmm4
+	vpxor	%xmm4, %xmm11, %xmm9
+	vmovdqa	64(%r14), %xmm4
+	vpclmulqdq	$0, %xmm5, %xmm4, %xmm11
+	vpclmulqdq	$1, %xmm5, %xmm4, %xmm12
+	vpxor	%xmm12, %xmm15, %xmm12
+	vpclmulqdq	$16, %xmm5, %xmm4, %xmm14
+	vpxor	%xmm14, %xmm12, %xmm12
+	vpclmulqdq	$17, %xmm5, %xmm4, %xmm14
+	vmovdqa	80(%r14), %xmm5
+	vpclmulqdq	$0, %xmm6, %xmm5, %xmm15
+	vpxor	%xmm15, %xmm11, %xmm11
+	vpclmulqdq	$1, %xmm6, %xmm5, %xmm15
+	vpxor	%xmm15, %xmm12, %xmm12
+	vpxor	%xmm12, %xmm10, %xmm10
+	vpclmulqdq	$16, %xmm6, %xmm5, %xmm12
+	vpclmulqdq	$17, %xmm6, %xmm5, %xmm6
+	vpxor	%xmm6, %xmm14, %xmm14
+	vmovdqa	96(%r14), %xmm6
+	vpclmulqdq	$0, %xmm7, %xmm6, %xmm15
+	vpxor	%xmm15, %xmm11, %xmm11
+	vpclmulqdq	$1, %xmm7, %xmm6, %xmm15
 	vpxor	%xmm11, %xmm13, %xmm11
-	vpclmulqdq	$1, %xmm14, %xmm5, %xmm13
-	vpxor	%xmm1, %xmm8, %xmm1
-	vpclmulqdq	$16, %xmm14, %xmm5, %xmm8
-	vpxor	%xmm1, %xmm7, %xmm1
-	vpxor	%xmm13, %xmm12, %xmm7
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpxor	%xmm7, %xmm0, %xmm0
-	vpclmulqdq	$17, %xmm14, %xmm5, %xmm7
-	vpxor	%xmm7, %xmm11, %xmm7
-	vpxor	%xmm7, %xmm10, %xmm7
-	vpclmulqdq	$0, %xmm9, %xmm6, %xmm8
-	vpxor	%xmm1, %xmm8, %xmm10
-	vpclmulqdq	$1, %xmm9, %xmm6, %xmm1
-	vpxor	%xmm1, %xmm0, %xmm0
-	vpclmulqdq	$16, %xmm9, %xmm6, %xmm1
-	vpxor	%xmm1, %xmm0, %xmm8
-	vpclmulqdq	$17, %xmm9, %xmm6, %xmm0
-	vpxor	%xmm0, %xmm7, %xmm9
+	vpclmulqdq	$16, %xmm7, %xmm6, %xmm13
+	vpxor	%xmm15, %xmm12, %xmm12
+	vpclmulqdq	$17, %xmm7, %xmm6, %xmm7
+	vpxor	%xmm13, %xmm12, %xmm12
+	vpxor	%xmm7, %xmm14, %xmm7
+	vpxor	%xmm7, %xmm9, %xmm13
+	vmovdqa	112(%r14), %xmm14
+	vpclmulqdq	$0, %xmm8, %xmm14, %xmm9
+	vpxor	%xmm9, %xmm11, %xmm11
+	vpclmulqdq	$1, %xmm8, %xmm14, %xmm9
+	vpxor	%xmm9, %xmm12, %xmm9
+	vpclmulqdq	$16, %xmm8, %xmm14, %xmm12
+	vpxor	%xmm12, %xmm9, %xmm9
+	vpxor	%xmm9, %xmm10, %xmm9
+	vpclmulqdq	$17, %xmm8, %xmm14, %xmm8
+	vpxor	%xmm8, %xmm13, %xmm10
 	subq	$-128, %rsi
-	addq	$-128, %rax
-	cmpq	$127, %rax
-	ja	.LBB1_17
-.LBB1_18:
-	vpslldq	$8, %xmm8, %xmm0
-	vpxor	%xmm0, %xmm10, %xmm0
-	vpbroadcastq	.LCPI1_2(%rip), %xmm1
-	vpclmulqdq	$16, %xmm1, %xmm0, %xmm3
-	vpshufd	$78, %xmm0, %xmm0
-	vpxor	%xmm0, %xmm3, %xmm0
-	vpsrldq	$8, %xmm8, %xmm3
-	vpclmulqdq	$16, %xmm1, %xmm0, %xmm1
-	vpxor	%xmm3, %xmm9, %xmm3
-	vpshufd	$78, %xmm0, %xmm0
-	vpxor	%xmm0, %xmm3, %xmm0
-	vpxor	%xmm1, %xmm0, %xmm1
-	vmovdqa	32(%rsp), %xmm10
-	cmpq	$16, %rax
-	jb	.LBB1_9
+	addq	$-128, %r15
+	cmpq	$128, %r15
+	jb	.LBB1_5
+	vmovdqa	%xmm4, (%rsp)
+	vmovdqa	%xmm1, %xmm4
+	vmovdqa	%xmm5, 48(%rsp)
+	vmovdqa	%xmm2, %xmm5
+	vmovdqa	%xmm6, %xmm7
+	vmovdqa	%xmm3, %xmm6
+	vmovdqa	%xmm14, 16(%rsp)
+	.p2align	4, 0x90
 .LBB1_4:
-	leaq	-16(%rax), %rdx
-	testb	$16, %dl
-	je	.LBB1_5
-	cmpq	$16, %rdx
-	jae	.LBB1_7
-.LBB1_10:
-	testq	%rdx, %rdx
-	je	.LBB1_12
-.LBB1_11:
-	vpxor	%xmm0, %xmm0, %xmm0
-	vmovdqa	%xmm0, (%rsp)
-	movq	%rsp, %rdi
-	vmovdqa	%xmm1, 16(%rsp)
-	callq	*memcpy@GOTPCREL(%rip)
-	vmovdqa	32(%rsp), %xmm10
-	vmovdqa	16(%rsp), %xmm0
-	vpxor	(%rsp), %xmm0, %xmm0
-	vpclmulqdq	$0, %xmm0, %xmm10, %xmm1
-	vpclmulqdq	$1, %xmm0, %xmm10, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm10, %xmm3
-	vpxor	%xmm2, %xmm3, %xmm2
-	vpslldq	$8, %xmm2, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpbroadcastq	.LCPI1_2(%rip), %xmm3
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm4, %xmm1
-	vpclmulqdq	$17, %xmm0, %xmm10, %xmm0
-	vpsrldq	$8, %xmm2, %xmm2
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
+	vmovdqu	32(%rsi), %xmm12
+	vmovdqu	64(%rsi), %xmm13
+	vpslldq	$8, %xmm9, %xmm14
+	vpxor	%xmm14, %xmm11, %xmm11
+	vpbroadcastq	.LCPI1_2(%rip), %xmm1
+	vpclmulqdq	$16, %xmm1, %xmm11, %xmm14
+	vpshufd	$78, %xmm11, %xmm11
+	vpxor	%xmm11, %xmm14, %xmm11
+	vpclmulqdq	$16, %xmm1, %xmm11, %xmm14
+	vmovdqu	96(%rsi), %xmm15
+	vmovdqu	112(%rsi), %xmm8
+	vpxor	(%rsi), %xmm10, %xmm10
+	vpsrldq	$8, %xmm9, %xmm9
+	vmovdqa	%xmm0, %xmm3
+	vpclmulqdq	$0, %xmm8, %xmm0, %xmm0
+	vpshufd	$78, %xmm11, %xmm11
+	vpclmulqdq	$1, %xmm8, %xmm3, %xmm1
+	vpxor	%xmm9, %xmm10, %xmm9
+	vpclmulqdq	$16, %xmm8, %xmm3, %xmm2
+	vpxor	%xmm11, %xmm9, %xmm9
+	vpclmulqdq	$17, %xmm8, %xmm3, %xmm8
+	vpxor	%xmm14, %xmm9, %xmm10
+	vpclmulqdq	$0, %xmm15, %xmm4, %xmm9
+	vpxor	%xmm1, %xmm2, %xmm1
+	vpclmulqdq	$1, %xmm15, %xmm4, %xmm2
+	vpxor	%xmm0, %xmm9, %xmm0
+	vpclmulqdq	$16, %xmm15, %xmm4, %xmm9
+	vmovdqu	80(%rsi), %xmm11
+	vpclmulqdq	$17, %xmm15, %xmm4, %xmm14
+	vpxor	%xmm2, %xmm9, %xmm2
+	vpclmulqdq	$0, %xmm11, %xmm5, %xmm9
+	vpxor	%xmm2, %xmm1, %xmm1
+	vpclmulqdq	$1, %xmm11, %xmm5, %xmm2
+	vpxor	%xmm8, %xmm14, %xmm8
+	vpclmulqdq	$16, %xmm11, %xmm5, %xmm14
+	vpxor	%xmm2, %xmm14, %xmm2
+	vpclmulqdq	$17, %xmm11, %xmm5, %xmm11
+	vpclmulqdq	$0, %xmm13, %xmm6, %xmm14
+	vpxor	%xmm14, %xmm9, %xmm9
+	vpxor	%xmm0, %xmm9, %xmm0
+	vpclmulqdq	$1, %xmm13, %xmm6, %xmm9
+	vpxor	%xmm2, %xmm9, %xmm2
+	vpclmulqdq	$16, %xmm13, %xmm6, %xmm9
+	vmovdqu	48(%rsi), %xmm14
+	vpclmulqdq	$17, %xmm13, %xmm6, %xmm13
+	vpxor	%xmm2, %xmm1, %xmm1
+	vmovdqa	(%rsp), %xmm15
+	vpclmulqdq	$0, %xmm14, %xmm15, %xmm2
+	vpxor	%xmm13, %xmm11, %xmm11
+	vpclmulqdq	$1, %xmm14, %xmm15, %xmm13
+	vpxor	%xmm11, %xmm8, %xmm8
+	vpclmulqdq	$16, %xmm14, %xmm15, %xmm11
+	vpxor	%xmm13, %xmm9, %xmm9
+	vpclmulqdq	$17, %xmm14, %xmm15, %xmm13
+	vpxor	%xmm11, %xmm9, %xmm9
+	vmovdqa	48(%rsp), %xmm15
+	vpclmulqdq	$0, %xmm12, %xmm15, %xmm11
+	vpxor	%xmm2, %xmm11, %xmm2
+	vpclmulqdq	$1, %xmm12, %xmm15, %xmm11
+	vpxor	%xmm11, %xmm9, %xmm9
+	vpclmulqdq	$16, %xmm12, %xmm15, %xmm11
+	vmovdqu	16(%rsi), %xmm14
+	vpclmulqdq	$17, %xmm12, %xmm15, %xmm12
+	vpxor	%xmm1, %xmm9, %xmm1
+	vpclmulqdq	$0, %xmm14, %xmm7, %xmm9
+	vpxor	%xmm12, %xmm13, %xmm12
+	vpclmulqdq	$1, %xmm14, %xmm7, %xmm13
+	vpxor	%xmm2, %xmm9, %xmm2
+	vpclmulqdq	$16, %xmm14, %xmm7, %xmm9
 	vpxor	%xmm2, %xmm0, %xmm0
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm0, %xmm0
-	vpxor	%xmm0, %xmm3, %xmm1
-.LBB1_12:
-	testq	%r14, %r14
-	je	.LBB1_14
-	shlq	$3, %r12
-	vmovq	%r12, %xmm0
+	vpxor	%xmm13, %xmm11, %xmm2
+	vpxor	%xmm2, %xmm9, %xmm2
+	vpxor	%xmm2, %xmm1, %xmm1
+	vpclmulqdq	$17, %xmm14, %xmm7, %xmm2
+	vmovdqa	16(%rsp), %xmm14
+	vpxor	%xmm2, %xmm12, %xmm2
+	vpxor	%xmm2, %xmm8, %xmm2
+	vpclmulqdq	$0, %xmm10, %xmm14, %xmm8
+	vpxor	%xmm0, %xmm8, %xmm11
+	vpclmulqdq	$1, %xmm10, %xmm14, %xmm0
 	vpxor	%xmm0, %xmm1, %xmm0
-	vpclmulqdq	$0, %xmm0, %xmm10, %xmm1
-	vpclmulqdq	$16, %xmm0, %xmm10, %xmm2
-	vpclmulqdq	$1, %xmm0, %xmm10, %xmm3
-	vpxor	%xmm2, %xmm3, %xmm2
-	vpslldq	$8, %xmm2, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpbroadcastq	.LCPI1_2(%rip), %xmm3
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
-	vpshufd	$78, %xmm1, %xmm1
+	vpclmulqdq	$16, %xmm10, %xmm14, %xmm1
+	vpxor	%xmm1, %xmm0, %xmm9
+	vpclmulqdq	$17, %xmm10, %xmm14, %xmm0
+	vpxor	%xmm0, %xmm2, %xmm10
+	vmovdqa	%xmm3, %xmm0
+	subq	$-128, %rsi
+	addq	$-128, %r15
+	cmpq	$127, %r15
+	ja	.LBB1_4
+.LBB1_5:
+	vpslldq	$8, %xmm9, %xmm0
+	vpxor	%xmm0, %xmm11, %xmm0
+	vpbroadcastq	.LCPI1_2(%rip), %xmm1
+	vpclmulqdq	$16, %xmm1, %xmm0, %xmm2
+	vpshufd	$78, %xmm0, %xmm0
+	vpxor	%xmm0, %xmm2, %xmm0
+	vpsrldq	$8, %xmm9, %xmm2
+	vpclmulqdq	$16, %xmm1, %xmm0, %xmm1
+	vpxor	%xmm2, %xmm10, %xmm2
+	vpshufd	$78, %xmm0, %xmm0
+	vpxor	%xmm0, %xmm2, %xmm0
+	vpxor	%xmm1, %xmm0, %xmm1
+.LBB1_6:
+	vmovq	%rax, %xmm9
+	movq	%r15, %r12
+	andq	$-128, %r12
+	addq	%rsi, %r12
+	movq	%r15, %rdx
+	andq	$15, %rdx
+	je	.LBB1_28
+	vmovdqa	%xmm1, 16(%rsp)
+	vmovdqa	%xmm9, (%rsp)
+	movq	%r15, %r13
+	andq	$-16, %r13
+	leaq	(%r12,%r13), %rsi
+	vpxor	%xmm0, %xmm0, %xmm0
+	vmovdqa	%xmm0, 32(%rsp)
+	leaq	32(%rsp), %rdi
+	callq	*memcpy@GOTPCREL(%rip)
+	vmovdqa	32(%rsp), %xmm0
+	testq	%r13, %r13
+	je	.LBB1_8
+	leaq	-16(%r13), %rcx
+	movq	%rcx, %rdx
+	shrq	$4, %rdx
+	leaq	2(%rdx), %rax
+	cmpq	$96, %rcx
+	cmovaeq	%rdx, %rax
+	movq	%rax, %rdx
+	shlq	$4, %rdx
+	vmovdqa	16(%rsp), %xmm1
+	vpxor	(%r12), %xmm1, %xmm1
+	vmovdqa	(%r14,%rdx), %xmm4
+	vpclmulqdq	$0, %xmm1, %xmm4, %xmm2
+	vpclmulqdq	$1, %xmm1, %xmm4, %xmm3
+	vpclmulqdq	$16, %xmm1, %xmm4, %xmm5
+	vpxor	%xmm3, %xmm5, %xmm3
+	vpclmulqdq	$17, %xmm1, %xmm4, %xmm1
+	testq	%rcx, %rcx
+	je	.LBB1_10
+	testb	$16, %r15b
+	jne	.LBB1_13
+	vmovdqu	16(%r12), %xmm4
+	decq	%rax
+	movq	%rax, %rcx
+	shlq	$4, %rcx
+	vmovdqa	(%r14,%rcx), %xmm5
+	vpclmulqdq	$0, %xmm4, %xmm5, %xmm6
+	vpclmulqdq	$1, %xmm4, %xmm5, %xmm7
+	leaq	-32(%r13), %rcx
+	vpclmulqdq	$16, %xmm4, %xmm5, %xmm8
+	addq	$16, %r12
+	vpclmulqdq	$17, %xmm4, %xmm5, %xmm4
+	vpxor	%xmm7, %xmm8, %xmm5
+	vpxor	%xmm2, %xmm6, %xmm2
+	vpxor	%xmm3, %xmm5, %xmm3
 	vpxor	%xmm1, %xmm4, %xmm1
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
-	vpclmulqdq	$17, %xmm0, %xmm10, %xmm0
-	vpsrldq	$8, %xmm2, %xmm2
+.LBB1_13:
+	vmovdqa	(%rsp), %xmm9
+	cmpq	$32, %r13
+	je	.LBB1_16
+	movq	%rax, %rdx
+	shlq	$4, %rdx
+	addq	%r14, %rdx
+	addq	$-16, %rdx
+	xorl	%esi, %esi
+	.p2align	4, 0x90
+.LBB1_15:
+	vmovdqa	(%rdx), %xmm4
+	vmovdqu	16(%r12,%rsi), %xmm5
+	vpclmulqdq	$0, %xmm5, %xmm4, %xmm6
+	vpclmulqdq	$1, %xmm5, %xmm4, %xmm7
+	vpxor	%xmm2, %xmm6, %xmm2
+	vpclmulqdq	$16, %xmm5, %xmm4, %xmm6
+	vmovdqa	-16(%rdx), %xmm8
+	vpclmulqdq	$17, %xmm5, %xmm4, %xmm4
+	vmovdqu	32(%r12,%rsi), %xmm5
+	vpxor	%xmm3, %xmm7, %xmm3
+	vpxor	%xmm1, %xmm4, %xmm1
+	addq	$-2, %rax
+	vpclmulqdq	$0, %xmm5, %xmm8, %xmm4
+	vpxor	%xmm2, %xmm4, %xmm2
+	vpclmulqdq	$1, %xmm5, %xmm8, %xmm4
+	vpxor	%xmm6, %xmm4, %xmm4
+	vpxor	%xmm3, %xmm4, %xmm3
+	vpclmulqdq	$16, %xmm5, %xmm8, %xmm4
+	vpxor	%xmm4, %xmm3, %xmm3
+	vpclmulqdq	$17, %xmm5, %xmm8, %xmm4
+	vpxor	%xmm1, %xmm4, %xmm1
+	addq	$-32, %rdx
+	addq	$32, %rsi
+	cmpq	%rsi, %rcx
+	jne	.LBB1_15
+.LBB1_16:
+	testq	%rax, %rax
+	je	.LBB1_18
+.LBB1_17:
+	vmovdqa	16(%r14), %xmm4
+	vpclmulqdq	$0, %xmm0, %xmm4, %xmm5
+	vpclmulqdq	$1, %xmm0, %xmm4, %xmm6
+	vpclmulqdq	$16, %xmm0, %xmm4, %xmm7
+	vmovdqa	(%r14), %xmm8
+	vpclmulqdq	$17, %xmm0, %xmm4, %xmm0
+	vpxor	%xmm7, %xmm6, %xmm4
+	vpclmulqdq	$0, %xmm9, %xmm8, %xmm6
+	vpxor	%xmm6, %xmm5, %xmm5
+	vpclmulqdq	$1, %xmm9, %xmm8, %xmm6
+	vpxor	%xmm3, %xmm6, %xmm3
+	vpxor	%xmm3, %xmm4, %xmm3
+	vpslldq	$8, %xmm3, %xmm4
+	vpxor	%xmm2, %xmm5, %xmm2
+	vpxor	%xmm4, %xmm2, %xmm2
+	vpsrldq	$8, %xmm3, %xmm3
+	vpxor	%xmm3, %xmm0, %xmm0
+	vpbroadcastq	.LCPI1_2(%rip), %xmm3
+	vpclmulqdq	$16, %xmm3, %xmm2, %xmm4
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm2, %xmm4, %xmm2
+	vpclmulqdq	$16, %xmm3, %xmm2, %xmm3
+	vpshufd	$78, %xmm2, %xmm2
 	vpxor	%xmm2, %xmm0, %xmm0
-	vpshufd	$78, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm0, %xmm0
 	vpxor	%xmm3, %xmm0, %xmm0
+	jmp	.LBB1_31
+.LBB1_28:
+	cmpq	$15, %r15
+	jbe	.LBB1_29
+	movq	%r15, %rcx
+	andq	$-16, %rcx
+	vpxor	(%r12), %xmm1, %xmm0
+	vmovdqa	(%r14,%rcx), %xmm2
+	vpclmulqdq	$0, %xmm0, %xmm2, %xmm1
+	vpclmulqdq	$1, %xmm0, %xmm2, %xmm3
+	vpclmulqdq	$16, %xmm0, %xmm2, %xmm4
+	vpclmulqdq	$17, %xmm0, %xmm2, %xmm0
+	vpxor	%xmm3, %xmm4, %xmm2
+	leaq	-16(%r15), %rax
+	cmpq	$16, %rax
+	jb	.LBB1_26
+	movq	%r15, %rdx
+	shrq	$4, %rdx
+	testb	$16, %r15b
+	jne	.LBB1_23
+	vmovdqu	16(%r12), %xmm3
+	decq	%rdx
+	movq	%rdx, %rax
+	shlq	$4, %rax
+	vmovdqa	(%r14,%rax), %xmm4
+	vpclmulqdq	$0, %xmm3, %xmm4, %xmm5
+	vpclmulqdq	$1, %xmm3, %xmm4, %xmm6
+	addq	$16, %r12
+	vpclmulqdq	$16, %xmm3, %xmm4, %xmm7
+	vpxor	%xmm7, %xmm6, %xmm6
+	vpclmulqdq	$17, %xmm3, %xmm4, %xmm3
+	vpxor	%xmm1, %xmm5, %xmm1
+	vpxor	%xmm2, %xmm6, %xmm2
+	vpxor	%xmm0, %xmm3, %xmm0
+	addq	$-32, %r15
+	movq	%r15, %rax
+.LBB1_23:
+	cmpq	$32, %rcx
+	je	.LBB1_26
+	addq	$32, %r12
+	shlq	$4, %rdx
+	leaq	(%rdx,%r14), %rcx
+	addq	$-16, %rcx
+	.p2align	4, 0x90
+.LBB1_25:
+	vmovdqa	(%rcx), %xmm3
+	vmovdqu	-16(%r12), %xmm4
+	vpclmulqdq	$0, %xmm4, %xmm3, %xmm5
+	vpclmulqdq	$1, %xmm4, %xmm3, %xmm6
+	vmovdqa	-16(%rcx), %xmm7
+	vpclmulqdq	$16, %xmm4, %xmm3, %xmm8
+	vpclmulqdq	$17, %xmm4, %xmm3, %xmm3
+	vmovdqu	(%r12), %xmm4
+	vpxor	%xmm1, %xmm5, %xmm1
+	vpclmulqdq	$0, %xmm4, %xmm7, %xmm5
+	vpxor	%xmm2, %xmm6, %xmm2
+	vpclmulqdq	$1, %xmm4, %xmm7, %xmm6
+	vpxor	%xmm0, %xmm3, %xmm0
+	vpxor	%xmm1, %xmm5, %xmm1
+	vpxor	%xmm6, %xmm8, %xmm3
+	vpxor	%xmm2, %xmm3, %xmm2
+	vpclmulqdq	$16, %xmm4, %xmm7, %xmm3
+	vpxor	%xmm3, %xmm2, %xmm2
+	vpclmulqdq	$17, %xmm4, %xmm7, %xmm3
+	vpxor	%xmm0, %xmm3, %xmm0
+	addq	$-32, %rax
+	addq	$32, %r12
+	addq	$-32, %rcx
+	cmpq	$15, %rax
+	ja	.LBB1_25
+.LBB1_26:
+	vmovdqa	(%r14), %xmm3
+	vpclmulqdq	$0, %xmm9, %xmm3, %xmm4
+	vpxor	%xmm1, %xmm4, %xmm1
+	vpclmulqdq	$1, %xmm9, %xmm3, %xmm3
+	jmp	.LBB1_27
+.LBB1_8:
+	vmovdqa	(%rsp), %xmm9
+	vmovdqa	16(%rsp), %xmm2
+	jmp	.LBB1_19
+.LBB1_29:
+	vmovdqa	(%r14), %xmm0
+	vpxor	%xmm1, %xmm9, %xmm1
+	vpclmulqdq	$0, %xmm1, %xmm0, %xmm2
+	vpclmulqdq	$1, %xmm1, %xmm0, %xmm3
+	vpclmulqdq	$16, %xmm1, %xmm0, %xmm4
+	vpxor	%xmm3, %xmm4, %xmm3
+	vpclmulqdq	$17, %xmm1, %xmm0, %xmm0
+	vpslldq	$8, %xmm3, %xmm1
+	vpxor	%xmm1, %xmm2, %xmm1
+	vpsrldq	$8, %xmm3, %xmm2
+	jmp	.LBB1_30
+.LBB1_10:
+	vmovdqa	(%rsp), %xmm9
+	testq	%rax, %rax
+	jne	.LBB1_17
+.LBB1_18:
+	vpslldq	$8, %xmm3, %xmm4
+	vpxor	%xmm4, %xmm2, %xmm2
+	vpsrldq	$8, %xmm3, %xmm3
+	vpbroadcastq	.LCPI1_2(%rip), %xmm4
+	vpclmulqdq	$16, %xmm4, %xmm2, %xmm5
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm2, %xmm5, %xmm2
+	vpclmulqdq	$16, %xmm4, %xmm2, %xmm4
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm2, %xmm3, %xmm2
+	vpxor	%xmm1, %xmm2, %xmm1
+	vpxor	%xmm1, %xmm4, %xmm2
+.LBB1_19:
+	vmovdqa	16(%r14), %xmm1
+	vpxor	%xmm0, %xmm2, %xmm0
+	vpclmulqdq	$0, %xmm0, %xmm1, %xmm2
+	vpclmulqdq	$1, %xmm0, %xmm1, %xmm3
+	vmovdqa	(%r14), %xmm4
+	vpclmulqdq	$16, %xmm0, %xmm1, %xmm5
+	vpxor	%xmm3, %xmm5, %xmm3
+	vpclmulqdq	$17, %xmm0, %xmm1, %xmm0
+	vpclmulqdq	$0, %xmm9, %xmm4, %xmm1
+	vpxor	%xmm2, %xmm1, %xmm1
+	vpclmulqdq	$1, %xmm9, %xmm4, %xmm2
+.LBB1_27:
+	vpxor	%xmm2, %xmm3, %xmm2
+	vpslldq	$8, %xmm2, %xmm3
+	vpxor	%xmm3, %xmm1, %xmm1
+	vpsrldq	$8, %xmm2, %xmm2
+.LBB1_30:
+	vpbroadcastq	.LCPI1_2(%rip), %xmm3
+	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
+	vpshufd	$78, %xmm1, %xmm1
+	vpxor	%xmm1, %xmm4, %xmm1
+	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
+	vpxor	%xmm2, %xmm0, %xmm0
+	vpshufd	$78, %xmm1, %xmm1
+	vpxor	%xmm1, %xmm0, %xmm0
+	vpxor	%xmm0, %xmm3, %xmm0
+.LBB1_31:
 	vpand	.LCPI1_1(%rip), %xmm0, %xmm0
-	vpxor	128(%r15), %xmm0, %xmm0
-	vaesenc	144(%r15), %xmm0, %xmm0
-	vaesenc	160(%r15), %xmm0, %xmm0
-	vaesenc	176(%r15), %xmm0, %xmm0
-	vaesenc	192(%r15), %xmm0, %xmm0
-	vaesenc	208(%r15), %xmm0, %xmm0
-	vaesenc	224(%r15), %xmm0, %xmm0
-	vaesenc	240(%r15), %xmm0, %xmm0
-	vaesenc	256(%r15), %xmm0, %xmm0
-	vaesenc	272(%r15), %xmm0, %xmm0
-	vaesenc	288(%r15), %xmm0, %xmm0
-	vaesenc	304(%r15), %xmm0, %xmm0
-	vaesenc	320(%r15), %xmm0, %xmm0
-	vaesenc	336(%r15), %xmm0, %xmm0
-	vaesenclast	352(%r15), %xmm0, %xmm0
-	vmovdqa	%xmm0, (%rsp)
-	xorl	%ebp, %ebp
-	cmpq	$16, %r14
-	movl	$16, %edx
-	cmovbq	%r14, %rdx
-	setae	%bpl
-	movq	%rsp, %rsi
-	movq	%rbx, %rdi
-	callq	*memcpy@GOTPCREL(%rip)
-.LBB1_14:
-	movl	%ebp, %eax
-	addq	$64, %rsp
-	.cfi_def_cfa_offset 48
+	vpxor	128(%r14), %xmm0, %xmm0
+	vaesenc	144(%r14), %xmm0, %xmm0
+	vaesenc	160(%r14), %xmm0, %xmm0
+	vaesenc	176(%r14), %xmm0, %xmm0
+	vaesenc	192(%r14), %xmm0, %xmm0
+	vaesenc	208(%r14), %xmm0, %xmm0
+	vaesenc	224(%r14), %xmm0, %xmm0
+	vaesenc	240(%r14), %xmm0, %xmm0
+	vaesenc	256(%r14), %xmm0, %xmm0
+	vaesenc	272(%r14), %xmm0, %xmm0
+	vaesenc	288(%r14), %xmm0, %xmm0
+	vaesenc	304(%r14), %xmm0, %xmm0
+	vaesenc	320(%r14), %xmm0, %xmm0
+	vaesenc	336(%r14), %xmm0, %xmm0
+	vaesenclast	352(%r14), %xmm0, %xmm0
+	vmovdqu	%xmm0, (%rbx)
+.LBB1_32:
+	movzbl	%bpl, %eax
+	addq	$72, %rsp
+	.cfi_def_cfa_offset 56
 	popq	%rbx
-	.cfi_def_cfa_offset 40
+	.cfi_def_cfa_offset 48
 	popq	%r12
+	.cfi_def_cfa_offset 40
+	popq	%r13
 	.cfi_def_cfa_offset 32
 	popq	%r14
 	.cfi_def_cfa_offset 24
@@ -960,77 +1149,6 @@ haberdashery_sivmac_haswell_sign:
 	popq	%rbp
 	.cfi_def_cfa_offset 8
 	retq
-.LBB1_5:
-	.cfi_def_cfa_offset 112
-	vpxor	(%rsi), %xmm1, %xmm0
-	vpclmulqdq	$0, %xmm0, %xmm10, %xmm1
-	vpclmulqdq	$1, %xmm0, %xmm10, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm10, %xmm3
-	vpxor	%xmm2, %xmm3, %xmm2
-	vpslldq	$8, %xmm2, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpbroadcastq	.LCPI1_2(%rip), %xmm3
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm4, %xmm1
-	addq	$16, %rsi
-	vpclmulqdq	$17, %xmm0, %xmm10, %xmm0
-	vpsrldq	$8, %xmm2, %xmm2
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
-	vpxor	%xmm2, %xmm0, %xmm0
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm0, %xmm0
-	vpxor	%xmm0, %xmm3, %xmm1
-	movq	%rdx, %rax
-	cmpq	$16, %rdx
-	jb	.LBB1_10
-.LBB1_7:
-	vpbroadcastq	.LCPI1_2(%rip), %xmm0
-	.p2align	4, 0x90
-.LBB1_8:
-	vpxor	(%rsi), %xmm1, %xmm1
-	vpclmulqdq	$0, %xmm1, %xmm10, %xmm2
-	vpclmulqdq	$1, %xmm1, %xmm10, %xmm3
-	vpclmulqdq	$16, %xmm1, %xmm10, %xmm4
-	vpxor	%xmm3, %xmm4, %xmm3
-	vpclmulqdq	$17, %xmm1, %xmm10, %xmm1
-	vpslldq	$8, %xmm3, %xmm4
-	vpxor	%xmm4, %xmm2, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm2, %xmm4
-	vpsrldq	$8, %xmm3, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm4, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm2, %xmm3
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm3, %xmm1
-	vpxor	16(%rsi), %xmm1, %xmm1
-	vpclmulqdq	$0, %xmm1, %xmm10, %xmm2
-	addq	$-32, %rax
-	vpclmulqdq	$1, %xmm1, %xmm10, %xmm3
-	addq	$32, %rsi
-	vpclmulqdq	$16, %xmm1, %xmm10, %xmm4
-	vpxor	%xmm3, %xmm4, %xmm3
-	vpclmulqdq	$17, %xmm1, %xmm10, %xmm1
-	vpslldq	$8, %xmm3, %xmm4
-	vpxor	%xmm4, %xmm2, %xmm2
-	vpsrldq	$8, %xmm3, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpclmulqdq	$16, %xmm0, %xmm2, %xmm3
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm3, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm2, %xmm3
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm3, %xmm1
-	cmpq	$15, %rax
-	ja	.LBB1_8
-.LBB1_9:
-	movq	%rax, %rdx
-	testq	%rdx, %rdx
-	jne	.LBB1_11
-	jmp	.LBB1_12
 .Lfunc_end1:
 	.size	haberdashery_sivmac_haswell_sign, .Lfunc_end1-haberdashery_sivmac_haswell_sign
 	.cfi_endproc
@@ -1053,289 +1171,488 @@ haberdashery_sivmac_haswell_sign:
 	.type	haberdashery_sivmac_haswell_verify,@function
 haberdashery_sivmac_haswell_verify:
 	.cfi_startproc
-	pushq	%r14
+	pushq	%r15
 	.cfi_def_cfa_offset 16
-	pushq	%rbx
+	pushq	%r14
 	.cfi_def_cfa_offset 24
+	pushq	%r12
+	.cfi_def_cfa_offset 32
+	pushq	%rbx
+	.cfi_def_cfa_offset 40
 	subq	$72, %rsp
-	.cfi_def_cfa_offset 96
-	.cfi_offset %rbx, -24
-	.cfi_offset %r14, -16
+	.cfi_def_cfa_offset 112
+	.cfi_offset %rbx, -40
+	.cfi_offset %r12, -32
+	.cfi_offset %r14, -24
+	.cfi_offset %r15, -16
 	movq	%rdx, %r14
 	xorl	%eax, %eax
 	movabsq	$68719476736, %rdx
 	cmpq	%rdx, %r14
-	ja	.LBB2_14
+	ja	.LBB2_33
 	cmpq	$16, %r8
-	jb	.LBB2_14
+	jb	.LBB2_33
 	movq	%rdi, %rbx
-	vmovdqa	(%rdi), %xmm10
+	leaq	(,%r14,8), %rax
 	vpxor	%xmm1, %xmm1, %xmm1
 	cmpq	$128, %r14
-	vmovdqa	%xmm10, 32(%rsp)
-	jae	.LBB2_15
-	movq	%r14, %rax
-	cmpq	$16, %rax
-	jae	.LBB2_5
-	jmp	.LBB2_10
-.LBB2_15:
-	vmovdqa	16(%rbx), %xmm15
-	vmovdqa	32(%rbx), %xmm3
-	vmovdqa	48(%rbx), %xmm4
-	vmovdqu	112(%rsi), %xmm5
-	vpclmulqdq	$0, %xmm5, %xmm10, %xmm6
-	vmovdqa	64(%rbx), %xmm1
-	vpclmulqdq	$1, %xmm5, %xmm10, %xmm7
-	vmovdqa	80(%rbx), %xmm2
-	vpclmulqdq	$16, %xmm5, %xmm10, %xmm8
-	vmovdqu	64(%rsi), %xmm9
-	vpclmulqdq	$17, %xmm5, %xmm10, %xmm5
-	vmovdqu	96(%rsi), %xmm10
-	vpclmulqdq	$0, %xmm10, %xmm15, %xmm11
-	vmovdqu	80(%rsi), %xmm12
-	vpclmulqdq	$1, %xmm10, %xmm15, %xmm13
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$16, %xmm10, %xmm15, %xmm8
-	vpxor	%xmm6, %xmm11, %xmm6
-	vpclmulqdq	$17, %xmm10, %xmm15, %xmm10
-	vpxor	%xmm8, %xmm13, %xmm8
-	vpclmulqdq	$0, %xmm12, %xmm3, %xmm11
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$1, %xmm12, %xmm3, %xmm8
-	vpxor	%xmm5, %xmm10, %xmm10
-	vpclmulqdq	$16, %xmm12, %xmm3, %xmm5
-	vpxor	%xmm5, %xmm8, %xmm8
-	vpclmulqdq	$0, %xmm9, %xmm4, %xmm13
-	vmovdqa	96(%rbx), %xmm5
-	vpxor	%xmm13, %xmm11, %xmm11
-	vmovdqu	32(%rsi), %xmm13
-	vpxor	%xmm6, %xmm11, %xmm6
-	vpclmulqdq	$1, %xmm9, %xmm4, %xmm11
-	vpxor	%xmm11, %xmm8, %xmm8
-	vmovdqu	48(%rsi), %xmm11
-	vpclmulqdq	$17, %xmm12, %xmm3, %xmm12
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$16, %xmm9, %xmm4, %xmm8
-	vpclmulqdq	$17, %xmm9, %xmm4, %xmm9
-	vpxor	%xmm9, %xmm12, %xmm9
-	vpxor	%xmm9, %xmm10, %xmm9
-	vpclmulqdq	$0, %xmm11, %xmm1, %xmm10
-	vpclmulqdq	$1, %xmm11, %xmm1, %xmm12
-	vpxor	%xmm12, %xmm8, %xmm8
-	vpclmulqdq	$16, %xmm11, %xmm1, %xmm12
-	vpxor	%xmm12, %xmm8, %xmm8
-	vpclmulqdq	$0, %xmm13, %xmm2, %xmm12
-	vpxor	%xmm12, %xmm10, %xmm10
-	vpclmulqdq	$1, %xmm13, %xmm2, %xmm12
-	vpxor	%xmm12, %xmm8, %xmm8
-	vmovdqu	16(%rsi), %xmm12
+	jb	.LBB2_7
+	vmovdqu	(%rsi), %xmm8
+	vmovdqu	16(%rsi), %xmm7
+	vmovdqu	32(%rsi), %xmm6
+	vmovdqu	112(%rsi), %xmm1
+	vmovdqa	(%rbx), %xmm0
+	vpclmulqdq	$0, %xmm1, %xmm0, %xmm5
+	vmovdqu	64(%rsi), %xmm4
+	vpclmulqdq	$1, %xmm1, %xmm0, %xmm3
+	vmovdqu	80(%rsi), %xmm9
+	vpclmulqdq	$16, %xmm1, %xmm0, %xmm10
+	vmovdqu	96(%rsi), %xmm11
+	vpclmulqdq	$17, %xmm1, %xmm0, %xmm12
+	vmovdqa	16(%rbx), %xmm1
+	vpclmulqdq	$0, %xmm11, %xmm1, %xmm13
+	vmovdqa	32(%rbx), %xmm2
+	vpclmulqdq	$1, %xmm11, %xmm1, %xmm14
+	vpxor	%xmm3, %xmm10, %xmm10
+	vpclmulqdq	$16, %xmm11, %xmm1, %xmm15
+	vmovdqa	48(%rbx), %xmm3
 	vpclmulqdq	$17, %xmm11, %xmm1, %xmm11
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$17, %xmm13, %xmm2, %xmm8
-	vpxor	%xmm8, %xmm11, %xmm8
-	vpclmulqdq	$0, %xmm12, %xmm5, %xmm11
-	vpxor	%xmm11, %xmm10, %xmm10
-	vpclmulqdq	$16, %xmm13, %xmm2, %xmm11
-	vpxor	%xmm6, %xmm10, %xmm10
-	vpclmulqdq	$1, %xmm12, %xmm5, %xmm6
-	vpxor	%xmm6, %xmm11, %xmm6
-	vpclmulqdq	$16, %xmm12, %xmm5, %xmm11
-	vpxor	%xmm6, %xmm11, %xmm11
-	vpclmulqdq	$17, %xmm12, %xmm5, %xmm12
-	vmovdqa	112(%rbx), %xmm6
-	vpxor	%xmm12, %xmm8, %xmm8
-	vmovdqu	(%rsi), %xmm12
-	vpxor	%xmm8, %xmm9, %xmm9
-	vpclmulqdq	$0, %xmm12, %xmm6, %xmm8
-	vpxor	%xmm8, %xmm10, %xmm10
-	vpclmulqdq	$1, %xmm12, %xmm6, %xmm8
-	vpxor	%xmm8, %xmm11, %xmm8
-	vpclmulqdq	$16, %xmm12, %xmm6, %xmm11
-	vpxor	%xmm11, %xmm8, %xmm8
-	vpxor	%xmm7, %xmm8, %xmm8
-	vpclmulqdq	$17, %xmm12, %xmm6, %xmm7
-	vpxor	%xmm7, %xmm9, %xmm9
-	subq	$-128, %rsi
-	leaq	-128(%r14), %rax
-	cmpq	$128, %rax
-	jb	.LBB2_18
-	vmovdqa	%xmm1, 16(%rsp)
-	vmovdqa	%xmm2, (%rsp)
-	.p2align	4, 0x90
-.LBB2_17:
-	vmovdqu	32(%rsi), %xmm11
-	vmovdqu	64(%rsi), %xmm12
-	vpslldq	$8, %xmm8, %xmm13
-	vpxor	%xmm13, %xmm10, %xmm10
-	vpbroadcastq	.LCPI2_2(%rip), %xmm0
-	vpclmulqdq	$16, %xmm0, %xmm10, %xmm13
-	vpshufd	$78, %xmm10, %xmm10
-	vpxor	%xmm10, %xmm13, %xmm10
-	vpclmulqdq	$16, %xmm0, %xmm10, %xmm13
-	vmovdqu	96(%rsi), %xmm14
-	vmovdqa	%xmm6, %xmm2
-	vmovdqa	%xmm5, %xmm6
-	vmovdqa	%xmm4, %xmm5
-	vmovdqa	%xmm3, %xmm4
-	vmovdqa	%xmm15, %xmm3
-	vmovdqu	112(%rsi), %xmm15
-	vpxor	(%rsi), %xmm9, %xmm1
-	vpsrldq	$8, %xmm8, %xmm8
-	vmovdqa	32(%rsp), %xmm9
-	vpclmulqdq	$0, %xmm15, %xmm9, %xmm7
-	vpshufd	$78, %xmm10, %xmm10
-	vpclmulqdq	$1, %xmm15, %xmm9, %xmm0
-	vpxor	%xmm1, %xmm8, %xmm8
-	vpclmulqdq	$16, %xmm15, %xmm9, %xmm1
-	vpxor	%xmm10, %xmm8, %xmm8
-	vpclmulqdq	$17, %xmm15, %xmm9, %xmm10
-	vmovdqa	%xmm3, %xmm15
-	vmovdqa	%xmm4, %xmm3
-	vmovdqa	%xmm5, %xmm4
-	vmovdqa	%xmm6, %xmm5
-	vmovdqa	%xmm2, %xmm6
-	vpxor	%xmm13, %xmm8, %xmm9
-	vpclmulqdq	$0, %xmm14, %xmm15, %xmm8
-	vpxor	%xmm0, %xmm1, %xmm0
-	vpclmulqdq	$1, %xmm14, %xmm15, %xmm1
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$16, %xmm14, %xmm15, %xmm8
-	vmovdqu	80(%rsi), %xmm13
-	vpclmulqdq	$17, %xmm14, %xmm15, %xmm14
-	vpxor	%xmm1, %xmm8, %xmm1
-	vpclmulqdq	$0, %xmm13, %xmm3, %xmm8
-	vpxor	%xmm1, %xmm0, %xmm0
-	vpclmulqdq	$1, %xmm13, %xmm3, %xmm1
-	vpxor	%xmm10, %xmm14, %xmm10
-	vpclmulqdq	$16, %xmm13, %xmm3, %xmm14
-	vpxor	%xmm1, %xmm14, %xmm1
-	vpclmulqdq	$17, %xmm13, %xmm3, %xmm13
-	vpclmulqdq	$0, %xmm12, %xmm4, %xmm14
-	vpxor	%xmm14, %xmm8, %xmm8
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpclmulqdq	$1, %xmm12, %xmm4, %xmm8
-	vpxor	%xmm1, %xmm8, %xmm1
-	vpclmulqdq	$16, %xmm12, %xmm4, %xmm8
-	vmovdqu	48(%rsi), %xmm14
-	vpclmulqdq	$17, %xmm12, %xmm4, %xmm12
-	vpxor	%xmm1, %xmm0, %xmm0
-	vmovdqa	16(%rsp), %xmm2
-	vpclmulqdq	$0, %xmm14, %xmm2, %xmm1
-	vpxor	%xmm12, %xmm13, %xmm12
-	vpclmulqdq	$1, %xmm14, %xmm2, %xmm13
+	vpxor	%xmm5, %xmm13, %xmm5
+	vpclmulqdq	$0, %xmm9, %xmm2, %xmm13
+	vpxor	%xmm15, %xmm14, %xmm14
+	vpclmulqdq	$1, %xmm9, %xmm2, %xmm15
+	vpxor	%xmm14, %xmm10, %xmm10
+	vpclmulqdq	$16, %xmm9, %xmm2, %xmm14
+	vpxor	%xmm12, %xmm11, %xmm11
+	vpclmulqdq	$17, %xmm9, %xmm2, %xmm9
+	vpxor	%xmm14, %xmm15, %xmm12
+	vpclmulqdq	$0, %xmm4, %xmm3, %xmm14
+	vpxor	%xmm14, %xmm13, %xmm13
+	vpclmulqdq	$1, %xmm4, %xmm3, %xmm14
+	vpxor	%xmm5, %xmm13, %xmm13
+	vpclmulqdq	$16, %xmm4, %xmm3, %xmm15
+	vmovdqu	48(%rsi), %xmm5
+	vpclmulqdq	$17, %xmm4, %xmm3, %xmm4
+	vpxor	%xmm14, %xmm12, %xmm12
 	vpxor	%xmm12, %xmm10, %xmm10
-	vpclmulqdq	$16, %xmm14, %xmm2, %xmm12
-	vpxor	%xmm13, %xmm8, %xmm8
-	vpclmulqdq	$17, %xmm14, %xmm2, %xmm13
-	vpxor	%xmm12, %xmm8, %xmm8
-	vmovdqa	(%rsp), %xmm2
-	vpclmulqdq	$0, %xmm11, %xmm2, %xmm12
-	vpxor	%xmm1, %xmm12, %xmm1
-	vpclmulqdq	$1, %xmm11, %xmm2, %xmm12
-	vpxor	%xmm12, %xmm8, %xmm8
-	vpclmulqdq	$16, %xmm11, %xmm2, %xmm12
-	vmovdqu	16(%rsi), %xmm14
-	vpclmulqdq	$17, %xmm11, %xmm2, %xmm11
-	vpxor	%xmm0, %xmm8, %xmm0
-	vpclmulqdq	$0, %xmm14, %xmm5, %xmm8
+	vpxor	%xmm4, %xmm9, %xmm4
+	vpxor	%xmm4, %xmm11, %xmm9
+	vmovdqa	64(%rbx), %xmm4
+	vpclmulqdq	$0, %xmm5, %xmm4, %xmm11
+	vpclmulqdq	$1, %xmm5, %xmm4, %xmm12
+	vpxor	%xmm12, %xmm15, %xmm12
+	vpclmulqdq	$16, %xmm5, %xmm4, %xmm14
+	vpxor	%xmm14, %xmm12, %xmm12
+	vpclmulqdq	$17, %xmm5, %xmm4, %xmm14
+	vmovdqa	80(%rbx), %xmm5
+	vpclmulqdq	$0, %xmm6, %xmm5, %xmm15
+	vpxor	%xmm15, %xmm11, %xmm11
+	vpclmulqdq	$1, %xmm6, %xmm5, %xmm15
+	vpxor	%xmm15, %xmm12, %xmm12
+	vpxor	%xmm12, %xmm10, %xmm10
+	vpclmulqdq	$16, %xmm6, %xmm5, %xmm12
+	vpclmulqdq	$17, %xmm6, %xmm5, %xmm6
+	vpxor	%xmm6, %xmm14, %xmm14
+	vmovdqa	96(%rbx), %xmm6
+	vpclmulqdq	$0, %xmm7, %xmm6, %xmm15
+	vpxor	%xmm15, %xmm11, %xmm11
+	vpclmulqdq	$1, %xmm7, %xmm6, %xmm15
 	vpxor	%xmm11, %xmm13, %xmm11
-	vpclmulqdq	$1, %xmm14, %xmm5, %xmm13
-	vpxor	%xmm1, %xmm8, %xmm1
-	vpclmulqdq	$16, %xmm14, %xmm5, %xmm8
-	vpxor	%xmm1, %xmm7, %xmm1
-	vpxor	%xmm13, %xmm12, %xmm7
-	vpxor	%xmm7, %xmm8, %xmm7
-	vpxor	%xmm7, %xmm0, %xmm0
-	vpclmulqdq	$17, %xmm14, %xmm5, %xmm7
-	vpxor	%xmm7, %xmm11, %xmm7
-	vpxor	%xmm7, %xmm10, %xmm7
-	vpclmulqdq	$0, %xmm9, %xmm6, %xmm8
-	vpxor	%xmm1, %xmm8, %xmm10
-	vpclmulqdq	$1, %xmm9, %xmm6, %xmm1
-	vpxor	%xmm1, %xmm0, %xmm0
-	vpclmulqdq	$16, %xmm9, %xmm6, %xmm1
-	vpxor	%xmm1, %xmm0, %xmm8
-	vpclmulqdq	$17, %xmm9, %xmm6, %xmm0
-	vpxor	%xmm0, %xmm7, %xmm9
+	vpclmulqdq	$16, %xmm7, %xmm6, %xmm13
+	vpxor	%xmm15, %xmm12, %xmm12
+	vpclmulqdq	$17, %xmm7, %xmm6, %xmm7
+	vpxor	%xmm13, %xmm12, %xmm12
+	vpxor	%xmm7, %xmm14, %xmm7
+	vpxor	%xmm7, %xmm9, %xmm13
+	vmovdqa	112(%rbx), %xmm14
+	vpclmulqdq	$0, %xmm8, %xmm14, %xmm9
+	vpxor	%xmm9, %xmm11, %xmm11
+	vpclmulqdq	$1, %xmm8, %xmm14, %xmm9
+	vpxor	%xmm9, %xmm12, %xmm9
+	vpclmulqdq	$16, %xmm8, %xmm14, %xmm12
+	vpxor	%xmm12, %xmm9, %xmm9
+	vpxor	%xmm9, %xmm10, %xmm9
+	vpclmulqdq	$17, %xmm8, %xmm14, %xmm8
+	vpxor	%xmm8, %xmm13, %xmm10
 	subq	$-128, %rsi
-	addq	$-128, %rax
-	cmpq	$127, %rax
-	ja	.LBB2_17
-.LBB2_18:
-	vpslldq	$8, %xmm8, %xmm0
-	vpxor	%xmm0, %xmm10, %xmm0
-	vpbroadcastq	.LCPI2_2(%rip), %xmm1
-	vpclmulqdq	$16, %xmm1, %xmm0, %xmm3
-	vpshufd	$78, %xmm0, %xmm0
-	vpxor	%xmm0, %xmm3, %xmm0
-	vpsrldq	$8, %xmm8, %xmm3
-	vpclmulqdq	$16, %xmm1, %xmm0, %xmm1
-	vpxor	%xmm3, %xmm9, %xmm3
-	vpshufd	$78, %xmm0, %xmm0
-	vpxor	%xmm0, %xmm3, %xmm0
-	vpxor	%xmm1, %xmm0, %xmm1
-	vmovdqa	32(%rsp), %xmm10
-	cmpq	$16, %rax
-	jb	.LBB2_10
+	addq	$-128, %r14
+	cmpq	$128, %r14
+	jb	.LBB2_6
+	vmovdqa	%xmm4, 16(%rsp)
+	vmovdqa	%xmm1, %xmm4
+	vmovdqa	%xmm5, (%rsp)
+	vmovdqa	%xmm2, %xmm5
+	vmovdqa	%xmm6, %xmm7
+	vmovdqa	%xmm3, %xmm6
+	vmovdqa	%xmm14, 32(%rsp)
+	.p2align	4, 0x90
 .LBB2_5:
-	leaq	-16(%rax), %rdx
-	testb	$16, %dl
-	je	.LBB2_6
-	cmpq	$16, %rdx
-	jae	.LBB2_8
-.LBB2_11:
-	vmovdqu	(%rcx), %xmm5
-	testq	%rdx, %rdx
-	je	.LBB2_13
-.LBB2_12:
+	vmovdqu	32(%rsi), %xmm12
+	vmovdqu	64(%rsi), %xmm13
+	vpslldq	$8, %xmm9, %xmm14
+	vpxor	%xmm14, %xmm11, %xmm11
+	vpbroadcastq	.LCPI2_2(%rip), %xmm1
+	vpclmulqdq	$16, %xmm1, %xmm11, %xmm14
+	vpshufd	$78, %xmm11, %xmm11
+	vpxor	%xmm11, %xmm14, %xmm11
+	vpclmulqdq	$16, %xmm1, %xmm11, %xmm14
+	vmovdqu	96(%rsi), %xmm15
+	vmovdqu	112(%rsi), %xmm8
+	vpxor	(%rsi), %xmm10, %xmm10
+	vpsrldq	$8, %xmm9, %xmm9
+	vmovdqa	%xmm0, %xmm3
+	vpclmulqdq	$0, %xmm8, %xmm0, %xmm0
+	vpshufd	$78, %xmm11, %xmm11
+	vpclmulqdq	$1, %xmm8, %xmm3, %xmm1
+	vpxor	%xmm9, %xmm10, %xmm9
+	vpclmulqdq	$16, %xmm8, %xmm3, %xmm2
+	vpxor	%xmm11, %xmm9, %xmm9
+	vpclmulqdq	$17, %xmm8, %xmm3, %xmm8
+	vpxor	%xmm14, %xmm9, %xmm10
+	vpclmulqdq	$0, %xmm15, %xmm4, %xmm9
+	vpxor	%xmm1, %xmm2, %xmm1
+	vpclmulqdq	$1, %xmm15, %xmm4, %xmm2
+	vpxor	%xmm0, %xmm9, %xmm0
+	vpclmulqdq	$16, %xmm15, %xmm4, %xmm9
+	vmovdqu	80(%rsi), %xmm11
+	vpclmulqdq	$17, %xmm15, %xmm4, %xmm14
+	vpxor	%xmm2, %xmm9, %xmm2
+	vpclmulqdq	$0, %xmm11, %xmm5, %xmm9
+	vpxor	%xmm2, %xmm1, %xmm1
+	vpclmulqdq	$1, %xmm11, %xmm5, %xmm2
+	vpxor	%xmm8, %xmm14, %xmm8
+	vpclmulqdq	$16, %xmm11, %xmm5, %xmm14
+	vpxor	%xmm2, %xmm14, %xmm2
+	vpclmulqdq	$17, %xmm11, %xmm5, %xmm11
+	vpclmulqdq	$0, %xmm13, %xmm6, %xmm14
+	vpxor	%xmm14, %xmm9, %xmm9
+	vpxor	%xmm0, %xmm9, %xmm0
+	vpclmulqdq	$1, %xmm13, %xmm6, %xmm9
+	vpxor	%xmm2, %xmm9, %xmm2
+	vpclmulqdq	$16, %xmm13, %xmm6, %xmm9
+	vmovdqu	48(%rsi), %xmm14
+	vpclmulqdq	$17, %xmm13, %xmm6, %xmm13
+	vpxor	%xmm2, %xmm1, %xmm1
+	vmovdqa	16(%rsp), %xmm15
+	vpclmulqdq	$0, %xmm14, %xmm15, %xmm2
+	vpxor	%xmm13, %xmm11, %xmm11
+	vpclmulqdq	$1, %xmm14, %xmm15, %xmm13
+	vpxor	%xmm11, %xmm8, %xmm8
+	vpclmulqdq	$16, %xmm14, %xmm15, %xmm11
+	vpxor	%xmm13, %xmm9, %xmm9
+	vpclmulqdq	$17, %xmm14, %xmm15, %xmm13
+	vpxor	%xmm11, %xmm9, %xmm9
+	vmovdqa	(%rsp), %xmm15
+	vpclmulqdq	$0, %xmm12, %xmm15, %xmm11
+	vpxor	%xmm2, %xmm11, %xmm2
+	vpclmulqdq	$1, %xmm12, %xmm15, %xmm11
+	vpxor	%xmm11, %xmm9, %xmm9
+	vpclmulqdq	$16, %xmm12, %xmm15, %xmm11
+	vmovdqu	16(%rsi), %xmm14
+	vpclmulqdq	$17, %xmm12, %xmm15, %xmm12
+	vpxor	%xmm1, %xmm9, %xmm1
+	vpclmulqdq	$0, %xmm14, %xmm7, %xmm9
+	vpxor	%xmm12, %xmm13, %xmm12
+	vpclmulqdq	$1, %xmm14, %xmm7, %xmm13
+	vpxor	%xmm2, %xmm9, %xmm2
+	vpclmulqdq	$16, %xmm14, %xmm7, %xmm9
+	vpxor	%xmm2, %xmm0, %xmm0
+	vpxor	%xmm13, %xmm11, %xmm2
+	vpxor	%xmm2, %xmm9, %xmm2
+	vpxor	%xmm2, %xmm1, %xmm1
+	vpclmulqdq	$17, %xmm14, %xmm7, %xmm2
+	vmovdqa	32(%rsp), %xmm14
+	vpxor	%xmm2, %xmm12, %xmm2
+	vpxor	%xmm2, %xmm8, %xmm2
+	vpclmulqdq	$0, %xmm10, %xmm14, %xmm8
+	vpxor	%xmm0, %xmm8, %xmm11
+	vpclmulqdq	$1, %xmm10, %xmm14, %xmm0
+	vpxor	%xmm0, %xmm1, %xmm0
+	vpclmulqdq	$16, %xmm10, %xmm14, %xmm1
+	vpxor	%xmm1, %xmm0, %xmm9
+	vpclmulqdq	$17, %xmm10, %xmm14, %xmm0
+	vpxor	%xmm0, %xmm2, %xmm10
+	vmovdqa	%xmm3, %xmm0
+	subq	$-128, %rsi
+	addq	$-128, %r14
+	cmpq	$127, %r14
+	ja	.LBB2_5
+.LBB2_6:
+	vpslldq	$8, %xmm9, %xmm0
+	vpxor	%xmm0, %xmm11, %xmm0
+	vpbroadcastq	.LCPI2_2(%rip), %xmm1
+	vpclmulqdq	$16, %xmm1, %xmm0, %xmm2
+	vpshufd	$78, %xmm0, %xmm0
+	vpxor	%xmm0, %xmm2, %xmm0
+	vpsrldq	$8, %xmm9, %xmm2
+	vpclmulqdq	$16, %xmm1, %xmm0, %xmm1
+	vpxor	%xmm2, %xmm10, %xmm2
+	vpshufd	$78, %xmm0, %xmm0
+	vpxor	%xmm0, %xmm2, %xmm0
+	vpxor	%xmm1, %xmm0, %xmm1
+.LBB2_7:
+	vmovdqu	(%rcx), %xmm9
+	vmovq	%rax, %xmm10
+	movq	%r14, %r15
+	andq	$-128, %r15
+	addq	%rsi, %r15
+	movq	%r14, %rdx
+	andq	$15, %rdx
+	je	.LBB2_29
+	vmovdqa	%xmm1, 32(%rsp)
+	vmovdqa	%xmm10, (%rsp)
+	vmovdqa	%xmm9, 16(%rsp)
+	movq	%r14, %r12
+	andq	$-16, %r12
+	leaq	(%r15,%r12), %rsi
 	vpxor	%xmm0, %xmm0, %xmm0
 	vmovdqa	%xmm0, 48(%rsp)
 	leaq	48(%rsp), %rdi
-	vmovdqa	%xmm1, (%rsp)
-	vmovdqa	%xmm5, 16(%rsp)
 	callq	*memcpy@GOTPCREL(%rip)
-	vmovdqa	16(%rsp), %xmm5
-	vmovdqa	32(%rsp), %xmm10
-	vmovdqa	(%rsp), %xmm0
-	vpxor	48(%rsp), %xmm0, %xmm0
-	vpclmulqdq	$0, %xmm0, %xmm10, %xmm1
-	vpclmulqdq	$1, %xmm0, %xmm10, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm10, %xmm3
+	vmovdqa	48(%rsp), %xmm0
+	testq	%r12, %r12
+	je	.LBB2_9
+	leaq	-16(%r12), %rcx
+	movq	%rcx, %rdx
+	shrq	$4, %rdx
+	leaq	2(%rdx), %rax
+	cmpq	$96, %rcx
+	cmovaeq	%rdx, %rax
+	movq	%rax, %rdx
+	shlq	$4, %rdx
+	vmovdqa	32(%rsp), %xmm1
+	vpxor	(%r15), %xmm1, %xmm1
+	vmovdqa	(%rbx,%rdx), %xmm4
+	vpclmulqdq	$0, %xmm1, %xmm4, %xmm2
+	vpclmulqdq	$1, %xmm1, %xmm4, %xmm3
+	vpclmulqdq	$16, %xmm1, %xmm4, %xmm5
+	vpxor	%xmm3, %xmm5, %xmm3
+	vpclmulqdq	$17, %xmm1, %xmm4, %xmm1
+	testq	%rcx, %rcx
+	je	.LBB2_11
+	testb	$16, %r14b
+	jne	.LBB2_14
+	vmovdqu	16(%r15), %xmm4
+	decq	%rax
+	movq	%rax, %rcx
+	shlq	$4, %rcx
+	vmovdqa	(%rbx,%rcx), %xmm5
+	vpclmulqdq	$0, %xmm4, %xmm5, %xmm6
+	vpclmulqdq	$1, %xmm4, %xmm5, %xmm7
+	leaq	-32(%r12), %rcx
+	vpclmulqdq	$16, %xmm4, %xmm5, %xmm8
+	addq	$16, %r15
+	vpclmulqdq	$17, %xmm4, %xmm5, %xmm4
+	vpxor	%xmm7, %xmm8, %xmm5
+	vpxor	%xmm2, %xmm6, %xmm2
+	vpxor	%xmm3, %xmm5, %xmm3
+	vpxor	%xmm1, %xmm4, %xmm1
+.LBB2_14:
+	vmovdqa	16(%rsp), %xmm9
+	vmovdqa	(%rsp), %xmm10
+	cmpq	$32, %r12
+	je	.LBB2_17
+	movq	%rax, %rdx
+	shlq	$4, %rdx
+	addq	%rbx, %rdx
+	addq	$-16, %rdx
+	xorl	%esi, %esi
+	.p2align	4, 0x90
+.LBB2_16:
+	vmovdqa	(%rdx), %xmm4
+	vmovdqu	16(%r15,%rsi), %xmm5
+	vpclmulqdq	$0, %xmm5, %xmm4, %xmm6
+	vpclmulqdq	$1, %xmm5, %xmm4, %xmm7
+	vpxor	%xmm2, %xmm6, %xmm2
+	vpclmulqdq	$16, %xmm5, %xmm4, %xmm6
+	vmovdqa	-16(%rdx), %xmm8
+	vpclmulqdq	$17, %xmm5, %xmm4, %xmm4
+	vmovdqu	32(%r15,%rsi), %xmm5
+	vpxor	%xmm3, %xmm7, %xmm3
+	vpxor	%xmm1, %xmm4, %xmm1
+	addq	$-2, %rax
+	vpclmulqdq	$0, %xmm5, %xmm8, %xmm4
+	vpxor	%xmm2, %xmm4, %xmm2
+	vpclmulqdq	$1, %xmm5, %xmm8, %xmm4
+	vpxor	%xmm6, %xmm4, %xmm4
+	vpxor	%xmm3, %xmm4, %xmm3
+	vpclmulqdq	$16, %xmm5, %xmm8, %xmm4
+	vpxor	%xmm4, %xmm3, %xmm3
+	vpclmulqdq	$17, %xmm5, %xmm8, %xmm4
+	vpxor	%xmm1, %xmm4, %xmm1
+	addq	$-32, %rdx
+	addq	$32, %rsi
+	cmpq	%rsi, %rcx
+	jne	.LBB2_16
+.LBB2_17:
+	testq	%rax, %rax
+	je	.LBB2_19
+.LBB2_18:
+	vmovdqa	16(%rbx), %xmm4
+	vpclmulqdq	$0, %xmm0, %xmm4, %xmm5
+	vpclmulqdq	$1, %xmm0, %xmm4, %xmm6
+	vpclmulqdq	$16, %xmm0, %xmm4, %xmm7
+	vmovdqa	(%rbx), %xmm8
+	vpclmulqdq	$17, %xmm0, %xmm4, %xmm0
+	vpxor	%xmm7, %xmm6, %xmm4
+	vpclmulqdq	$0, %xmm10, %xmm8, %xmm6
+	vpxor	%xmm6, %xmm5, %xmm5
+	vpclmulqdq	$1, %xmm10, %xmm8, %xmm6
+	vpxor	%xmm3, %xmm6, %xmm3
+	vpxor	%xmm3, %xmm4, %xmm3
+	vpslldq	$8, %xmm3, %xmm4
+	vpxor	%xmm2, %xmm5, %xmm2
+	vpxor	%xmm4, %xmm2, %xmm2
+	vpsrldq	$8, %xmm3, %xmm3
+	vpxor	%xmm3, %xmm0, %xmm0
+	vpbroadcastq	.LCPI2_2(%rip), %xmm3
+	vpclmulqdq	$16, %xmm3, %xmm2, %xmm4
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm2, %xmm4, %xmm2
+	vpclmulqdq	$16, %xmm3, %xmm2, %xmm3
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm2, %xmm0, %xmm0
+	vpxor	%xmm1, %xmm0, %xmm0
+	vpxor	%xmm3, %xmm0, %xmm0
+	jmp	.LBB2_32
+.LBB2_29:
+	cmpq	$15, %r14
+	jbe	.LBB2_30
+	movq	%r14, %rcx
+	andq	$-16, %rcx
+	vpxor	(%r15), %xmm1, %xmm0
+	vmovdqa	(%rbx,%rcx), %xmm2
+	vpclmulqdq	$0, %xmm0, %xmm2, %xmm1
+	vpclmulqdq	$1, %xmm0, %xmm2, %xmm3
+	vpclmulqdq	$16, %xmm0, %xmm2, %xmm4
+	vpclmulqdq	$17, %xmm0, %xmm2, %xmm0
+	vpxor	%xmm3, %xmm4, %xmm2
+	leaq	-16(%r14), %rax
+	cmpq	$16, %rax
+	jb	.LBB2_27
+	movq	%r14, %rdx
+	shrq	$4, %rdx
+	testb	$16, %r14b
+	jne	.LBB2_24
+	vmovdqu	16(%r15), %xmm3
+	decq	%rdx
+	movq	%rdx, %rax
+	shlq	$4, %rax
+	vmovdqa	(%rbx,%rax), %xmm4
+	vpclmulqdq	$0, %xmm3, %xmm4, %xmm5
+	vpclmulqdq	$1, %xmm3, %xmm4, %xmm6
+	addq	$16, %r15
+	vpclmulqdq	$16, %xmm3, %xmm4, %xmm7
+	vpxor	%xmm7, %xmm6, %xmm6
+	vpclmulqdq	$17, %xmm3, %xmm4, %xmm3
+	vpxor	%xmm1, %xmm5, %xmm1
+	vpxor	%xmm2, %xmm6, %xmm2
+	vpxor	%xmm0, %xmm3, %xmm0
+	addq	$-32, %r14
+	movq	%r14, %rax
+.LBB2_24:
+	cmpq	$32, %rcx
+	je	.LBB2_27
+	addq	$32, %r15
+	shlq	$4, %rdx
+	leaq	(%rdx,%rbx), %rcx
+	addq	$-16, %rcx
+	.p2align	4, 0x90
+.LBB2_26:
+	vmovdqa	(%rcx), %xmm3
+	vmovdqu	-16(%r15), %xmm4
+	vpclmulqdq	$0, %xmm4, %xmm3, %xmm5
+	vpclmulqdq	$1, %xmm4, %xmm3, %xmm6
+	vmovdqa	-16(%rcx), %xmm7
+	vpclmulqdq	$16, %xmm4, %xmm3, %xmm8
+	vpclmulqdq	$17, %xmm4, %xmm3, %xmm3
+	vmovdqu	(%r15), %xmm4
+	vpxor	%xmm1, %xmm5, %xmm1
+	vpclmulqdq	$0, %xmm4, %xmm7, %xmm5
+	vpxor	%xmm2, %xmm6, %xmm2
+	vpclmulqdq	$1, %xmm4, %xmm7, %xmm6
+	vpxor	%xmm0, %xmm3, %xmm0
+	vpxor	%xmm1, %xmm5, %xmm1
+	vpxor	%xmm6, %xmm8, %xmm3
+	vpxor	%xmm2, %xmm3, %xmm2
+	vpclmulqdq	$16, %xmm4, %xmm7, %xmm3
+	vpxor	%xmm3, %xmm2, %xmm2
+	vpclmulqdq	$17, %xmm4, %xmm7, %xmm3
+	vpxor	%xmm0, %xmm3, %xmm0
+	addq	$-32, %rax
+	addq	$32, %r15
+	addq	$-32, %rcx
+	cmpq	$15, %rax
+	ja	.LBB2_26
+.LBB2_27:
+	vmovdqa	(%rbx), %xmm3
+	vpclmulqdq	$0, %xmm10, %xmm3, %xmm4
+	vpxor	%xmm1, %xmm4, %xmm1
+	vpclmulqdq	$1, %xmm10, %xmm3, %xmm3
+	jmp	.LBB2_28
+.LBB2_9:
+	vmovdqa	16(%rsp), %xmm9
+	vmovdqa	(%rsp), %xmm10
+	vmovdqa	32(%rsp), %xmm2
+	jmp	.LBB2_20
+.LBB2_30:
+	vmovdqa	(%rbx), %xmm0
+	vpxor	%xmm1, %xmm10, %xmm1
+	vpclmulqdq	$0, %xmm1, %xmm0, %xmm2
+	vpclmulqdq	$1, %xmm1, %xmm0, %xmm3
+	vpclmulqdq	$16, %xmm1, %xmm0, %xmm4
+	vpxor	%xmm3, %xmm4, %xmm3
+	vpclmulqdq	$17, %xmm1, %xmm0, %xmm0
+	vpslldq	$8, %xmm3, %xmm1
+	vpxor	%xmm1, %xmm2, %xmm1
+	vpsrldq	$8, %xmm3, %xmm2
+	jmp	.LBB2_31
+.LBB2_11:
+	vmovdqa	16(%rsp), %xmm9
+	vmovdqa	(%rsp), %xmm10
+	testq	%rax, %rax
+	jne	.LBB2_18
+.LBB2_19:
+	vpslldq	$8, %xmm3, %xmm4
+	vpxor	%xmm4, %xmm2, %xmm2
+	vpsrldq	$8, %xmm3, %xmm3
+	vpbroadcastq	.LCPI2_2(%rip), %xmm4
+	vpclmulqdq	$16, %xmm4, %xmm2, %xmm5
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm2, %xmm5, %xmm2
+	vpclmulqdq	$16, %xmm4, %xmm2, %xmm4
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm2, %xmm3, %xmm2
+	vpxor	%xmm1, %xmm2, %xmm1
+	vpxor	%xmm1, %xmm4, %xmm2
+.LBB2_20:
+	vmovdqa	16(%rbx), %xmm1
+	vpxor	%xmm0, %xmm2, %xmm0
+	vpclmulqdq	$0, %xmm0, %xmm1, %xmm2
+	vpclmulqdq	$1, %xmm0, %xmm1, %xmm3
+	vmovdqa	(%rbx), %xmm4
+	vpclmulqdq	$16, %xmm0, %xmm1, %xmm5
+	vpxor	%xmm3, %xmm5, %xmm3
+	vpclmulqdq	$17, %xmm0, %xmm1, %xmm0
+	vpclmulqdq	$0, %xmm10, %xmm4, %xmm1
+	vpxor	%xmm2, %xmm1, %xmm1
+	vpclmulqdq	$1, %xmm10, %xmm4, %xmm2
+.LBB2_28:
 	vpxor	%xmm2, %xmm3, %xmm2
 	vpslldq	$8, %xmm2, %xmm3
 	vpxor	%xmm3, %xmm1, %xmm1
+	vpsrldq	$8, %xmm2, %xmm2
+.LBB2_31:
 	vpbroadcastq	.LCPI2_2(%rip), %xmm3
 	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
 	vpshufd	$78, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm4, %xmm1
-	vpclmulqdq	$17, %xmm0, %xmm10, %xmm0
-	vpsrldq	$8, %xmm2, %xmm2
 	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
 	vpxor	%xmm2, %xmm0, %xmm0
 	vpshufd	$78, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm0, %xmm0
-	vpxor	%xmm0, %xmm3, %xmm1
-.LBB2_13:
-	shlq	$3, %r14
-	vmovq	%r14, %xmm0
-	vpxor	%xmm0, %xmm1, %xmm0
-	vpclmulqdq	$0, %xmm0, %xmm10, %xmm1
-	vpclmulqdq	$1, %xmm0, %xmm10, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm10, %xmm3
-	vpclmulqdq	$17, %xmm0, %xmm10, %xmm0
-	vpxor	%xmm2, %xmm3, %xmm2
-	vpslldq	$8, %xmm2, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpbroadcastq	.LCPI2_2(%rip), %xmm3
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
-	vpsrldq	$8, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm0, %xmm0
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm4, %xmm1
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm2
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm0, %xmm0
-	vpxor	%xmm0, %xmm2, %xmm0
+	vpxor	%xmm0, %xmm3, %xmm0
+.LBB2_32:
 	vpand	.LCPI2_1(%rip), %xmm0, %xmm0
 	vpxor	128(%rbx), %xmm0, %xmm0
 	vaesenc	144(%rbx), %xmm0, %xmm0
@@ -1352,90 +1669,22 @@ haberdashery_sivmac_haswell_verify:
 	vaesenc	320(%rbx), %xmm0, %xmm0
 	vaesenc	336(%rbx), %xmm0, %xmm0
 	vaesenclast	352(%rbx), %xmm0, %xmm0
-	vpxor	%xmm5, %xmm0, %xmm0
+	vpxor	%xmm0, %xmm9, %xmm0
 	xorl	%eax, %eax
 	vptest	%xmm0, %xmm0
 	sete	%al
-.LBB2_14:
+.LBB2_33:
 	addq	$72, %rsp
-	.cfi_def_cfa_offset 24
+	.cfi_def_cfa_offset 40
 	popq	%rbx
-	.cfi_def_cfa_offset 16
+	.cfi_def_cfa_offset 32
+	popq	%r12
+	.cfi_def_cfa_offset 24
 	popq	%r14
+	.cfi_def_cfa_offset 16
+	popq	%r15
 	.cfi_def_cfa_offset 8
 	retq
-.LBB2_6:
-	.cfi_def_cfa_offset 96
-	vpxor	(%rsi), %xmm1, %xmm0
-	vpclmulqdq	$0, %xmm0, %xmm10, %xmm1
-	vpclmulqdq	$1, %xmm0, %xmm10, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm10, %xmm3
-	vpxor	%xmm2, %xmm3, %xmm2
-	vpslldq	$8, %xmm2, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpbroadcastq	.LCPI2_2(%rip), %xmm3
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm4, %xmm1
-	addq	$16, %rsi
-	vpclmulqdq	$17, %xmm0, %xmm10, %xmm0
-	vpsrldq	$8, %xmm2, %xmm2
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
-	vpxor	%xmm2, %xmm0, %xmm0
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm0, %xmm0
-	vpxor	%xmm0, %xmm3, %xmm1
-	movq	%rdx, %rax
-	cmpq	$16, %rdx
-	jb	.LBB2_11
-.LBB2_8:
-	vpbroadcastq	.LCPI2_2(%rip), %xmm0
-	.p2align	4, 0x90
-.LBB2_9:
-	vpxor	(%rsi), %xmm1, %xmm1
-	vpclmulqdq	$0, %xmm1, %xmm10, %xmm2
-	vpclmulqdq	$1, %xmm1, %xmm10, %xmm3
-	vpclmulqdq	$16, %xmm1, %xmm10, %xmm4
-	vpxor	%xmm3, %xmm4, %xmm3
-	vpclmulqdq	$17, %xmm1, %xmm10, %xmm1
-	vpslldq	$8, %xmm3, %xmm4
-	vpxor	%xmm4, %xmm2, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm2, %xmm4
-	vpsrldq	$8, %xmm3, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm4, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm2, %xmm3
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm3, %xmm1
-	vpxor	16(%rsi), %xmm1, %xmm1
-	vpclmulqdq	$0, %xmm1, %xmm10, %xmm2
-	addq	$-32, %rax
-	vpclmulqdq	$1, %xmm1, %xmm10, %xmm3
-	addq	$32, %rsi
-	vpclmulqdq	$16, %xmm1, %xmm10, %xmm4
-	vpxor	%xmm3, %xmm4, %xmm3
-	vpclmulqdq	$17, %xmm1, %xmm10, %xmm1
-	vpslldq	$8, %xmm3, %xmm4
-	vpxor	%xmm4, %xmm2, %xmm2
-	vpsrldq	$8, %xmm3, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpclmulqdq	$16, %xmm0, %xmm2, %xmm3
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm3, %xmm2
-	vpclmulqdq	$16, %xmm0, %xmm2, %xmm3
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm3, %xmm1
-	cmpq	$15, %rax
-	ja	.LBB2_9
-.LBB2_10:
-	movq	%rax, %rdx
-	vmovdqu	(%rcx), %xmm5
-	testq	%rdx, %rdx
-	jne	.LBB2_12
-	jmp	.LBB2_13
 .Lfunc_end2:
 	.size	haberdashery_sivmac_haswell_verify, .Lfunc_end2-haberdashery_sivmac_haswell_verify
 	.cfi_endproc

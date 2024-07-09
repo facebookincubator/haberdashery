@@ -9,6 +9,8 @@ pub mod aead;
 mod aes256gcm;
 mod chacha20_poly1305;
 mod cmac128;
+pub mod ctx;
+pub mod curve25519;
 mod evp_cipher_ctx;
 mod evp_mac_ctx;
 mod hmac_sha256;

@@ -18,6 +18,7 @@ RUN rustup install nightly-2023-12-13
 WORKDIR src
 COPY asm asm
 COPY rust rust
+COPY bindings bindings
 COPY scripts scripts
 COPY test_vectors test_vectors
 CMD ["/bin/bash", "/src/scripts/cargo.sh"]

@@ -13,10 +13,14 @@ readonly PROJECT_DIR
 
 main() {
   cd "${PROJECT_DIR}"
+  if [ $# -ne 0 ]; then
+    cd "${1}"
+  fi
   shopt -s globstar
   for file in **/Makefile; do
-    cd "$(dirname "${PROJECT_DIR}/${file}")"
-    make test clean
+    pushd "$(dirname "${file}")" > /dev/null
+    make test clean || (make clean && exit 1)
+    popd > /dev/null
   done
 }
 

@@ -340,17 +340,17 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	movq	496(%rsp), %r12
 	xorl	%ebp, %ebp
 	cmpq	512(%rsp), %r12
-	jne	.LBB1_49
+	jne	.LBB1_50
 	cmpq	$12, %rdx
-	jne	.LBB1_49
+	jne	.LBB1_50
 	movq	%r8, %r14
 	movabsq	$68719476737, %rax
 	cmpq	%rax, %r8
-	jae	.LBB1_49
+	jae	.LBB1_50
 	cmpq	%rax, %r12
-	jae	.LBB1_49
+	jae	.LBB1_50
 	cmpq	$16, 528(%rsp)
-	jne	.LBB1_49
+	jne	.LBB1_50
 	movq	%r9, %rbx
 	vmovq	4(%rsi), %xmm1
 	vmovd	(%rsi), %xmm0
@@ -708,12 +708,7 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vmovdqa	%xmm15, 368(%rsp)
 	vmovdqa	%xmm9, 272(%rsp)
 	vmovdqa	%xmm4, 128(%rsp)
-	jae	.LBB1_16
-	vmovdqa	%xmm4, %xmm0
-	vpxor	%xmm13, %xmm13, %xmm13
-	movq	%r14, %rax
-	jmp	.LBB1_7
-.LBB1_16:
+	jb	.LBB1_10
 	vmovdqa	%xmm3, 96(%rsp)
 	vmovdqa	%xmm1, 16(%rsp)
 	vmovdqu	64(%rcx), %xmm3
@@ -790,7 +785,7 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	subq	$-128, %rcx
 	leaq	-128(%r14), %rax
 	cmpq	$128, %rax
-	jb	.LBB1_19
+	jb	.LBB1_9
 	vmovdqa	80(%rsp), %xmm12
 	vmovdqa	144(%rsp), %xmm13
 	vmovdqa	288(%rsp), %xmm14
@@ -798,7 +793,7 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vmovdqa	272(%rsp), %xmm0
 	vmovdqa	48(%rsp), %xmm1
 	.p2align	4, 0x90
-.LBB1_18:
+.LBB1_8:
 	vmovdqu	64(%rcx), %xmm6
 	vmovdqu	80(%rcx), %xmm7
 	vmovdqu	96(%rcx), %xmm8
@@ -884,8 +879,8 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	subq	$-128, %rcx
 	addq	$-128, %rax
 	cmpq	$127, %rax
-	ja	.LBB1_18
-.LBB1_19:
+	ja	.LBB1_8
+.LBB1_9:
 	vpslldq	$8, %xmm5, %xmm6
 	vpxor	%xmm6, %xmm3, %xmm3
 	vpsrldq	$8, %xmm5, %xmm5
@@ -902,16 +897,21 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vpxor	%xmm6, %xmm6, %xmm6
 	vmovdqa	16(%rsp), %xmm1
 	vmovdqa	96(%rsp), %xmm3
-.LBB1_7:
+	jmp	.LBB1_11
+.LBB1_10:
+	vmovdqa	%xmm4, %xmm0
+	vpxor	%xmm13, %xmm13, %xmm13
+	movq	%r14, %rax
+.LBB1_11:
 	vaesenclast	%xmm6, %xmm3, %xmm10
 	vpxor	%xmm0, %xmm1, %xmm2
 	vpslldq	$4, %xmm8, %xmm1
 	vpslldq	$8, %xmm8, %xmm3
 	cmpq	$16, %rax
-	jb	.LBB1_13
+	jb	.LBB1_17
 	leaq	-16(%rax), %rdx
 	testb	$16, %dl
-	jne	.LBB1_10
+	jne	.LBB1_14
 	vpxor	(%rcx), %xmm13, %xmm4
 	addq	$16, %rcx
 	vmovdqa	64(%rsp), %xmm9
@@ -932,12 +932,12 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vpxor	%xmm5, %xmm4, %xmm4
 	vpxor	%xmm4, %xmm6, %xmm13
 	movq	%rdx, %rax
-.LBB1_10:
+.LBB1_14:
 	cmpq	$16, %rdx
-	jb	.LBB1_14
+	jb	.LBB1_18
 	vmovdqa	64(%rsp), %xmm9
 	.p2align	4, 0x90
-.LBB1_12:
+.LBB1_16:
 	vpxor	(%rcx), %xmm13, %xmm4
 	vpclmulqdq	$0, %xmm4, %xmm9, %xmm5
 	vpclmulqdq	$1, %xmm4, %xmm9, %xmm6
@@ -975,16 +975,16 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vpxor	%xmm5, %xmm4, %xmm4
 	vpxor	%xmm4, %xmm6, %xmm13
 	cmpq	$15, %rax
-	ja	.LBB1_12
-.LBB1_13:
+	ja	.LBB1_16
+.LBB1_17:
 	movq	%rax, %rdx
-.LBB1_14:
+.LBB1_18:
 	vpxor	%xmm2, %xmm10, %xmm4
 	vpxor	%xmm3, %xmm1, %xmm2
 	vpslldq	$12, %xmm8, %xmm5
 	testq	%rdx, %rdx
 	vmovdqa	%xmm4, 16(%rsp)
-	je	.LBB1_15
+	je	.LBB1_20
 	vpxor	%xmm0, %xmm0, %xmm0
 	vmovdqa	%xmm0, (%rsp)
 	movq	%rsp, %rdi
@@ -1017,7 +1017,7 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vpxor	%xmm0, %xmm2, %xmm13
 	vmovdqa	400(%rsp), %xmm2
 	jmp	.LBB1_21
-.LBB1_15:
+.LBB1_20:
 	vmovdqa	64(%rsp), %xmm14
 .LBB1_21:
 	vmovdqa	80(%rsp), %xmm15
@@ -1030,11 +1030,7 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vmovq	%r12, %xmm7
 	vmovq	%r14, %xmm9
 	cmpq	$128, %r12
-	jae	.LBB1_38
-	movq	%r12, %rax
-	movq	%rbx, %rsi
-	jmp	.LBB1_23
-.LBB1_38:
+	jb	.LBB1_26
 	vmovdqa	%xmm9, 144(%rsp)
 	vmovdqa	%xmm2, 80(%rsp)
 	vmovdqa	%xmm7, 96(%rsp)
@@ -1113,10 +1109,10 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	leaq	128(%rbx), %rsi
 	leaq	-128(%r12), %rax
 	cmpq	$128, %rax
-	jb	.LBB1_41
+	jb	.LBB1_25
 	vmovdqa	%xmm12, %xmm13
 	.p2align	4, 0x90
-.LBB1_40:
+.LBB1_24:
 	vmovdqu	64(%rsi), %xmm7
 	vmovdqu	80(%rsi), %xmm8
 	vmovdqu	96(%rsi), %xmm9
@@ -1202,8 +1198,8 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	subq	$-128, %rsi
 	addq	$-128, %rax
 	cmpq	$127, %rax
-	ja	.LBB1_40
-.LBB1_41:
+	ja	.LBB1_24
+.LBB1_25:
 	vpslldq	$8, %xmm6, %xmm7
 	vpxor	%xmm7, %xmm4, %xmm4
 	vpsrldq	$8, %xmm6, %xmm6
@@ -1220,17 +1216,21 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vmovdqa	96(%rsp), %xmm7
 	vmovdqa	80(%rsp), %xmm2
 	vmovdqa	144(%rsp), %xmm9
-.LBB1_23:
+	jmp	.LBB1_27
+.LBB1_26:
+	movq	%r12, %rax
+	movq	%rbx, %rsi
+.LBB1_27:
 	vaesenclast	.LCPI1_13(%rip), %xmm2, %xmm2
 	vpshufd	$80, 416(%rsp), %xmm5
 	vmovdqa	112(%rsp), %xmm8
 	vpxor	%xmm6, %xmm8, %xmm4
 	vpunpcklqdq	%xmm7, %xmm9, %xmm0
 	cmpq	$16, %rax
-	jb	.LBB1_28
+	jb	.LBB1_33
 	leaq	-16(%rax), %rdx
 	testb	$16, %dl
-	jne	.LBB1_26
+	jne	.LBB1_30
 	vpxor	(%rsi), %xmm13, %xmm1
 	addq	$16, %rsi
 	vpclmulqdq	$0, %xmm1, %xmm14, %xmm3
@@ -1250,11 +1250,11 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vpxor	%xmm3, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm6, %xmm13
 	movq	%rdx, %rax
-.LBB1_26:
+.LBB1_30:
 	cmpq	$16, %rdx
-	jb	.LBB1_29
+	jb	.LBB1_34
 	.p2align	4, 0x90
-.LBB1_27:
+.LBB1_31:
 	vpxor	(%rsi), %xmm13, %xmm1
 	vpclmulqdq	$0, %xmm1, %xmm14, %xmm3
 	vpclmulqdq	$1, %xmm1, %xmm14, %xmm6
@@ -1292,17 +1292,17 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vpxor	%xmm3, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm6, %xmm13
 	cmpq	$15, %rax
-	ja	.LBB1_27
-.LBB1_28:
+	ja	.LBB1_31
+.LBB1_33:
 	movq	%rax, %rdx
-.LBB1_29:
+.LBB1_34:
 	movq	520(%rsp), %r14
 	vpblendd	$9, 432(%rsp), %xmm5, %xmm3
 	vpxor	%xmm4, %xmm2, %xmm1
 	vmovdqa	%xmm1, 32(%rsp)
 	vpsllq	$3, %xmm0, %xmm0
 	testq	%rdx, %rdx
-	je	.LBB1_31
+	je	.LBB1_36
 	vmovdqa	%xmm0, 80(%rsp)
 	vpxor	%xmm0, %xmm0, %xmm0
 	vmovdqa	%xmm0, (%rsp)
@@ -1333,7 +1333,7 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vpxor	%xmm1, %xmm0, %xmm0
 	vpxor	%xmm0, %xmm2, %xmm13
 	vmovdqa	80(%rsp), %xmm0
-.LBB1_31:
+.LBB1_36:
 	vpxor	%xmm0, %xmm13, %xmm0
 	vpclmulqdq	$1, %xmm0, %xmm14, %xmm1
 	vpclmulqdq	$16, %xmm0, %xmm14, %xmm2
@@ -1385,11 +1385,11 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	movq	504(%rsp), %rax
 	vpor	.LCPI1_15(%rip), %xmm0, %xmm8
 	cmpq	$128, %r12
-	jb	.LBB1_35
+	jb	.LBB1_40
 	vmovaps	112(%rsp), %xmm3
 	vmovaps	16(%rsp), %xmm5
 	.p2align	4, 0x90
-.LBB1_33:
+.LBB1_38:
 	vpaddd	.LCPI1_0(%rip), %xmm8, %xmm0
 	vpaddd	.LCPI1_1(%rip), %xmm8, %xmm11
 	vpaddd	.LCPI1_2(%rip), %xmm8, %xmm12
@@ -1574,8 +1574,8 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	addq	$128, %rax
 	addq	$-128, %r12
 	vpaddd	.LCPI1_18(%rip), %xmm8, %xmm8
-	cmpq	$128, %r12
-	jae	.LBB1_33
+	cmpq	$127, %r12
+	ja	.LBB1_38
 	vmovdqa	256(%rsp), %xmm5
 	vmovdqa	240(%rsp), %xmm9
 	vmovdqa	224(%rsp), %xmm10
@@ -1585,12 +1585,12 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vmovdqa	160(%rsp), %xmm3
 	vmovdqa	128(%rsp), %xmm14
 	vmovdqa	32(%rsp), %xmm1
-.LBB1_35:
+.LBB1_40:
 	cmpq	$16, %r12
-	jb	.LBB1_46
+	jb	.LBB1_47
 	leaq	-16(%r12), %r14
 	testb	$16, %r14b
-	jne	.LBB1_37
+	jne	.LBB1_43
 	leaq	16(%rbx), %rsi
 	vpaddd	.LCPI1_0(%rip), %xmm8, %xmm15
 	leaq	16(%rax), %r15
@@ -1611,16 +1611,15 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vaesenclast	%xmm1, %xmm0, %xmm0
 	vpxor	(%rbx), %xmm0, %xmm0
 	vmovdqu	%xmm0, (%rax)
-	vmovdqa	%xmm15, %xmm0
 	movq	%r15, %rax
 	vmovdqa	%xmm15, %xmm8
 	movq	%r14, %r12
 	movq	%rsi, %rbx
-	jmp	.LBB1_43
-.LBB1_37:
+	jmp	.LBB1_44
 .LBB1_43:
+.LBB1_44:
 	cmpq	$16, %r14
-	jb	.LBB1_47
+	jb	.LBB1_48
 	vmovdqa	352(%rsp), %xmm15
 	vmovdqa	336(%rsp), %xmm4
 	vmovdqa	256(%rsp), %xmm5
@@ -1636,7 +1635,7 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	vmovdqa	112(%rsp), %xmm1
 	vmovdqa	32(%rsp), %xmm0
 	.p2align	4, 0x90
-.LBB1_45:
+.LBB1_46:
 	vpxor	%xmm15, %xmm8, %xmm2
 	vaesenc	%xmm4, %xmm2, %xmm2
 	vaesenc	%xmm5, %xmm2, %xmm2
@@ -1677,25 +1676,25 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	addq	$-32, %r12
 	vpaddd	.LCPI1_1(%rip), %xmm8, %xmm8
 	cmpq	$15, %r12
-	ja	.LBB1_45
-.LBB1_46:
+	ja	.LBB1_46
+.LBB1_47:
 	movq	%rbx, %rsi
 	movq	%rax, %r15
 	movq	%r12, %r14
-	vmovdqa	%xmm8, %xmm0
-.LBB1_47:
+	vmovdqa	%xmm8, %xmm15
+.LBB1_48:
 	movl	$1, %ebp
 	testq	%r14, %r14
-	je	.LBB1_49
-	vmovdqa	%xmm0, 64(%rsp)
+	je	.LBB1_50
 	vpxor	%xmm0, %xmm0, %xmm0
 	vmovdqa	%xmm0, (%rsp)
 	movq	%rsp, %rdi
 	movq	memcpy@GOTPCREL(%rip), %rbx
 	movq	%r14, %rdx
+	vmovdqa	%xmm15, 64(%rsp)
 	callq	*%rbx
-	vmovdqa	352(%rsp), %xmm0
-	vpxor	64(%rsp), %xmm0, %xmm0
+	vmovdqa	64(%rsp), %xmm0
+	vpxor	352(%rsp), %xmm0, %xmm0
 	vaesenc	336(%rsp), %xmm0, %xmm0
 	vaesenc	256(%rsp), %xmm0, %xmm0
 	vaesenc	320(%rsp), %xmm0, %xmm0
@@ -1716,7 +1715,7 @@ haberdashery_aes256gcmsiv_broadwell_encrypt:
 	movq	%r15, %rdi
 	movq	%r14, %rdx
 	callq	*%rbx
-.LBB1_49:
+.LBB1_50:
 	movl	%ebp, %eax
 	addq	$448, %rsp
 	.cfi_def_cfa_offset 48
@@ -1884,17 +1883,17 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	movq	512(%rsp), %rbx
 	xorl	%eax, %eax
 	cmpq	544(%rsp), %rbx
-	jne	.LBB2_35
+	jne	.LBB2_36
 	cmpq	$12, %rdx
-	jne	.LBB2_35
+	jne	.LBB2_36
 	movq	%r8, %r15
 	movabsq	$68719476736, %rdx
 	cmpq	%rdx, %r8
-	ja	.LBB2_35
+	ja	.LBB2_36
 	cmpq	%rdx, %rbx
-	ja	.LBB2_35
+	ja	.LBB2_36
 	cmpq	$16, 528(%rsp)
-	jb	.LBB2_35
+	jb	.LBB2_36
 	movq	%r9, %r14
 	vmovq	4(%rsi), %xmm1
 	vmovd	(%rsi), %xmm10
@@ -2095,7 +2094,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpshufd	$78, %xmm4, %xmm4
 	vpxor	%xmm4, %xmm5, %xmm4
 	vpxor	%xmm6, %xmm4, %xmm4
-	vmovdqa	%xmm4, 336(%rsp)
+	vmovdqa	%xmm4, 352(%rsp)
 	vpunpcklqdq	%xmm2, %xmm0, %xmm11
 	vpunpcklqdq	%xmm3, %xmm1, %xmm5
 	vpxor	%xmm7, %xmm7, %xmm7
@@ -2126,7 +2125,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm2, %xmm1, %xmm1
 	vpshufb	%xmm0, %xmm4, %xmm2
 	vaesenclast	.LCPI2_8(%rip), %xmm2, %xmm2
-	vmovdqa	%xmm3, 160(%rsp)
+	vmovdqa	%xmm3, 128(%rsp)
 	vpxor	%xmm3, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm2, %xmm3
 	vpslldq	$4, %xmm4, %xmm1
@@ -2136,7 +2135,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm2, %xmm1, %xmm1
 	vpshufd	$255, %xmm3, %xmm2
 	vaesenclast	%xmm7, %xmm2, %xmm2
-	vmovdqa	%xmm4, 96(%rsp)
+	vmovdqa	%xmm4, 80(%rsp)
 	vpxor	%xmm4, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm2, %xmm4
 	vpslldq	$4, %xmm3, %xmm1
@@ -2146,7 +2145,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm2, %xmm1, %xmm1
 	vpshufb	%xmm0, %xmm4, %xmm2
 	vaesenclast	.LCPI2_9(%rip), %xmm2, %xmm2
-	vmovdqa	%xmm3, 80(%rsp)
+	vmovdqa	%xmm3, 64(%rsp)
 	vpxor	%xmm3, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm2, %xmm9
 	vpslldq	$4, %xmm4, %xmm1
@@ -2156,7 +2155,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm2, %xmm1, %xmm1
 	vpshufd	$255, %xmm9, %xmm2
 	vaesenclast	%xmm7, %xmm2, %xmm2
-	vmovdqa	%xmm4, 240(%rsp)
+	vmovdqa	%xmm4, 256(%rsp)
 	vpxor	%xmm4, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm2, %xmm3
 	vpslldq	$4, %xmm9, %xmm1
@@ -2175,7 +2174,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm2, %xmm1, %xmm1
 	vpshufd	$255, %xmm4, %xmm2
 	vaesenclast	%xmm7, %xmm2, %xmm2
-	vmovdqa	%xmm3, 144(%rsp)
+	vmovdqa	%xmm3, 240(%rsp)
 	vpxor	%xmm3, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm2, %xmm5
 	vpslldq	$4, %xmm4, %xmm1
@@ -2195,7 +2194,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm2, %xmm1, %xmm1
 	vpshufd	$255, %xmm3, %xmm2
 	vaesenclast	%xmm7, %xmm2, %xmm2
-	vmovdqa	%xmm5, 128(%rsp)
+	vmovdqa	%xmm5, 208(%rsp)
 	vpxor	%xmm5, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm2, %xmm4
 	vpslldq	$4, %xmm3, %xmm1
@@ -2223,21 +2222,17 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm2, %xmm1, %xmm1
 	vpslldq	$12, %xmm6, %xmm2
 	cmpq	$96, %r15
-	vmovdqa	%xmm11, 192(%rsp)
-	vmovdqa	%xmm6, 256(%rsp)
-	vmovdqa	%xmm3, 208(%rsp)
+	vmovdqa	%xmm11, 160(%rsp)
+	vmovdqa	%xmm6, 192(%rsp)
+	vmovdqa	%xmm3, 176(%rsp)
 	vmovdqa	%xmm10, 464(%rsp)
 	vmovdqa	%xmm9, 112(%rsp)
 	vmovdqa	%xmm14, 320(%rsp)
 	vmovdqa	%xmm8, 400(%rsp)
 	vmovdqa	%xmm15, 384(%rsp)
-	jae	.LBB2_18
-	movq	%r15, %rax
-	vmovdqa	48(%rsp), %xmm8
-	jmp	.LBB2_7
-.LBB2_18:
-	vmovdqa	%xmm2, (%rsp)
-	vmovdqa	%xmm1, 64(%rsp)
+	jb	.LBB2_9
+	vmovdqa	%xmm2, 96(%rsp)
+	vmovdqa	%xmm1, (%rsp)
 	vmovdqu	(%rcx), %xmm4
 	vmovdqu	16(%rcx), %xmm3
 	vmovdqu	32(%rcx), %xmm5
@@ -2275,7 +2270,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpclmulqdq	$17, %xmm5, %xmm15, %xmm5
 	vpxor	%xmm5, %xmm7, %xmm5
 	vpxor	%xmm6, %xmm5, %xmm5
-	vmovdqa	336(%rsp), %xmm2
+	vmovdqa	352(%rsp), %xmm2
 	vpclmulqdq	$0, %xmm3, %xmm2, %xmm6
 	vpxor	%xmm6, %xmm8, %xmm6
 	vpclmulqdq	$1, %xmm3, %xmm2, %xmm7
@@ -2295,17 +2290,14 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	addq	$96, %rcx
 	leaq	-96(%r15), %rax
 	cmpq	$96, %rax
-	jae	.LBB2_20
-	vpbroadcastq	.LCPI2_23(%rip), %xmm12
-	jmp	.LBB2_22
-.LBB2_20:
+	jb	.LBB2_10
 	vmovdqa	%xmm1, %xmm6
 	vmovdqa	%xmm15, %xmm1
 	vpbroadcastq	.LCPI2_23(%rip), %xmm12
 	vmovdqa	%xmm6, %xmm15
 	vmovdqa	320(%rsp), %xmm14
 	.p2align	4, 0x90
-.LBB2_21:
+.LBB2_8:
 	vmovdqu	32(%rcx), %xmm6
 	vmovdqu	48(%rcx), %xmm7
 	vmovdqu	64(%rcx), %xmm8
@@ -2372,8 +2364,15 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	addq	$96, %rcx
 	addq	$-96, %rax
 	cmpq	$95, %rax
-	ja	.LBB2_21
-.LBB2_22:
+	ja	.LBB2_8
+	jmp	.LBB2_11
+.LBB2_9:
+	movq	%r15, %rax
+	vmovdqa	48(%rsp), %xmm8
+	jmp	.LBB2_12
+.LBB2_10:
+	vpbroadcastq	.LCPI2_23(%rip), %xmm12
+.LBB2_11:
 	vpslldq	$8, %xmm5, %xmm6
 	vpxor	%xmm6, %xmm3, %xmm3
 	vpsrldq	$8, %xmm5, %xmm5
@@ -2385,22 +2384,22 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpshufd	$78, %xmm3, %xmm3
 	vpxor	%xmm3, %xmm4, %xmm3
 	vpxor	%xmm5, %xmm3, %xmm7
-	vmovdqa	192(%rsp), %xmm11
-	vmovdqa	256(%rsp), %xmm6
-	vmovdqa	208(%rsp), %xmm3
+	vmovdqa	160(%rsp), %xmm11
+	vmovdqa	192(%rsp), %xmm6
+	vmovdqa	176(%rsp), %xmm3
 	vmovdqa	112(%rsp), %xmm9
 	vmovdqa	48(%rsp), %xmm8
-	vmovdqa	64(%rsp), %xmm1
-	vmovdqa	(%rsp), %xmm2
-.LBB2_7:
+	vmovdqa	(%rsp), %xmm1
+	vmovdqa	96(%rsp), %xmm2
+.LBB2_12:
 	vpxor	%xmm2, %xmm1, %xmm1
 	vpshufb	%xmm0, %xmm3, %xmm0
 	movq	520(%rsp), %rsi
 	cmpq	$16, %rax
-	jb	.LBB2_12
+	jb	.LBB2_18
 	leaq	-16(%rax), %rdx
 	testb	$16, %dl
-	jne	.LBB2_10
+	jne	.LBB2_15
 	vpxor	(%rcx), %xmm7, %xmm2
 	addq	$16, %rcx
 	vpclmulqdq	$0, %xmm2, %xmm13, %xmm3
@@ -2420,11 +2419,11 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm3, %xmm2, %xmm2
 	vpxor	%xmm2, %xmm4, %xmm7
 	movq	%rdx, %rax
-.LBB2_10:
+.LBB2_15:
 	cmpq	$16, %rdx
-	jb	.LBB2_13
+	jb	.LBB2_19
 	.p2align	4, 0x90
-.LBB2_11:
+.LBB2_16:
 	vpxor	(%rcx), %xmm7, %xmm2
 	vpclmulqdq	$0, %xmm2, %xmm13, %xmm3
 	vpclmulqdq	$1, %xmm2, %xmm13, %xmm4
@@ -2462,29 +2461,29 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm3, %xmm2, %xmm2
 	vpxor	%xmm2, %xmm4, %xmm7
 	cmpq	$15, %rax
-	ja	.LBB2_11
-.LBB2_12:
+	ja	.LBB2_16
+.LBB2_18:
 	movq	%rax, %rdx
-.LBB2_13:
+.LBB2_19:
 	vaesenclast	.LCPI2_13(%rip), %xmm0, %xmm3
 	vpxor	%xmm6, %xmm1, %xmm4
 	vmovdqu	(%rsi), %xmm0
 	vmovdqa	%xmm0, 368(%rsp)
 	testq	%rdx, %rdx
-	vmovdqa	%xmm13, 176(%rsp)
-	je	.LBB2_15
+	vmovdqa	%xmm13, 144(%rsp)
+	je	.LBB2_21
 	vpxor	%xmm0, %xmm0, %xmm0
 	vmovdqa	%xmm0, 16(%rsp)
 	leaq	16(%rsp), %rdi
 	movq	%rcx, %rsi
 	vmovdqa	%xmm7, (%rsp)
-	vmovdqa	%xmm3, 64(%rsp)
+	vmovdqa	%xmm3, 96(%rsp)
 	vmovdqa	%xmm4, 288(%rsp)
 	callq	*memcpy@GOTPCREL(%rip)
 	vmovdqa	112(%rsp), %xmm9
 	vmovdqa	48(%rsp), %xmm8
-	vmovdqa	192(%rsp), %xmm11
-	vmovdqa	176(%rsp), %xmm4
+	vmovdqa	160(%rsp), %xmm11
+	vmovdqa	144(%rsp), %xmm4
 	vpbroadcastq	.LCPI2_23(%rip), %xmm12
 	vmovdqa	(%rsp), %xmm0
 	vpxor	16(%rsp), %xmm0, %xmm0
@@ -2496,7 +2495,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vmovdqa	288(%rsp), %xmm4
 	vpslldq	$8, %xmm2, %xmm3
 	vpxor	%xmm3, %xmm1, %xmm1
-	vmovdqa	64(%rsp), %xmm3
+	vmovdqa	96(%rsp), %xmm3
 	vpsrldq	$8, %xmm2, %xmm2
 	vpxor	%xmm2, %xmm0, %xmm0
 	vpclmulqdq	$16, %xmm12, %xmm1, %xmm2
@@ -2506,10 +2505,10 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpshufd	$78, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm0, %xmm0
 	vpxor	%xmm0, %xmm2, %xmm7
-.LBB2_15:
-	vmovdqa	160(%rsp), %xmm6
-	vmovdqa	96(%rsp), %xmm5
-	vmovdqa	80(%rsp), %xmm15
+.LBB2_21:
+	vmovdqa	128(%rsp), %xmm6
+	vmovdqa	80(%rsp), %xmm5
+	vmovdqa	64(%rsp), %xmm15
 	vmovq	%rbx, %xmm1
 	vmovq	%r15, %xmm2
 	movq	536(%rsp), %rdx
@@ -2517,8 +2516,8 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vmovdqa	368(%rsp), %xmm0
 	vpor	.LCPI2_14(%rip), %xmm0, %xmm3
 	cmpq	$96, %rbx
-	vmovdqa	%xmm13, 64(%rsp)
-	jb	.LBB2_23
+	vmovdqa	%xmm13, 336(%rsp)
+	jb	.LBB2_28
 	vmovdqa	%xmm2, 416(%rsp)
 	vmovdqa	%xmm1, 432(%rsp)
 	vmovdqa	%xmm7, (%rsp)
@@ -2553,7 +2552,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm14, %xmm7, %xmm7
 	vaesenc	%xmm14, %xmm8, %xmm8
 	#NO_APP
-	vmovaps	96(%rsp), %xmm4
+	vmovaps	80(%rsp), %xmm4
 	#APP
 	vaesenc	%xmm4, %xmm0, %xmm0
 	vaesenc	%xmm4, %xmm1, %xmm1
@@ -2570,7 +2569,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm15, %xmm7, %xmm7
 	vaesenc	%xmm15, %xmm8, %xmm8
 	#NO_APP
-	vmovaps	240(%rsp), %xmm4
+	vmovaps	256(%rsp), %xmm4
 	#APP
 	vaesenc	%xmm4, %xmm0, %xmm0
 	vaesenc	%xmm4, %xmm1, %xmm1
@@ -2587,7 +2586,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm9, %xmm7, %xmm7
 	vaesenc	%xmm9, %xmm8, %xmm8
 	#NO_APP
-	vmovaps	144(%rsp), %xmm4
+	vmovaps	240(%rsp), %xmm4
 	#APP
 	vaesenc	%xmm4, %xmm0, %xmm0
 	vaesenc	%xmm4, %xmm1, %xmm1
@@ -2605,7 +2604,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm4, %xmm7, %xmm7
 	vaesenc	%xmm4, %xmm8, %xmm8
 	#NO_APP
-	vmovaps	128(%rsp), %xmm4
+	vmovaps	208(%rsp), %xmm4
 	#APP
 	vaesenc	%xmm4, %xmm0, %xmm0
 	vaesenc	%xmm4, %xmm1, %xmm1
@@ -2632,7 +2631,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm4, %xmm7, %xmm7
 	vaesenc	%xmm4, %xmm8, %xmm8
 	#NO_APP
-	vmovaps	256(%rsp), %xmm4
+	vmovaps	192(%rsp), %xmm4
 	#APP
 	vaesenc	%xmm4, %xmm0, %xmm0
 	vaesenc	%xmm4, %xmm1, %xmm1
@@ -2641,7 +2640,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm4, %xmm7, %xmm7
 	vaesenc	%xmm4, %xmm8, %xmm8
 	#NO_APP
-	vmovaps	208(%rsp), %xmm4
+	vmovaps	176(%rsp), %xmm4
 	#APP
 	vaesenc	%xmm4, %xmm0, %xmm0
 	vaesenc	%xmm4, %xmm1, %xmm1
@@ -2673,19 +2672,14 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	addq	$-96, %rbx
 	vpaddd	.LCPI2_15(%rip), %xmm3, %xmm2
 	cmpq	$96, %rbx
-	jae	.LBB2_25
-	vmovdqa	32(%rsp), %xmm11
-	vmovdqa	320(%rsp), %xmm10
-	vmovdqa	(%rsp), %xmm0
-	jmp	.LBB2_28
-.LBB2_25:
+	jb	.LBB2_26
 	vmovdqa	(%rsp), %xmm0
 	.p2align	4, 0x90
-.LBB2_26:
-	vmovdqa	%xmm4, 352(%rsp)
+.LBB2_24:
+	vmovdqa	%xmm4, 288(%rsp)
 	vmovdqa	%xmm2, (%rsp)
 	vpxor	%xmm0, %xmm9, %xmm0
-	vmovdqa	%xmm0, 288(%rsp)
+	vmovdqa	%xmm0, 96(%rsp)
 	vpaddd	.LCPI2_16(%rip), %xmm3, %xmm0
 	vpaddd	.LCPI2_17(%rip), %xmm3, %xmm1
 	vpaddd	.LCPI2_18(%rip), %xmm3, %xmm6
@@ -2700,7 +2694,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm10, %xmm10, %xmm10
 	vpxor	%xmm12, %xmm12, %xmm12
 	vpxor	%xmm11, %xmm11, %xmm11
-	vmovaps	176(%rsp), %xmm4
+	vmovaps	144(%rsp), %xmm4
 	vmovaps	48(%rsp), %xmm2
 	#APP
 	vaesenc	%xmm2, %xmm3, %xmm3
@@ -2718,7 +2712,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpclmulqdq	$1, %xmm4, %xmm8, %xmm9
 	vpxor	%xmm9, %xmm12, %xmm12
 	#NO_APP
-	vmovaps	160(%rsp), %xmm2
+	vmovaps	128(%rsp), %xmm2
 	#APP
 	vaesenc	%xmm2, %xmm3, %xmm3
 	vaesenc	%xmm2, %xmm15, %xmm15
@@ -2728,7 +2722,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm2, %xmm7, %xmm7
 	#NO_APP
 	vmovaps	320(%rsp), %xmm9
-	vmovaps	96(%rsp), %xmm2
+	vmovaps	80(%rsp), %xmm2
 	#APP
 	vaesenc	%xmm2, %xmm3, %xmm3
 	vaesenc	%xmm2, %xmm15, %xmm15
@@ -2745,7 +2739,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpclmulqdq	$1, %xmm9, %xmm14, %xmm8
 	vpxor	%xmm8, %xmm12, %xmm12
 	#NO_APP
-	vmovaps	80(%rsp), %xmm2
+	vmovaps	64(%rsp), %xmm2
 	#APP
 	vaesenc	%xmm2, %xmm3, %xmm3
 	vaesenc	%xmm2, %xmm15, %xmm15
@@ -2754,22 +2748,22 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm2, %xmm6, %xmm6
 	vaesenc	%xmm2, %xmm7, %xmm7
 	#NO_APP
-	vmovaps	240(%rsp), %xmm2
-	vmovaps	400(%rsp), %xmm4
+	vmovaps	400(%rsp), %xmm2
+	vmovaps	256(%rsp), %xmm4
 	#APP
-	vaesenc	%xmm2, %xmm3, %xmm3
-	vaesenc	%xmm2, %xmm15, %xmm15
-	vaesenc	%xmm2, %xmm0, %xmm0
-	vaesenc	%xmm2, %xmm1, %xmm1
-	vaesenc	%xmm2, %xmm6, %xmm6
-	vaesenc	%xmm2, %xmm7, %xmm7
-	vpclmulqdq	$16, %xmm4, %xmm13, %xmm8
+	vaesenc	%xmm4, %xmm3, %xmm3
+	vaesenc	%xmm4, %xmm15, %xmm15
+	vaesenc	%xmm4, %xmm0, %xmm0
+	vaesenc	%xmm4, %xmm1, %xmm1
+	vaesenc	%xmm4, %xmm6, %xmm6
+	vaesenc	%xmm4, %xmm7, %xmm7
+	vpclmulqdq	$16, %xmm2, %xmm13, %xmm8
 	vpxor	%xmm8, %xmm12, %xmm12
-	vpclmulqdq	$0, %xmm4, %xmm13, %xmm8
+	vpclmulqdq	$0, %xmm2, %xmm13, %xmm8
 	vpxor	%xmm8, %xmm10, %xmm10
-	vpclmulqdq	$17, %xmm4, %xmm13, %xmm8
+	vpclmulqdq	$17, %xmm2, %xmm13, %xmm8
 	vpxor	%xmm8, %xmm11, %xmm11
-	vpclmulqdq	$1, %xmm4, %xmm13, %xmm8
+	vpclmulqdq	$1, %xmm2, %xmm13, %xmm8
 	vpxor	%xmm8, %xmm12, %xmm12
 	#NO_APP
 	vmovaps	112(%rsp), %xmm8
@@ -2781,7 +2775,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm8, %xmm6, %xmm6
 	vaesenc	%xmm8, %xmm7, %xmm7
 	#NO_APP
-	vmovaps	144(%rsp), %xmm2
+	vmovaps	240(%rsp), %xmm2
 	#APP
 	vaesenc	%xmm2, %xmm3, %xmm3
 	vaesenc	%xmm2, %xmm15, %xmm15
@@ -2808,7 +2802,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpclmulqdq	$1, %xmm4, %xmm5, %xmm8
 	vpxor	%xmm8, %xmm12, %xmm12
 	#NO_APP
-	vmovaps	128(%rsp), %xmm2
+	vmovaps	208(%rsp), %xmm2
 	#APP
 	vaesenc	%xmm2, %xmm3, %xmm3
 	vaesenc	%xmm2, %xmm15, %xmm15
@@ -2818,8 +2812,8 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm2, %xmm7, %xmm7
 	#NO_APP
 	vmovaps	304(%rsp), %xmm2
-	vmovaps	336(%rsp), %xmm4
-	vmovaps	352(%rsp), %xmm8
+	vmovaps	352(%rsp), %xmm4
+	vmovaps	288(%rsp), %xmm8
 	#APP
 	vaesenc	%xmm2, %xmm3, %xmm3
 	vaesenc	%xmm2, %xmm15, %xmm15
@@ -2846,8 +2840,8 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm2, %xmm7, %xmm7
 	#NO_APP
 	vmovdqa	32(%rsp), %xmm5
-	vmovaps	256(%rsp), %xmm2
-	vmovaps	288(%rsp), %xmm8
+	vmovaps	192(%rsp), %xmm2
+	vmovaps	96(%rsp), %xmm8
 	#APP
 	vaesenc	%xmm2, %xmm3, %xmm3
 	vaesenc	%xmm2, %xmm15, %xmm15
@@ -2876,7 +2870,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpshufd	$78, %xmm10, %xmm4
 	vpxor	%xmm4, %xmm5, %xmm11
 	vmovdqa	(%rsp), %xmm2
-	vmovaps	208(%rsp), %xmm4
+	vmovaps	176(%rsp), %xmm4
 	#APP
 	vaesenc	%xmm4, %xmm3, %xmm3
 	vaesenc	%xmm4, %xmm15, %xmm15
@@ -2885,7 +2879,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm4, %xmm6, %xmm6
 	vaesenc	%xmm4, %xmm7, %xmm7
 	#NO_APP
-	vmovaps	64(%rsp), %xmm4
+	vmovaps	336(%rsp), %xmm4
 	#APP
 	vaesenclast	%xmm4, %xmm3, %xmm3
 	vaesenclast	%xmm4, %xmm15, %xmm15
@@ -2911,16 +2905,21 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	addq	$-96, %rbx
 	vpclmulqdq	$16, %xmm12, %xmm10, %xmm0
 	vpxor	%xmm0, %xmm11, %xmm0
-	vmovdqa	192(%rsp), %xmm11
+	vmovdqa	160(%rsp), %xmm11
 	vmovdqa	%xmm2, %xmm3
 	vpaddd	.LCPI2_15(%rip), %xmm2, %xmm2
 	cmpq	$95, %rbx
-	ja	.LBB2_26
+	ja	.LBB2_24
 	vmovdqa	32(%rsp), %xmm11
 	vmovdqa	320(%rsp), %xmm10
-.LBB2_28:
+	jmp	.LBB2_27
+.LBB2_26:
+	vmovdqa	32(%rsp), %xmm11
+	vmovdqa	320(%rsp), %xmm10
+	vmovdqa	(%rsp), %xmm0
+.LBB2_27:
 	vpxor	%xmm0, %xmm9, %xmm0
-	vmovdqa	176(%rsp), %xmm9
+	vmovdqa	144(%rsp), %xmm9
 	vpclmulqdq	$0, %xmm8, %xmm9, %xmm1
 	vpclmulqdq	$1, %xmm8, %xmm9, %xmm3
 	vpclmulqdq	$16, %xmm8, %xmm9, %xmm6
@@ -2951,7 +2950,7 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpclmulqdq	$17, %xmm5, %xmm13, %xmm5
 	vpxor	%xmm5, %xmm9, %xmm5
 	vpxor	%xmm5, %xmm6, %xmm5
-	vmovdqa	336(%rsp), %xmm8
+	vmovdqa	352(%rsp), %xmm8
 	vpclmulqdq	$0, %xmm4, %xmm8, %xmm6
 	vpxor	%xmm6, %xmm1, %xmm1
 	vpclmulqdq	$1, %xmm4, %xmm8, %xmm6
@@ -2983,52 +2982,46 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	movq	%rcx, %r14
 	movq	%rax, %rdx
 	vmovdqa	%xmm2, %xmm3
-	vmovdqa	160(%rsp), %xmm6
-	vmovdqa	96(%rsp), %xmm5
-	vmovdqa	192(%rsp), %xmm11
+	vmovdqa	128(%rsp), %xmm6
+	vmovdqa	80(%rsp), %xmm5
+	vmovdqa	160(%rsp), %xmm11
+	vmovdqa	336(%rsp), %xmm13
 	vmovdqa	432(%rsp), %xmm1
 	vmovdqa	416(%rsp), %xmm2
-.LBB2_23:
+.LBB2_28:
 	vpshufd	$80, 448(%rsp), %xmm0
 	vpunpcklqdq	%xmm1, %xmm2, %xmm1
 	cmpq	$16, %rbx
 	vmovdqa	%xmm0, 32(%rsp)
 	vmovdqa	%xmm1, (%rsp)
-	jae	.LBB2_29
-	movq	%r14, %rsi
-	movq	%rdx, %r15
-	vmovdqa	%xmm3, %xmm14
-	vmovdqa	176(%rsp), %xmm8
-	jmp	.LBB2_31
-.LBB2_29:
-	vmovdqa	176(%rsp), %xmm8
-	vmovdqa	144(%rsp), %xmm1
-	vmovdqa	128(%rsp), %xmm13
+	jb	.LBB2_31
+	vmovdqa	144(%rsp), %xmm8
 	vmovdqa	272(%rsp), %xmm2
-	vmovdqa	208(%rsp), %xmm0
-	vmovdqa	48(%rsp), %xmm15
-	vmovdqa	80(%rsp), %xmm9
+	vmovdqa	192(%rsp), %xmm9
+	vmovdqa	176(%rsp), %xmm0
+	vmovdqa	48(%rsp), %xmm14
+	vmovdqa	64(%rsp), %xmm1
 	.p2align	4, 0x90
 .LBB2_30:
 	vpxor	%xmm3, %xmm11, %xmm4
-	vaesenc	%xmm15, %xmm4, %xmm4
+	vaesenc	%xmm14, %xmm4, %xmm4
 	vaesenc	%xmm6, %xmm4, %xmm4
 	vaesenc	%xmm5, %xmm4, %xmm4
-	vaesenc	%xmm9, %xmm4, %xmm4
-	vaesenc	240(%rsp), %xmm4, %xmm4
-	vaesenc	112(%rsp), %xmm4, %xmm4
 	vaesenc	%xmm1, %xmm4, %xmm4
+	vaesenc	256(%rsp), %xmm4, %xmm4
+	vaesenc	112(%rsp), %xmm4, %xmm4
+	vaesenc	240(%rsp), %xmm4, %xmm4
 	vaesenc	224(%rsp), %xmm4, %xmm4
-	vaesenc	%xmm13, %xmm4, %xmm4
+	vaesenc	208(%rsp), %xmm4, %xmm4
 	vaesenc	304(%rsp), %xmm4, %xmm4
 	vaesenc	%xmm2, %xmm4, %xmm4
-	vaesenc	256(%rsp), %xmm4, %xmm4
+	vaesenc	%xmm9, %xmm4, %xmm4
 	vaesenc	%xmm0, %xmm4, %xmm4
-	vaesenclast	64(%rsp), %xmm4, %xmm4
+	vaesenclast	%xmm13, %xmm4, %xmm4
 	vpxor	(%r14), %xmm4, %xmm4
 	vmovdqa	%xmm5, %xmm10
 	vpxor	%xmm7, %xmm4, %xmm5
-	vmovdqa	%xmm6, %xmm14
+	vmovdqa	%xmm6, %xmm15
 	vpclmulqdq	$1, %xmm5, %xmm8, %xmm6
 	vpclmulqdq	$16, %xmm5, %xmm8, %xmm7
 	vpxor	%xmm6, %xmm7, %xmm6
@@ -3044,26 +3037,32 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpxor	%xmm6, %xmm5, %xmm5
 	vpshufd	$78, %xmm4, %xmm6
 	vpxor	%xmm6, %xmm5, %xmm5
-	vmovdqa	%xmm14, %xmm6
+	vmovdqa	%xmm15, %xmm6
 	leaq	16(%r14), %rsi
 	leaq	16(%rdx), %r15
 	addq	$-16, %rbx
-	vpaddd	.LCPI2_0(%rip), %xmm3, %xmm14
+	vpaddd	.LCPI2_0(%rip), %xmm3, %xmm15
 	vpclmulqdq	$16, %xmm12, %xmm4, %xmm3
 	vpxor	%xmm5, %xmm3, %xmm7
 	vmovdqa	%xmm10, %xmm5
 	movq	%r15, %rdx
-	vmovdqa	%xmm14, %xmm3
+	vmovdqa	%xmm15, %xmm3
 	movq	%rsi, %r14
 	cmpq	$15, %rbx
 	ja	.LBB2_30
+	jmp	.LBB2_32
 .LBB2_31:
+	movq	%r14, %rsi
+	movq	%rdx, %r15
+	vmovdqa	%xmm3, %xmm15
+	vmovdqa	144(%rsp), %xmm8
+.LBB2_32:
 	vmovdqa	32(%rsp), %xmm0
 	vpblendd	$9, 464(%rsp), %xmm0, %xmm3
 	vmovdqa	(%rsp), %xmm0
 	vpsllq	$3, %xmm0, %xmm1
 	testq	%rbx, %rbx
-	je	.LBB2_32
+	je	.LBB2_34
 	vpxor	%xmm0, %xmm0, %xmm0
 	vmovdqa	%xmm0, 16(%rsp)
 	leaq	16(%rsp), %rdi
@@ -3071,25 +3070,25 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	movq	%rbx, %rdx
 	vmovdqa	%xmm7, (%rsp)
 	vmovdqa	%xmm3, 32(%rsp)
-	vmovdqa	%xmm1, 288(%rsp)
-	vmovdqa	%xmm14, 352(%rsp)
+	vmovdqa	%xmm1, 96(%rsp)
+	vmovdqa	%xmm15, 288(%rsp)
 	callq	*%r14
-	vmovdqa	352(%rsp), %xmm0
-	vpxor	192(%rsp), %xmm0, %xmm0
+	vmovdqa	288(%rsp), %xmm0
+	vpxor	160(%rsp), %xmm0, %xmm0
 	vaesenc	48(%rsp), %xmm0, %xmm0
-	vaesenc	160(%rsp), %xmm0, %xmm0
-	vaesenc	96(%rsp), %xmm0, %xmm0
-	vaesenc	80(%rsp), %xmm0, %xmm0
-	vaesenc	240(%rsp), %xmm0, %xmm0
-	vaesenc	112(%rsp), %xmm0, %xmm0
-	vaesenc	144(%rsp), %xmm0, %xmm0
-	vaesenc	224(%rsp), %xmm0, %xmm0
 	vaesenc	128(%rsp), %xmm0, %xmm0
+	vaesenc	80(%rsp), %xmm0, %xmm0
+	vaesenc	64(%rsp), %xmm0, %xmm0
+	vaesenc	256(%rsp), %xmm0, %xmm0
+	vaesenc	112(%rsp), %xmm0, %xmm0
+	vaesenc	240(%rsp), %xmm0, %xmm0
+	vaesenc	224(%rsp), %xmm0, %xmm0
+	vaesenc	208(%rsp), %xmm0, %xmm0
 	vaesenc	304(%rsp), %xmm0, %xmm0
 	vaesenc	272(%rsp), %xmm0, %xmm0
-	vaesenc	256(%rsp), %xmm0, %xmm0
-	vaesenc	208(%rsp), %xmm0, %xmm0
-	vaesenclast	64(%rsp), %xmm0, %xmm0
+	vaesenc	192(%rsp), %xmm0, %xmm0
+	vaesenc	176(%rsp), %xmm0, %xmm0
+	vaesenclast	336(%rsp), %xmm0, %xmm0
 	vpxor	16(%rsp), %xmm0, %xmm0
 	vmovdqa	%xmm0, 16(%rsp)
 	leaq	16(%rsp), %rsi
@@ -3102,17 +3101,17 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	movq	%r15, %rsi
 	movq	%rbx, %rdx
 	callq	*%r14
-	vmovdqa	128(%rsp), %xmm13
+	vmovdqa	208(%rsp), %xmm13
 	vmovdqa	224(%rsp), %xmm7
-	vmovdqa	144(%rsp), %xmm10
+	vmovdqa	240(%rsp), %xmm10
 	vmovdqa	112(%rsp), %xmm14
-	vmovdqa	240(%rsp), %xmm4
-	vmovdqa	80(%rsp), %xmm11
-	vmovdqa	96(%rsp), %xmm5
-	vmovdqa	160(%rsp), %xmm6
+	vmovdqa	256(%rsp), %xmm4
+	vmovdqa	64(%rsp), %xmm11
+	vmovdqa	80(%rsp), %xmm5
+	vmovdqa	128(%rsp), %xmm6
 	vmovdqa	48(%rsp), %xmm15
-	vmovdqa	192(%rsp), %xmm9
-	vmovdqa	176(%rsp), %xmm8
+	vmovdqa	160(%rsp), %xmm9
+	vmovdqa	144(%rsp), %xmm8
 	vpbroadcastq	.LCPI2_23(%rip), %xmm12
 	vmovdqa	(%rsp), %xmm0
 	vpxor	16(%rsp), %xmm0, %xmm0
@@ -3132,20 +3131,20 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vpclmulqdq	$16, %xmm12, %xmm1, %xmm2
 	vpshufd	$78, %xmm1, %xmm1
 	vpxor	%xmm1, %xmm0, %xmm0
-	vmovdqa	288(%rsp), %xmm1
+	vmovdqa	96(%rsp), %xmm1
 	vpxor	%xmm0, %xmm2, %xmm0
-	jmp	.LBB2_34
-.LBB2_32:
-	vmovdqa	240(%rsp), %xmm4
+	jmp	.LBB2_35
+.LBB2_34:
+	vmovdqa	256(%rsp), %xmm4
 	vmovdqa	112(%rsp), %xmm14
-	vmovdqa	144(%rsp), %xmm10
+	vmovdqa	240(%rsp), %xmm10
 	vmovdqa	%xmm7, %xmm0
 	vmovdqa	224(%rsp), %xmm7
-	vmovdqa	128(%rsp), %xmm13
+	vmovdqa	208(%rsp), %xmm13
 	vmovdqa	%xmm11, %xmm9
 	vmovdqa	48(%rsp), %xmm15
-	vmovdqa	80(%rsp), %xmm11
-.LBB2_34:
+	vmovdqa	64(%rsp), %xmm11
+.LBB2_35:
 	vpxor	%xmm1, %xmm0, %xmm0
 	vpclmulqdq	$1, %xmm0, %xmm8, %xmm1
 	vpclmulqdq	$16, %xmm0, %xmm8, %xmm2
@@ -3177,14 +3176,14 @@ haberdashery_aes256gcmsiv_broadwell_decrypt:
 	vaesenc	%xmm13, %xmm0, %xmm0
 	vaesenc	304(%rsp), %xmm0, %xmm0
 	vaesenc	272(%rsp), %xmm0, %xmm0
-	vaesenc	256(%rsp), %xmm0, %xmm0
-	vaesenc	208(%rsp), %xmm0, %xmm0
-	vaesenclast	64(%rsp), %xmm0, %xmm0
+	vaesenc	192(%rsp), %xmm0, %xmm0
+	vaesenc	176(%rsp), %xmm0, %xmm0
+	vaesenclast	336(%rsp), %xmm0, %xmm0
 	vpxor	368(%rsp), %xmm0, %xmm0
 	xorl	%eax, %eax
 	vptest	%xmm0, %xmm0
 	sete	%al
-.LBB2_35:
+.LBB2_36:
 	addq	$480, %rsp
 	.cfi_def_cfa_offset 32
 	popq	%rbx

@@ -13,13 +13,13 @@ consumed by end users, but rather to be consumed indirectly via your
 preferred crypto library.
 
 ## Quickstart
-Test rust bindings: `scripts/cargo.sh sys`
+Test rust bindings: `scripts/cargo.sh bindings/rust_lib`
 
 Test c89 bindings: `scripts/make.sh`
 
-Run benchmarks (dry run): `cargo bench --manifest-path=rust/sys/benchmarks/Cargo.toml -- --filter=profile=skylakex --dry-run`
+Run benchmarks (dry run): `cargo bench --manifest-path=bindings/rust_bench/Cargo.toml -- --filter=profile=skylakex --dry-run`
 
-Run benchmarks: `cargo bench --manifest-path=rust/sys/benchmarks/Cargo.toml -- --filter=profile=skylakex`
+Run benchmarks: `cargo bench --manifest-path=bindings/rust_bench/Cargo.toml -- --filter=profile=skylakex`
 
 Test asm-generation scripts `scripts/cargo.sh`
 
@@ -46,7 +46,7 @@ de-optimizes otherwise carefully-interleaved code.
 
 As part of assembly generation, implementation metadata is created by rust
 proc macros which is used to auto-generate bindings. Binding metadata can be
-found in `descriptor_yaml`.
+found in `descriptors`.
 
 The assembly can be (re)generated via the script `scripts/asm.sh`. Bindings
 can be (re)generated with the script `scripts/bindings.sh`. Dockerized
@@ -59,13 +59,13 @@ corresponding scripts directly.
 ### Example bindings
 Although the algorithms are implemented in rust, the rust implementations are
 not intended to be taken as a direct dependency. Rather, rust libraries will
-consume the generated assembly via rust bindings like any other language.
-Rust bindings are located in `rust/sys` and can be tested with
-`scripts/cargo.sh sys` or via a direct call to `cargo`. A dockerized example
-of building and testing is in `podman/test_rust_sys.Dockerfile`. c89-themed
-bindings are located in `c` and can be tested with `scripts/make.sh sys` or
-via a direct call to `make`. A dockerized example of building and testing is
-in `podman/test_c89.Dockerfile`.
+consume the generated assembly via rust bindings like any other language.  Rust
+"sys" bindings are located in `bindings/rust_sys` and can be tested with
+`scripts/cargo.sh bindings/rust_sys --all-features` or via a direct call to
+`cargo`. Rust trait-based bindings are in `bindings/rust_lib`. c89-themed
+bindings are located in `c` and can be tested with `scripts/make.sh sys` or via
+a direct call to `make`. A dockerized example of building and testing is in
+`podman/test_c89.Dockerfile`.
 
 ### Testing
 `test_vectors` contains binary test vectors in a bespoke format. Our

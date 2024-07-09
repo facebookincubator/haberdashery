@@ -9,7 +9,7 @@ use crate::aes256::Aes256;
 use crate::aes256::NUM_ROUNDS;
 use crate::intrinsics::m128i::M128i;
 
-#[inline(always)]
+#[inline]
 pub fn expand_and_crypt_step<const N: usize>(
     aes: &mut Aes256,
     i: usize,
@@ -28,7 +28,7 @@ pub fn expand_and_crypt_step<const N: usize>(
     }
 }
 
-#[inline(always)]
+#[inline]
 pub fn expand_crypt_even<const N: usize>(
     keys: [M128i; 2],
     blocks: &mut [M128i; N],
@@ -43,7 +43,7 @@ pub fn expand_crypt_even<const N: usize>(
     }
 }
 
-#[inline(always)]
+#[inline]
 pub fn expand_crypt_odd<const N: usize>(keys: [M128i; 2], blocks: &mut [M128i; N]) -> M128i {
     if cfg!(feature = "avx512f") & cfg!(feature = "avx512vl") {
         expand_crypt_odd_avx512(keys, blocks)
@@ -54,7 +54,7 @@ pub fn expand_crypt_odd<const N: usize>(keys: [M128i; 2], blocks: &mut [M128i; N
     }
 }
 
-#[inline(always)]
+#[inline]
 pub fn expand_crypt_even_ref<const N: usize>(
     keys: [M128i; 2],
     blocks: &mut [M128i; N],
@@ -71,7 +71,7 @@ pub fn expand_crypt_even_ref<const N: usize>(
         ^ keys[0].left_byteshift::<8>()
         ^ keys[0].left_byteshift::<12>()
 }
-#[inline(always)]
+#[inline]
 pub fn expand_crypt_even_asm<const N: usize>(
     keys: [M128i; 2],
     blocks: &mut [M128i; N],
@@ -153,7 +153,7 @@ pub fn expand_crypt_even_asm<const N: usize>(
         _ => expand_crypt_even_ref(keys, blocks, rcon),
     }
 }
-#[inline(always)]
+#[inline]
 pub fn expand_crypt_even_avx512<const N: usize>(
     keys: [M128i; 2],
     blocks: &mut [M128i; N],
@@ -234,7 +234,7 @@ pub fn expand_crypt_even_avx512<const N: usize>(
     }
 }
 
-#[inline(always)]
+#[inline]
 pub fn expand_crypt_odd_ref<const N: usize>(keys: [M128i; 2], blocks: &mut [M128i; N]) -> M128i {
     for block in blocks {
         *block = block.aesenc(keys[0]);
@@ -246,7 +246,7 @@ pub fn expand_crypt_odd_ref<const N: usize>(keys: [M128i; 2], blocks: &mut [M128
         ^ keys[0].left_byteshift::<12>()
 }
 
-#[inline(always)]
+#[inline]
 pub fn expand_crypt_odd_asm<const N: usize>(keys: [M128i; 2], blocks: &mut [M128i; N]) -> M128i {
     let mut next_key = M128i::zero();
     match N {
@@ -322,7 +322,7 @@ pub fn expand_crypt_odd_asm<const N: usize>(keys: [M128i; 2], blocks: &mut [M128
     }
 }
 
-#[inline(always)]
+#[inline]
 pub fn expand_crypt_odd_avx512<const N: usize>(keys: [M128i; 2], blocks: &mut [M128i; N]) -> M128i {
     let mut next_key = M128i::zero();
     match N {

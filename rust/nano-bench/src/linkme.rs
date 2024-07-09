@@ -157,7 +157,7 @@ impl Args {
         self.csv_out_path.as_ref().map(PathBuf::from)
     }
     fn metric(&self) -> Metric {
-        if self.perf || self.rdtsc {
+        if self.perf || self.rdtsc || cfg!(debug_assertions) {
             Metric::Rdtsc
         } else {
             Metric::PerfEventCycles
@@ -218,7 +218,7 @@ pub fn test_perf_event() -> anyhow::Result<()> {
 }
 pub fn main(metadata_mod: Option<ReportMetadataMod>) {
     let args = Args::parse();
-    if args.metric() == Metric::Rdtsc {
+    if args.metric() == Metric::PerfEventCycles {
         test_perf_event().expect("Couldn't open perf event, perhaps you need to run: sysctl kernel.perf_event_paranoid=3");
     }
     let suite = args.suite(metadata_mod);

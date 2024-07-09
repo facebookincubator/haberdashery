@@ -7,9 +7,15 @@
 
 use core::arch::x86_64::*;
 use core::mem::size_of;
+use core::mem::MaybeUninit;
+use core::ops::Range;
 use core::ptr::copy_nonoverlapping;
 
-use ffi_util::Inout;
+use intrinsics::__m128i::*;
+use intrinsics::u32::*;
+
+use crate::ffi::pod::Pod;
+use crate::intrinsics::m256i::M256i;
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
@@ -17,307 +23,347 @@ pub struct M128i(pub __m128i);
 
 #[allow(unused)]
 impl M128i {
-    pub const BYTE_LEN: usize = size_of::<Self>();
+    pub const SIZE: usize = size_of::<Self>();
+    pub const ZERO: Self = Self::from_bytes([0u8; Self::SIZE]);
 
-    pub fn cast<T: From<[u8; size_of::<Self>()]>>(self) -> T {
-        T::from(self.into())
+    #[inline]
+    pub unsafe fn load<T>(ptr: *const T) -> Self {
+        unsafe { __m128i::_mm_loadu_si128(ptr as *const __m128i) }
+    }
+    #[inline]
+    pub unsafe fn store<T>(self, ptr: *mut T) {
+        unsafe { _mm_storeu_si128(ptr as *mut __m128i, *self) };
+    }
+    #[inline]
+    pub unsafe fn cast<T>(self) -> T {
+        debug_assert_eq!(size_of::<T>(), size_of::<Self>());
+        let mut result = MaybeUninit::uninit();
+        unsafe { self.store(result.as_mut_ptr()) };
+        unsafe { result.assume_init() }
+    }
+    #[inline]
+    pub const fn from_bytes(bytes: [u8; Self::SIZE]) -> Self {
+        unsafe { core::mem::transmute(bytes) }
+    }
+    #[inline]
+    pub fn to_bytes(&self) -> [u8; Self::SIZE] {
+        let mut bytes = [0u8; 16];
+        unsafe { self.store(bytes.as_mut_ptr()) };
+        bytes
+    }
+    #[inline]
+    pub fn zero() -> Self {
+        unsafe { __m128i::_mm_setzero_si128() }
+    }
+    #[inline]
+    pub fn is_zero(self) -> bool {
+        unsafe { self._mm_test_all_zeros(self) == 1 }
+    }
+    #[inline]
+    pub fn crypto_equals(self, rhs: M128i) -> bool {
+        (self ^ rhs).is_zero()
     }
 }
 impl Default for M128i {
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self::zero()
     }
 }
 impl core::ops::Deref for M128i {
     type Target = __m128i;
-    #[inline(always)]
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 impl core::ops::DerefMut for M128i {
-    #[inline(always)]
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
+impl From<M128i> for __m128d {
+    #[inline]
+    fn from(reg: M128i) -> Self {
+        unsafe { _mm_castsi128_pd(reg.into()) }
+    }
+}
+impl From<__m128d> for M128i {
+    #[inline]
+    fn from(reg: __m128d) -> Self {
+        unsafe { _mm_castpd_si128(reg) }.into()
+    }
+}
 impl From<M128i> for __m128i {
-    #[inline(always)]
+    #[inline]
     fn from(reg: M128i) -> Self {
         reg.0
     }
 }
 impl From<__m128i> for M128i {
-    #[inline(always)]
+    #[inline]
     fn from(reg: __m128i) -> Self {
         Self(reg)
     }
 }
-impl From<[u8; Self::BYTE_LEN]> for M128i {
-    #[inline(always)]
-    fn from(array: [u8; Self::BYTE_LEN]) -> Self {
-        unsafe { _mm_loadu_si128(array.as_ptr() as *const __m128i).into() }
+impl From<[u8; Self::SIZE]> for M128i {
+    #[inline]
+    fn from(array: [u8; Self::SIZE]) -> Self {
+        unsafe { Self::load(array.as_ptr()) }
     }
 }
-impl From<M128i> for [u8; M128i::BYTE_LEN] {
-    #[inline(always)]
+impl From<M128i> for [u8; M128i::SIZE] {
+    #[inline]
     fn from(reg: M128i) -> Self {
-        let mut buf = [0u8; M128i::BYTE_LEN];
-        unsafe { _mm_storeu_si128(buf.as_mut_ptr() as *mut __m128i, *reg) };
-        buf
+        unsafe { reg.cast() }
     }
 }
 impl<T: Into<M128i>> core::ops::BitXor<T> for M128i {
     type Output = Self;
-    #[inline(always)]
-    fn bitxor(self, other: T) -> Self::Output {
-        unsafe { _mm_xor_si128(*self, *other.into()).into() }
+    #[inline]
+    fn bitxor(self, rhs: T) -> Self::Output {
+        unsafe { self._mm_xor_si128(rhs.into()) }
     }
 }
 impl core::ops::BitXorAssign for M128i {
-    #[inline(always)]
+    #[inline]
     fn bitxor_assign(&mut self, other: Self) {
         *self = *self ^ other;
     }
 }
 impl<T: Into<M128i>> core::ops::BitAnd<T> for M128i {
     type Output = Self;
-    #[inline(always)]
+    #[inline]
     fn bitand(self, other: T) -> Self::Output {
-        unsafe { _mm_and_si128(*self, *other.into()).into() }
+        unsafe { self._mm_and_si128(other.into()) }
     }
 }
 impl core::ops::BitAndAssign for M128i {
-    #[inline(always)]
+    #[inline]
     fn bitand_assign(&mut self, other: Self) {
         *self = *self & other;
     }
 }
 impl<T: Into<M128i>> core::ops::BitOr<T> for M128i {
     type Output = Self;
-    #[inline(always)]
+    #[inline]
     fn bitor(self, other: T) -> Self::Output {
-        unsafe { _mm_or_si128(*self, *other.into()).into() }
+        unsafe { self._mm_or_si128(other.into()) }
     }
 }
 impl core::ops::BitOrAssign for M128i {
-    #[inline(always)]
+    #[inline]
     fn bitor_assign(&mut self, other: Self) {
         *self = *self | other;
     }
 }
 impl From<[u64; 2]> for M128i {
-    #[inline(always)]
+    #[inline]
     fn from(v: [u64; 2]) -> Self {
-        unsafe { _mm_set_epi64x(v[1] as i64, v[0] as i64).into() }
+        unsafe { __m128i::_mm_set_epi64x(v.map(|v| v as i64)) }
     }
 }
 impl From<[u32; 4]> for M128i {
-    #[inline(always)]
+    #[inline]
     fn from(v: [u32; 4]) -> Self {
-        unsafe { _mm_set_epi32(v[3] as i32, v[2] as i32, v[1] as i32, v[0] as i32).into() }
+        unsafe { __m128i::_mm_set_epi32(v.map(|v| v as i32)) }
     }
 }
-#[derive(Clone, Copy)]
-pub struct M128iArray<const N: usize>(pub [M128i; N]);
-impl<const N: usize> M128iArray<N> {
-    #[inline(always)]
-    pub fn byte_reverse(self) -> Self {
-        Self(self.0.map(M128i::byte_reverse))
+unsafe impl Pod for M128i {
+    #[inline]
+    unsafe fn load(ptr: *const u8) -> Self {
+        unsafe { Self::load(ptr) }
     }
-}
-impl<const N: usize> Default for M128iArray<N> {
-    #[inline(always)]
-    fn default() -> Self {
-        [M128i::default(); N].into()
+    #[inline]
+    #[track_caller]
+    unsafe fn load_partial(ptr: *const u8, len: usize) -> Self {
+        unsafe { Self::load_range(ptr, 0..len) }
     }
-}
-impl<const N: usize, T: Into<Self>> core::ops::BitXor<T> for M128iArray<N> {
-    type Output = Self;
-    #[inline(always)]
-    fn bitxor(mut self, rhs: T) -> Self::Output {
-        let rhs = rhs.into();
-        for i in 0..N {
-            self[i] ^= rhs[i];
-        }
-        self
+    #[inline]
+    unsafe fn store(&self, ptr: *mut u8) {
+        unsafe { Self::store(*self, ptr) }
     }
-}
-impl<const N: usize> core::ops::Index<usize> for M128iArray<N> {
-    type Output = M128i;
-    #[inline(always)]
-    fn index(&self, i: usize) -> &Self::Output {
-        &self.0[i]
-    }
-}
-impl<const N: usize> core::ops::IndexMut<usize> for M128iArray<N> {
-    #[inline(always)]
-    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
-        &mut self.0[i]
-    }
-}
-impl<const N: usize> From<[M128i; N]> for M128iArray<N> {
-    #[inline(always)]
-    fn from(array: [M128i; N]) -> Self {
-        Self(array)
-    }
-}
-impl<const N: usize> From<M128iArray<N>> for [M128i; N] {
-    #[inline(always)]
-    fn from(array: M128iArray<N>) -> Self {
-        array.0
-    }
-}
-impl<const N: usize> From<[[u8; M128i::BYTE_LEN]; N]> for M128iArray<N> {
-    #[inline(always)]
-    fn from(array: [[u8; M128i::BYTE_LEN]; N]) -> Self {
-        array.map(M128i::from).into()
-    }
-}
-impl<const N: usize> From<M128iArray<N>> for [[u8; M128i::BYTE_LEN]; N] {
-    #[inline(always)]
-    fn from(array: M128iArray<N>) -> Self {
-        array.0.map(Into::into)
-    }
-}
-impl From<[u8; 2 * M128i::BYTE_LEN]> for M128iArray<2> {
-    #[inline(always)]
-    fn from(array: [u8; 2 * M128i::BYTE_LEN]) -> Self {
-        unsafe { core::mem::transmute::<_, [[u8; M128i::BYTE_LEN]; 2]>(array) }.into()
-    }
-}
-impl From<[u8; 4 * M128i::BYTE_LEN]> for M128iArray<4> {
-    #[inline(always)]
-    fn from(array: [u8; 4 * M128i::BYTE_LEN]) -> Self {
-        unsafe { core::mem::transmute::<_, [[u8; M128i::BYTE_LEN]; 4]>(array) }.into()
-    }
-}
-impl Inout for M128i {
-    #[inline(always)]
-    unsafe fn read(ptr: *const u8, len: usize) -> Self {
-        let mut buf = [0u8; size_of::<M128i>()];
-        copy_nonoverlapping(ptr, buf.as_mut_ptr(), len);
-        buf.into()
-    }
-    #[inline(always)]
-    unsafe fn write(self, ptr: *mut u8, len: usize) {
-        let buf: [u8; size_of::<M128i>()] = self.into();
-        copy_nonoverlapping(buf.as_ptr(), ptr, len);
-    }
-}
-impl<const N: usize> Inout for M128iArray<N> {
-    #[inline(always)]
-    unsafe fn read(ptr: *const u8, len: usize) -> Self {
-        let mut buf = [[0u8; size_of::<M128i>()]; N];
-        copy_nonoverlapping(ptr, buf.as_mut_ptr() as *mut u8, len);
-        buf.into()
-    }
-    #[inline(always)]
-    unsafe fn write(self, ptr: *mut u8, len: usize) {
-        let buf: [[u8; size_of::<M128i>()]; N] = self.into();
-        copy_nonoverlapping(buf.as_ptr() as *const u8, ptr, len);
+    #[inline]
+    unsafe fn store_partial(&self, ptr: *mut u8, len: usize) {
+        self.store_range(ptr, 0..len)
     }
 }
 impl M128i {
-    #[inline(always)]
-    pub fn zero() -> Self {
-        Self(unsafe { _mm_setzero_si128() })
+    /// Returns a copy with bytes outside of range zeroed out.
+    /// Unsafe since we require a subrange of [0, 16].
+    #[inline]
+    #[track_caller]
+    pub unsafe fn mov_range(self, mut range: Range<usize>) -> Self {
+        debug_assert!(
+            range.end <= Self::SIZE,
+            "Invalid M128i::load_range length: {} > {}",
+            range.end,
+            Self::SIZE
+        );
+        range.start = range.start.min(range.end);
+        if cfg!(feature = "avx512vl") && cfg!(feature = "avx512bw") {
+            self.mov_range_avx512(range)
+        } else {
+            self.mov_range_ref(range)
+        }
     }
-    #[inline(always)]
-    pub fn is_zero(self) -> bool {
-        unsafe { _mm_test_all_zeros(*self, *self) == 1 }
+    #[inline]
+    pub unsafe fn mov_range_avx512(self, range: Range<usize>) -> Self {
+        let Range { start, end } = range;
+        let start_mask = 0xff_ff_ff_ff._bzhi_u32(start as u32) as u16;
+        let end_mask = 0xff_ff_ff_ff._bzhi_u32(end as u32) as u16;
+        unsafe { __m128i::_mm_maskz_mov_epi8(start_mask ^ end_mask, self) }
     }
-    #[inline(always)]
-    pub fn crypto_equals(self, other: M128i) -> bool {
-        (self ^ other).is_zero()
+    #[inline]
+    pub unsafe fn mov_range_ref(self, range: Range<usize>) -> Self {
+        let buf: [u8; Self::SIZE] = self.into();
+        unsafe { Self::load_range(buf.as_ptr().add(range.start), range) }
     }
-    #[inline(always)]
+    /// Loads the bytes from ptr into to M128i at the given range.
+    /// For the range [a..b], the 'a'-th byte of M128i will contain *ptr and the 'b'-th byte will contain *(ptr + b - a).
+    /// Unsafe since we require a subrange of [0..16] and because pointers are involved.
+    #[inline]
+    #[track_caller]
+    pub unsafe fn load_range(ptr: *const u8, mut range: Range<usize>) -> Self {
+        debug_assert!(
+            range.end <= Self::SIZE,
+            "Invalid M128i::load_range length: {} > {}",
+            range.end,
+            Self::SIZE
+        );
+        range.start = range.start.min(range.end);
+        if cfg!(feature = "avx512vl") && cfg!(feature = "avx512bw") {
+            Self::load_range_avx512(ptr, range)
+        } else {
+            Self::load_range_ref(ptr, range)
+        }
+    }
+    #[inline]
+    pub unsafe fn load_range_avx512(ptr: *const u8, range: Range<usize>) -> Self {
+        let Range { start, end } = range;
+        let start_mask = 0xff_ff_ff_ff._bzhi_u32(start as u32) as u16;
+        let end_mask = 0xff_ff_ff_ff._bzhi_u32(end as u32) as u16;
+        unsafe { __m128i::_mm_maskz_loadu_epi8(start_mask ^ end_mask, ptr.sub(start) as *const i8) }
+    }
+    #[inline]
+    pub unsafe fn load_range_ref(ptr: *const u8, range: Range<usize>) -> Self {
+        let Range { start, end } = range;
+        let mut buf = [0u8; Self::SIZE];
+        unsafe { copy_nonoverlapping(ptr, buf.as_mut_ptr().add(start), end - start) };
+        buf.into()
+    }
+    /// Stores bytes from M128i within the given range into ptr.
+    /// For the range [a..b], the 'a'-th byte of M128i will be copied to *ptr and the 'b'-th byte will be copied to *(ptr + b - a).
+    /// Unsafe since we require a subrange of [0..16] and because pointers are involved.
+    #[inline]
+    #[track_caller]
+    pub unsafe fn store_range(self, ptr: *mut u8, mut range: Range<usize>) {
+        debug_assert!(
+            range.end <= Self::SIZE,
+            "Invalid M128i::store_prefix length: {} > {}",
+            range.end,
+            Self::SIZE
+        );
+        range.start = range.start.min(range.end);
+        if cfg!(feature = "avx512vl") && cfg!(feature = "avx512bw") {
+            self.store_range_avx512(ptr, range);
+        } else {
+            self.store_range_ref(ptr, range);
+        }
+    }
+    #[inline]
+    pub unsafe fn store_range_avx512(self, ptr: *mut u8, range: Range<usize>) {
+        let Range { start, end } = range;
+        let start_mask = 0xff_ff_ff_ff._bzhi_u32(start as u32) as u16;
+        let end_mask = 0xff_ff_ff_ff._bzhi_u32(end as u32) as u16;
+        unsafe { _mm_mask_storeu_epi8(ptr.sub(start) as *mut i8, start_mask ^ end_mask, self.0) }
+    }
+    #[inline]
+    pub unsafe fn store_range_ref(self, ptr: *mut u8, range: Range<usize>) {
+        let Range { start, end } = range;
+        let buf: [u8; Self::SIZE] = self.into();
+        unsafe { copy_nonoverlapping(buf.as_ptr().add(start), ptr, end - start) };
+    }
+    #[inline]
+    pub fn select64<const IMM8: i32>(self, rhs: M128i) -> Self {
+        unsafe { _mm_shuffle_pd::<IMM8>(self.into(), rhs.into()) }.into()
+    }
+    #[inline]
     pub fn shuffle32<const IMM8: i32>(self) -> Self {
-        unsafe { _mm_shuffle_epi32::<IMM8>(*self).into() }
+        unsafe { self._mm_shuffle_epi32::<IMM8>() }.into()
     }
-    #[inline(always)]
+    #[inline]
     pub fn add32(self, other: impl Into<Self>) -> Self {
-        unsafe { _mm_add_epi32(*self, *other.into()).into() }
+        unsafe { self._mm_add_epi32(other.into()) }
     }
-    #[inline(always)]
-    pub unsafe fn from_slice_zero_pad(bytes: &[u8], offset: usize) -> Self {
-        debug_assert!(bytes.len() + offset <= Self::BYTE_LEN);
-        let mut buf = [0u8; Self::BYTE_LEN];
-        copy_nonoverlapping(bytes.as_ptr(), buf.as_mut_ptr().add(offset), bytes.len());
-        buf.into()
-    }
-    #[inline(always)]
-    pub unsafe fn from_ptr_zero_pad(ptr: *const u8, len: usize, offset: usize) -> Self {
-        debug_assert!(len + offset <= Self::BYTE_LEN);
-        let mut buf = [0u8; Self::BYTE_LEN];
-        copy_nonoverlapping(ptr, buf.as_mut_ptr().add(offset), len);
-        buf.into()
-    }
-    #[inline(always)]
+    #[inline]
     pub fn left_bitshift64<const IMM8: i32>(self) -> Self {
-        unsafe { _mm_slli_epi64::<IMM8>(*self).into() }
+        unsafe { self._mm_slli_epi64::<IMM8>() }.into()
     }
-    #[inline(always)]
+    #[inline]
     pub fn right_bitshift64<const IMM8: i32>(self) -> Self {
-        unsafe { _mm_srli_epi64::<IMM8>(*self).into() }
+        unsafe { self._mm_srli_epi64::<IMM8>() }.into()
     }
-    #[inline(always)]
+    #[inline]
     pub fn left_byteshift<const IMM8: i32>(self) -> Self {
-        unsafe { _mm_slli_si128::<IMM8>(*self).into() }
+        unsafe { self._mm_slli_si128::<IMM8>() }.into()
     }
-    #[inline(always)]
+    #[inline]
     pub fn right_byteshift<const IMM8: i32>(self) -> Self {
-        unsafe { _mm_srli_si128::<IMM8>(*self).into() }
+        unsafe { self._mm_srli_si128::<IMM8>() }.into()
     }
-    #[inline(always)]
+    #[inline]
     pub fn unpacklo64(self, other: M128i) -> Self {
-        unsafe { _mm_unpacklo_epi64(*self, *other).into() }
+        unsafe { self._mm_unpacklo_epi64(other) }
     }
-    #[inline(always)]
+    #[inline]
     pub fn blend8(self, other: Self, mask: impl Into<Self>) -> Self {
-        let mask = mask.into();
-        unsafe { _mm_blendv_epi8(*self, *other, *mask).into() }
+        unsafe { self._mm_blendv_epi8(other, mask.into()) }
     }
-    #[inline(always)]
+    #[inline]
     pub fn cmpgt32(self, other: M128i) -> Self {
-        unsafe { _mm_cmpgt_epi32(*self, *other).into() }
+        unsafe { self._mm_cmpgt_epi32(other) }
     }
-    #[inline(always)]
+    #[inline]
     pub fn shuffle8(self, shuffle: impl Into<M128i>) -> Self {
-        unsafe { _mm_shuffle_epi8(*self, *shuffle.into()).into() }
+        unsafe { self._mm_shuffle_epi8(shuffle.into()) }
     }
-    #[inline(always)]
+    #[inline]
     pub fn byte_reverse(self) -> M128i {
         self.shuffle8([0x0c0d0e0f, 0x08090a0b, 0x04050607, 0x00010203])
     }
-    #[inline(always)]
+    #[inline]
     pub fn aeskeygenassist<const IMM8: i32>(self) -> Self {
-        unsafe { _mm_aeskeygenassist_si128::<IMM8>(*self).into() }
+        unsafe { self._mm_aeskeygenassist_si128::<IMM8>() }.into()
     }
-    #[inline(always)]
+    #[inline]
     pub fn aesenc(self, round_key: Self) -> Self {
-        unsafe { _mm_aesenc_si128(*self, round_key.0).into() }
+        unsafe { self._mm_aesenc_si128(round_key) }
     }
-    #[inline(always)]
+    #[inline]
     pub fn aesenclast(self, round_key: Self) -> Self {
-        unsafe { _mm_aesenclast_si128(*self, round_key.0).into() }
+        unsafe { self._mm_aesenclast_si128(round_key) }
     }
-    #[inline(always)]
+    #[inline]
     pub fn aesdec(self, round_key: Self) -> Self {
-        unsafe { _mm_aesdec_si128(*self, round_key.0).into() }
+        unsafe { self._mm_aesdec_si128(round_key) }
     }
-    #[inline(always)]
+    #[inline]
     pub fn aesdeclast(self, round_key: Self) -> Self {
-        unsafe { _mm_aesdeclast_si128(*self, round_key.0).into() }
+        unsafe { self._mm_aesdeclast_si128(round_key) }
     }
-    #[inline(always)]
+    #[inline]
     pub fn aesimc(self) -> Self {
-        unsafe { _mm_aesimc_si128(*self).into() }
+        unsafe { self._mm_aesimc_si128() }
     }
-    #[inline(always)]
+    #[inline]
     pub fn clmul<const IMM8: i32>(self, other: Self) -> Self {
-        unsafe { _mm_clmulepi64_si128::<IMM8>(*self, *other).into() }
+        unsafe { self._mm_clmulepi64_si128::<IMM8>(other) }.into()
+    }
+    #[inline]
+    pub fn broadcast256(self) -> M256i {
+        unsafe { self._mm256_broadcastsi128_si256() }
     }
 }
 
@@ -325,8 +371,8 @@ impl M128i {
 mod tests {
     use super::*;
     impl<T: Into<Self> + Clone> core::cmp::PartialEq<T> for M128i {
-        fn eq(&self, other: &T) -> bool {
-            self.crypto_equals(other.clone().into())
+        fn eq(&self, rhs: &T) -> bool {
+            self.crypto_equals(rhs.clone().into())
         }
     }
     impl core::cmp::PartialEq<&str> for M128i {
@@ -361,27 +407,9 @@ mod tests {
             random::array().into()
         }
     }
-    impl<const N: usize> M128iArray<N> {
-        pub fn random() -> Self {
-            [(); N].map(|_| M128i::random()).into()
-        }
-    }
-    impl<const N: usize> core::fmt::Debug for M128iArray<N> {
-        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-            for block in self.0 {
-                write!(f, "{block:?}")?;
-            }
-            Ok(())
-        }
-    }
-    impl<const N: usize, T: Into<Self> + Clone> core::cmp::PartialEq<T> for M128iArray<N> {
-        fn eq(&self, rhs: &T) -> bool {
-            let rhs = rhs.clone().into();
-            let mut result = M128i::zero();
-            for i in 0..N {
-                result |= self[i] ^ rhs[i];
-            }
-            result.is_zero()
+    impl random::Randomizable for M128i {
+        fn random() -> Self {
+            random::array().into()
         }
     }
     #[test]
@@ -464,6 +492,140 @@ mod tests {
                     random.shuffle32::<0xff>().aesenclast(M128i::zero())
                 );
             }
+        }
+    }
+
+    #[test]
+    fn mov_range() {
+        let input_bytes: [u8; M128i::SIZE] = core::array::from_fn(|i| i as u8 | 0x80);
+        let input_block: M128i = input_bytes.into();
+
+        for i in 0..input_bytes.len() {
+            for j in i..input_bytes.len() {
+                let block = unsafe { input_block.mov_range(i..j) };
+                let bytes: [u8; M128i::SIZE] = block.into();
+                for k in 0..input_bytes.len() {
+                    match i <= k && k < j {
+                        true => assert_eq!(bytes[k], input_bytes[k]),
+                        false => assert_eq!(bytes[k], 0),
+                    }
+                }
+
+                if (cpuid::AVX512VL | cpuid::AVX512BW).is_supported() {
+                    assert_eq!(
+                        unsafe { input_block.mov_range_ref(i..j) },    //
+                        unsafe { input_block.mov_range_avx512(i..j) }, //
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn load_range() {
+        let input_bytes: [u8; M128i::SIZE] = core::array::from_fn(|i| i as u8 | 0x80);
+
+        for i in 0..input_bytes.len() {
+            for j in i..input_bytes.len() {
+                let block = unsafe { M128i::load_range(input_bytes.as_ptr(), i..j) };
+                let bytes: [u8; M128i::SIZE] = block.into();
+                for k in 0..input_bytes.len() {
+                    match i <= k && k < j {
+                        true => assert_eq!(bytes[k], input_bytes[k - i]),
+                        false => assert_eq!(bytes[k], 0),
+                    }
+                }
+                if (cpuid::AVX512VL | cpuid::AVX512BW).is_supported() {
+                    assert_eq!(
+                        unsafe { M128i::load_range_ref(input_bytes.as_ptr(), i..j) },
+                        unsafe { M128i::load_range_avx512(input_bytes.as_ptr(), i..j) },
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn store_range() {
+        let input_bytes: [u8; M128i::SIZE] = core::array::from_fn(|i| i as u8 | 0x80);
+        let input_block: M128i = input_bytes.into();
+
+        for i in 0..input_bytes.len() {
+            for j in i..input_bytes.len() {
+                let mut bytes = [0u8; M128i::SIZE];
+                unsafe { input_block.store_range(bytes.as_mut_ptr(), i..j) };
+                for k in 0..j - i {
+                    assert_eq!(bytes[k], input_bytes[k + i]);
+                }
+                for &byte in &bytes[j - i..] {
+                    assert_eq!(byte, 0);
+                }
+                if (cpuid::AVX512VL | cpuid::AVX512BW).is_supported() {
+                    let mut bytes_ref = [0u8; M128i::SIZE];
+                    let mut bytes_avx512 = [0u8; M128i::SIZE];
+                    unsafe { input_block.store_range_ref(bytes_ref.as_mut_ptr(), i..j) };
+                    unsafe { input_block.store_range_avx512(bytes_avx512.as_mut_ptr(), i..j) };
+                    assert_eq!(M128i::from(bytes_ref), M128i::from(bytes_avx512));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn aesenc() {
+        let key = M128i::from(hex_literal::hex!("551b9ba091fba324a7ad66257aa46c85"));
+        assert_eq!(
+            key.aesenc(M128i::zero()),
+            "562037160da08f8641c467d570be20ae"
+        );
+
+        let input = M128i::from(hex_literal::hex!("f8752d94c86666af0729a80437ecff71"));
+        assert_eq!(key.aesenc(input), "ae551a82c5c6e92946edcfd14752dfdf");
+
+        for _i in 0..128 {
+            let key = M128i::random();
+            let input = M128i::random();
+            assert_eq!(key.aesenc(input), input ^ key.aesenc(M128i::zero()));
+        }
+    }
+    #[test]
+    fn aesenclast() {
+        let key = M128i::from(hex_literal::hex!("551b9ba091fba324a7ad66257aa46c85"));
+        assert_eq!(
+            key.aesenclast(M128i::zero()),
+            "fc0f3397819550e05c491436daaf0a3f"
+        );
+
+        let input = M128i::from(hex_literal::hex!("f8752d94c86666af0729a80437ecff71"));
+        assert_eq!(key.aesenclast(input), "047a1e0349f3364f5b60bc32ed43f54e");
+
+        for _i in 0..128 {
+            let key = M128i::random();
+            let input = M128i::random();
+            assert_eq!(key.aesenclast(input), input ^ key.aesenclast(M128i::zero()));
+        }
+    }
+    #[test]
+    fn select64() {
+        for _i in 0..128 {
+            let a: [u64; 2] = random::random();
+            let b: [u64; 2] = random::random();
+            assert_eq!(
+                M128i::from(a).select64::<0b00>(M128i::from(b)),
+                [a[0], b[0]]
+            );
+            assert_eq!(
+                M128i::from(a).select64::<0b01>(M128i::from(b)),
+                [a[1], b[0]]
+            );
+            assert_eq!(
+                M128i::from(a).select64::<0b10>(M128i::from(b)),
+                [a[0], b[1]]
+            );
+            assert_eq!(
+                M128i::from(a).select64::<0b11>(M128i::from(b)),
+                [a[1], b[1]]
+            );
         }
     }
 }

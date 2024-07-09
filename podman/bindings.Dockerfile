@@ -14,5 +14,7 @@ RUN apk add \
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 ENV PATH=/root/.cargo/bin:$PATH
 ENV CARGO_TARGET_DIR=/root/cargo
+# Needed for testing openssl bindings
+RUN apk add openssl-dev --no-cache
 WORKDIR src
 CMD ["/bin/bash", "/src/scripts/bindings.sh"]

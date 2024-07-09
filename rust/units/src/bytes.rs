@@ -76,6 +76,12 @@ pub enum ByteParseError {
 }
 #[derive(Debug)]
 pub struct Bytes(usize);
+impl TryFrom<&String> for Bytes {
+    type Error = ByteParseError;
+    fn try_from(s: &String) -> Result<Bytes, Self::Error> {
+        s.as_str().try_into()
+    }
+}
 impl TryFrom<&str> for Bytes {
     type Error = ByteParseError;
     fn try_from(s: &str) -> Result<Self, Self::Error> {

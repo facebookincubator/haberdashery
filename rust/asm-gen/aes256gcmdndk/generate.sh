@@ -19,14 +19,14 @@ main() {
   local -r TARGET="$(basename "${PWD}")"
   local -r GEN="${ROOT_DIR}/rust/asm-gen/asm.sh"
   if [ $# -eq 0 ]; then
-    "${GEN}" "tigerlake" "${TARGET}" "${ROOT_DIR}"
-    "${GEN}" "skylakex" "${TARGET}" "${ROOT_DIR}"
-    "${GEN}" "skylake" "${TARGET}" "${ROOT_DIR}"
-    "${GEN}" "broadwell" "${TARGET}" "${ROOT_DIR}"
-    "${GEN}" "haswell" "${TARGET}" "${ROOT_DIR}"
+    main "tigerlake" "$@"
+    main "skylakex" "$@"
+    main "skylake" "$@"
+    main "broadwell" "$@"
+    main "haswell" "$@"
   else
     local -r PROFILE="${1}"; shift
-    "${GEN}" "${PROFILE}" "${TARGET}" "${ROOT_DIR}"
+    "${GEN}" "${PROFILE}" "${TARGET}" "${ROOT_DIR}" "$@"
   fi
 }
 

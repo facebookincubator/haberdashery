@@ -5,7 +5,7 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use crate::intrinsics::m128i::*;
+use crate::intrinsics::m128i::M128i;
 use crate::polyval::HashInput;
 use crate::polyval::PolyvalKey;
 use crate::polyval::PolyvalState;
@@ -18,40 +18,40 @@ pub fn ghash_key<const N: usize>(key: M128i) -> PolyvalKey<N> {
 #[derive(Clone, Copy)]
 pub struct GhashState<const N: usize>(PolyvalState<N>);
 impl<const N: usize> From<PolyvalKey<N>> for GhashState<N> {
-    #[inline(always)]
+    #[inline]
     fn from(key: PolyvalKey<N>) -> Self {
         Self(key.into())
     }
 }
 #[allow(unused)]
 impl<const N: usize> GhashState<N> {
-    #[inline(always)]
+    #[inline]
     pub fn new(key: PolyvalKey<N>, hash: M128i) -> Self {
         Self(PolyvalState::new(key, hash))
     }
-    #[inline(always)]
+    #[inline]
     pub fn hash(&mut self, v: impl ByteReverse) -> Self {
         v.byte_reverse().hash(&mut self.0);
         *self
     }
-    #[inline(always)]
+    #[inline]
     pub fn hash_lengths(&mut self, aad_len: usize, crypt_len: usize) -> Self {
         M128i::from([crypt_len as u64 * 8, aad_len as u64 * 8]).hash(&mut self.0);
         *self
     }
-    #[inline(always)]
+    #[inline]
     pub fn raw(&self) -> M128i {
         self.0.result()
     }
-    #[inline(always)]
+    #[inline]
     pub fn set_raw_hash(&mut self, v: M128i) {
         self.0.set_raw_hash(v);
     }
-    #[inline(always)]
+    #[inline]
     pub fn keys(&self) -> [M128i; N] {
         self.0.keys()
     }
-    #[inline(always)]
+    #[inline]
     pub fn result(&self) -> M128i {
         self.0.result().byte_reverse()
     }
@@ -61,13 +61,13 @@ pub trait ByteReverse: HashInput {
     fn byte_reverse(self) -> Self;
 }
 impl ByteReverse for M128i {
-    #[inline(always)]
+    #[inline]
     fn byte_reverse(self) -> Self {
         self.byte_reverse()
     }
 }
 impl<const N: usize> ByteReverse for [M128i; N] {
-    #[inline(always)]
+    #[inline]
     fn byte_reverse(mut self) -> Self {
         for block in &mut self {
             *block = block.byte_reverse();
@@ -75,18 +75,9 @@ impl<const N: usize> ByteReverse for [M128i; N] {
         self
     }
 }
-impl<const N: usize> ByteReverse for M128iArray<N> {
-    #[inline(always)]
-    fn byte_reverse(mut self) -> Self {
-        for i in 0..N {
-            self[i] = self[i].byte_reverse();
-        }
-        self
-    }
-}
 
 #[allow(unused)]
-#[inline(always)]
+#[inline]
 pub fn mulx_ghash(v: M128i) -> M128i {
     let v = v.byte_reverse();
     let remainder = v.left_bitshift64::<63>();
@@ -99,7 +90,7 @@ pub fn mulx_ghash(v: M128i) -> M128i {
     v.byte_reverse()
 }
 
-#[inline(always)]
+#[inline]
 pub fn mulx_polyval(v: M128i) -> M128i {
     let remainder = v.right_bitshift64::<63>();
     let v = v.left_bitshift64::<1>() ^ remainder.shuffle32::<0b01_00_11_10>();

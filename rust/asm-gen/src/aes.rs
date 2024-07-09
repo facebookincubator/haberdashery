@@ -12,34 +12,38 @@ use crate::intrinsics::m128i::*;
 pub struct AesRoundKeys<const R: usize>([M128i; R]);
 #[allow(unused)]
 impl<const R: usize> AesRoundKeys<R> {
-    #[inline(always)]
+    #[inline]
+    pub fn zero() -> Self {
+        Self([M128i::zero(); R])
+    }
+    #[inline]
     pub fn encrypt_round_first(&self, item: &mut impl AesRoundInput) {
         item.encrypt_round_first(self);
     }
-    #[inline(always)]
+    #[inline]
     pub fn encrypt_round(&self, item: &mut impl AesRoundInput, i: usize) {
         item.encrypt_round(self, i);
     }
-    #[inline(always)]
+    #[inline]
     pub fn encrypt_round_last(&self, item: &mut impl AesRoundInput) {
         item.encrypt_round_last(self);
     }
 }
 impl<const R: usize> From<[M128i; R]> for AesRoundKeys<R> {
-    #[inline(always)]
+    #[inline]
     fn from(v: [M128i; R]) -> Self {
         Self(v)
     }
 }
 impl<const R: usize> core::ops::Index<usize> for AesRoundKeys<R> {
     type Output = M128i;
-    #[inline(always)]
+    #[inline]
     fn index(&self, i: usize) -> &Self::Output {
         &self.0[i]
     }
 }
 impl<const R: usize> core::ops::IndexMut<usize> for AesRoundKeys<R> {
-    #[inline(always)]
+    #[inline]
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         &mut self.0[i]
     }
@@ -52,46 +56,32 @@ pub trait AesRoundInput {
 }
 
 impl AesRoundInput for M128i {
-    #[inline(always)]
+    #[inline]
     fn encrypt_round_first<const R: usize>(&mut self, key: &AesRoundKeys<R>) {
         *self ^= key[0];
     }
-    #[inline(always)]
+    #[inline]
     fn encrypt_round<const R: usize>(&mut self, key: &AesRoundKeys<R>, i: usize) {
         *self = self.aesenc(key[i]);
     }
-    #[inline(always)]
+    #[inline]
     fn encrypt_round_last<const R: usize>(&mut self, key: &AesRoundKeys<R>) {
         *self = self.aesenclast(key[R - 1]);
     }
 }
 
 impl<const N: usize> AesRoundInput for [M128i; N] {
-    #[inline(always)]
+    #[inline]
     fn encrypt_round_first<const R: usize>(&mut self, key: &AesRoundKeys<R>) {
         self.iter_mut().for_each(|b| b.encrypt_round_first(key));
     }
-    #[inline(always)]
+    #[inline]
     fn encrypt_round<const R: usize>(&mut self, key: &AesRoundKeys<R>, i: usize) {
         crate::asm::vaesenc::vaesenc(self, key[i]);
     }
-    #[inline(always)]
+    #[inline]
     fn encrypt_round_last<const R: usize>(&mut self, key: &AesRoundKeys<R>) {
         crate::asm::vaesenc::vaesenclast(self, key[R - 1]);
-    }
-}
-impl<const N: usize> AesRoundInput for M128iArray<N> {
-    #[inline(always)]
-    fn encrypt_round_first<const R: usize>(&mut self, key: &AesRoundKeys<R>) {
-        self.0.encrypt_round_first(key)
-    }
-    #[inline(always)]
-    fn encrypt_round<const R: usize>(&mut self, key: &AesRoundKeys<R>, i: usize) {
-        self.0.encrypt_round(key, i)
-    }
-    #[inline(always)]
-    fn encrypt_round_last<const R: usize>(&mut self, key: &AesRoundKeys<R>) {
-        self.0.encrypt_round_last(key)
     }
 }
 

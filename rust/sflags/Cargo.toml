@@ -1,0 +1,15 @@
+[package]
+name = "sflags"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+linkme = "0.3.26"
+paste = "1.0.15"
+
+[dev-dependencies]
+anyhow = "1.0.86"
+test-helper = { path = "test-helper" }
+assert_cmd = "2.0.14"
+const_format = { version = "0.2.32", features = ["more_str_macros"] }
+predicates = "3.1.0"

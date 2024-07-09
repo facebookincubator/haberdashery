@@ -5,6 +5,9 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+mod randomizable;
+pub use randomizable::Randomizable;
+
 pub fn slice(buf: &mut [u8]) {
     getrandom::getrandom(buf).unwrap();
 }
@@ -20,4 +23,32 @@ pub fn vec(len: usize) -> Vec<u8> {
 }
 pub fn usize() -> usize {
     usize::from_le_bytes(array())
+}
+pub fn u64() -> u64 {
+    u64::from_le_bytes(array())
+}
+pub fn u32() -> u32 {
+    u32::from_le_bytes(array())
+}
+pub fn u16() -> u16 {
+    u16::from_le_bytes(array())
+}
+pub fn u8() -> u8 {
+    u8::from_le_bytes(array())
+}
+pub fn i64() -> i64 {
+    i64::from_le_bytes(array())
+}
+pub fn i32() -> i32 {
+    i32::from_le_bytes(array())
+}
+pub fn i16() -> i16 {
+    i16::from_le_bytes(array())
+}
+pub fn i8() -> i8 {
+    i8::from_le_bytes(array())
+}
+
+pub fn random<T: Randomizable>() -> T {
+    T::random()
 }

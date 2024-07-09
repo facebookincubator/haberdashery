@@ -23,8 +23,8 @@ main() {
     do_podman assembly -v .:/src
     do_podman bindings -v .:/src
     do_podman test_c89
+    do_podman test_openssl_evp
     do_podman test_rust
-    do_podman test_rust_sys
   else
     do_podman "$@"
   fi

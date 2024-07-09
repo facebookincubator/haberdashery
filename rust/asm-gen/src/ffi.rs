@@ -6,4 +6,9 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 pub mod aead;
+pub mod aead_streaming;
 pub mod mac;
+pub mod pod;
+pub mod reader;
+pub mod reader_writer;
+pub mod writer;

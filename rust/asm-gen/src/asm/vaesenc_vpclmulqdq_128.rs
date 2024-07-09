@@ -6,9 +6,9 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use crate::clmulfoil::*;
-use crate::intrinsics::m128i::*;
+use crate::intrinsics::m128i::M128i;
 
-#[inline(always)]
+#[inline]
 pub fn vaesenc_vpclmulqdq_128<const N: usize>(
     aes_key: M128i,
     aes_data: &mut [M128i; N],
@@ -145,7 +145,7 @@ mod tests {
         }
         fn compare_reference_impl<const N: usize>() {
             let aes_key = M128i::random();
-            let mut aes_data: [M128i; N] = M128iArray::<N>::random().into();
+            let mut aes_data: [M128i; N] = random::random();
             let mut auth_product = M128i::random().clmul_foil(M128i::random());
             let auth_left = M128i::random();
             let auth_right = M128i::random();
