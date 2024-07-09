@@ -1,0 +1,10 @@
+# @generated
+algorithm=aes256gcmsiv
+key_len=32
+nonce_len=12
+prefix=haberdashery
+primitive=aead
+profile=tigerlake
+struct_alignment=16
+struct_size=240
+tag_len=16

@@ -1,0 +1,8 @@
+# @generated
+
+[package]
+name = "aes256gcmsiv_tigerlake"
+edition = "2021"
+
+[lib]
+doctest = false

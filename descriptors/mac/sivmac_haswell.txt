@@ -1,0 +1,9 @@
+# @generated
+algorithm=siv_mac
+key_len=32
+prefix=haberdashery
+primitive=mac
+profile=haswell
+struct_alignment=16
+struct_size=368
+tag_len=16

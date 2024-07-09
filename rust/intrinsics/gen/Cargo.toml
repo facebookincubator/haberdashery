@@ -1,0 +1,8 @@
+[package]
+name = "gen"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.203", features = ["derive"] }
+serde-xml-rs = "0.6.0"

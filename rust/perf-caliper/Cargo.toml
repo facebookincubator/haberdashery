@@ -1,0 +1,22 @@
+[package]
+name = "perf-caliper"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "bench"
+harness = false
+
+[dependencies]
+nano-bench = { path = "../nano-bench" }
+perf-counters = { path = "../perf-counters" }
+perf-events = { path = "../perf-events" }
+sflags = { path = "../sflags" }
+units = { path = "../units" }
+
+[dev-dependencies]
+cpuid = { path = "../cpuid" }
+haberdashery-lib = { path = "../../bindings/rust_lib", features=["bench"] }

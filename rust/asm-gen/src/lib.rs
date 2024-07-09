@@ -6,20 +6,30 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 #![cfg_attr(not(test), no_std)]
+#![feature(inline_const)]
+#![cfg_attr(feature = "stdsimd", feature(stdsimd))]
+#![cfg_attr(not(feature = "stdsimd"), feature(stdarch_x86_avx512))]
+#[cfg(not(target_arch = "x86_64"))]
+compile_error!("only x86_64 is supported, try: cargo build --target=x86_64-unknown-linux-gnu");
 
 mod aes;
+mod aes192;
+pub mod aes192gcm;
 mod aes256;
 pub mod aes256gcm;
 pub mod aes256gcmdndk;
 pub mod aes256gcmsiv;
 mod aesgcm;
 pub mod asm;
+mod clamped_index;
+pub mod clmul;
 mod clmulfoil;
 mod counter128;
 pub mod ffi;
 mod ghash;
 mod intrinsics;
 pub mod is_supported;
+pub mod ops;
 mod partial;
 mod polyval;
 pub mod sivmac;

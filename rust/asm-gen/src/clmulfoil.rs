@@ -18,7 +18,7 @@ pub struct ClMulFoilProduct<T> {
 }
 impl<T: BitXor<Output = T>> BitXor for ClMulFoilProduct<T> {
     type Output = Self;
-    #[inline(always)]
+    #[inline]
     fn bitxor(self, other: Self) -> Self::Output {
         Self {
             lo: self.lo ^ other.lo,
@@ -28,7 +28,7 @@ impl<T: BitXor<Output = T>> BitXor for ClMulFoilProduct<T> {
     }
 }
 impl<T: BitXorAssign> BitXorAssign for ClMulFoilProduct<T> {
-    #[inline(always)]
+    #[inline]
     fn bitxor_assign(&mut self, other: Self) {
         self.lo ^= other.lo;
         self.mid ^= other.mid;
@@ -40,32 +40,32 @@ pub trait ClMulFoil<Rhs = Self> {
     fn clmul_foil(self, right: Rhs) -> Self::Output;
 }
 pub trait ClSqFoil: ClMulFoil<Self> + Copy {
-    #[inline(always)]
+    #[inline]
     fn clsq_foil(self) -> Self::Output {
         self.clmul_foil(self)
     }
 }
 
 impl ClMulFoilProduct<M128i> {
-    #[inline(always)]
+    #[inline]
     pub fn reduce(&self) -> M128i {
         let this = self.combine_foil();
         this.reduce_mul()
     }
-    #[inline(always)]
+    #[inline]
     pub fn combine_foil(mut self) -> Self {
         self.lo ^= self.mid.left_byteshift::<8>();
         self.hi ^= self.mid.right_byteshift::<8>();
         self.mid = M128i::zero();
         self
     }
-    #[inline(always)]
+    #[inline]
     fn reduce_mul(&self) -> M128i {
         let reduced = Self::reduce_mul_step(self.lo);
         let reduced = Self::reduce_mul_step(reduced);
         self.hi ^ reduced
     }
-    #[inline(always)]
+    #[inline]
     fn reduce_mul_step(target: M128i) -> M128i {
         let poly: M128i = [1, 0, 0, 0xc2_00_00_00].into();
         target.clmul::<0x10>(poly) ^ target.shuffle32::<0b_01_00_11_10>()
@@ -73,7 +73,7 @@ impl ClMulFoilProduct<M128i> {
 }
 impl ClMulFoil<M128i> for M128i {
     type Output = ClMulFoilProduct<M128i>;
-    #[inline(always)]
+    #[inline]
     #[allow(clippy::suspicious_arithmetic_impl)]
     fn clmul_foil(self, right: M128i) -> Self::Output {
         Self::Output {
@@ -84,7 +84,7 @@ impl ClMulFoil<M128i> for M128i {
     }
 }
 impl ClSqFoil for M128i {
-    #[inline(always)]
+    #[inline]
     fn clsq_foil(self) -> Self::Output {
         Self::Output {
             lo: self.clmul::<0x00>(self),

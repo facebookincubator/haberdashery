@@ -6,3 +6,5 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 pub mod m128i;
+pub mod m256i;
+pub mod m512i;

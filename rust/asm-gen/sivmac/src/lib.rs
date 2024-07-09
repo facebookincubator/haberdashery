@@ -5,44 +5,65 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use ffi_util::Reader;
-use ffi_util::Writer;
 use haberdashery_asm_gen::ffi::mac::Mac;
+use haberdashery_asm_gen::ffi::reader::Reader;
+use haberdashery_asm_gen::ffi::writer::Writer;
 use haberdashery_asm_gen::is_supported::is_supported;
 use haberdashery_asm_gen::sivmac::SivMacKey as Base;
 
-const LANES: usize = 8;
-
-#[haberdashery_template_proc::constants(
-    algorithm: sivmac,
-)]
-mod constants {
-    pub const KEY_LEN: usize = 32;
-    pub const TAG_LEN: usize = 16;
-}
-#[haberdashery_template_proc::mac(
-    algorithm: sivmac,
+#[repr(C)]
+pub struct SivMac(Base<8>);
+#[bindings_proc::mac(
+    algorithm: siv_mac,
     prefix: haberdashery,
     profile: haswell,
     profile: broadwell,
     profile: skylake,
     profile: skylakex,
-    profile: tigerlake,
 )]
-pub struct SivMac([core::arch::x86_64::__m128i; 23]);
 impl Mac for SivMac {
-    type BaseImpl = Base<LANES>;
+    const KEY_LEN: usize = 32;
+    const TAG_LEN: usize = 16;
+    const STRUCT_SIZE: usize = 368;
+    const STRUCT_ALIGNMENT: usize = 16;
     #[inline(always)]
     fn init(&mut self, key: &[u8]) -> bool {
-        self.to_base_mut().init(key)
+        self.0.init(key)
     }
     #[inline(always)]
     fn sign(&self, message: Reader, tag: Writer) -> bool {
-        self.to_base().sign(message, tag)
+        self.0.sign(message, tag)
     }
     #[inline(always)]
     fn verify(&self, message: Reader, tag: Reader) -> bool {
-        self.to_base().verify(message, tag)
+        self.0.verify(message, tag)
+    }
+    #[inline(always)]
+    fn is_supported() -> bool {
+        is_supported()
+    }
+}
+#[bindings_proc::mac(
+    algorithm: siv_mac,
+    prefix: haberdashery,
+    profile: tigerlake,
+)]
+impl Mac for SivMac {
+    const KEY_LEN: usize = 32;
+    const TAG_LEN: usize = 16;
+    const STRUCT_SIZE: usize = 384;
+    const STRUCT_ALIGNMENT: usize = 16;
+    #[inline(always)]
+    fn init(&mut self, key: &[u8]) -> bool {
+        self.0.init(key)
+    }
+    #[inline(always)]
+    fn sign(&self, message: Reader, tag: Writer) -> bool {
+        self.0.sign(message, tag)
+    }
+    #[inline(always)]
+    fn verify(&self, message: Reader, tag: Reader) -> bool {
+        self.0.verify(message, tag)
     }
     #[inline(always)]
     fn is_supported() -> bool {

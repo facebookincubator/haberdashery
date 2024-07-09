@@ -18,10 +18,20 @@ main() {
   fi
   local -r LIB_NAME="${1}"; shift
   EXTRA_FLAGS=()
+  RUST_FLAGS=()
   case "${LIB_NAME}" in
     "haberdashery")
-      LIB_DIR="${PROJECT_DIR}/rust/sys/benchmarks"
+      LIB_DIR="${PROJECT_DIR}/bindings/rust_bench"
       EXTRA_FLAGS=(--detect-profile --group-by-path)
+      ;;
+    "alt-haberdashery")
+      LIB_DIR="${PROJECT_DIR}/bindings/rust_bench"
+      if [ $# -eq 0 ]; then
+          echo "usage: ${0} alt-haberdashery aes256gcm_skylakex"
+          exit 1
+      fi
+      local -r FEATURES="${1}"; shift
+      RUST_FLAGS=(--no-default-features --features="${FEATURES}")
       ;;
     "openssl")
       LIB_DIR="${PROJECT_DIR}/rust/openssl"
@@ -35,7 +45,9 @@ main() {
       ;;
   esac
   cd "${LIB_DIR}"
-  cargo bench -- \
+  cargo bench \
+    "${RUST_FLAGS[@]}" \
+    -- \
     --length=0,16,32,48,64,80,96,112,128 \
     --length=144,160,176,192,208,224,240 \
     --length=256,384,512,640,768,896,1024 \

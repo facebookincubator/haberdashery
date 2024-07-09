@@ -1,0 +1,9 @@
+[package]
+name = "bindings"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.82"
+convert_case = "0.6.0"
+sflags = { path = "../sflags" }

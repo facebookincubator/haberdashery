@@ -1,0 +1,8 @@
+# @generated
+
+[package]
+name = "aes256gcm_streaming_skylakex"
+edition = "2021"
+
+[lib]
+doctest = false

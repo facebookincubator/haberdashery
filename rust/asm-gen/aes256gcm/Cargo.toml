@@ -11,6 +11,5 @@ skylakex = ["haberdashery-asm-gen/skylakex"]
 tigerlake = ["haberdashery-asm-gen/tigerlake"]
 
 [dependencies]
-ffi-util = { path = "../../ffi-util" }
+bindings-proc = { path = "../../bindings/bindings-proc" }
 haberdashery-asm-gen = { path = ".." }
-haberdashery-template-proc = { path = "../../template-proc" }

@@ -5,25 +5,16 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use ffi_util::Reader;
-use ffi_util::ReaderWriter;
-use ffi_util::Writer;
 use haberdashery_asm_gen::aes256gcm::Aes256GcmKey as BaseKey;
 use haberdashery_asm_gen::ffi::aead::Aead;
+use haberdashery_asm_gen::ffi::reader::Reader;
+use haberdashery_asm_gen::ffi::reader_writer::ReaderWriter;
+use haberdashery_asm_gen::ffi::writer::Writer;
 use haberdashery_asm_gen::is_supported::is_supported;
 
-const LANES: usize = 6;
-
-#[haberdashery_template_proc::constants(
-    algorithm: aes256gcm,
-)]
-mod constants {
-    const KEY_LEN: usize = 32;
-    const NONCE_LEN: usize = 12;
-    const TAG_LEN: usize = 16;
-}
-
-#[haberdashery_template_proc::aead(
+#[repr(C)]
+pub struct Aes256Gcm(BaseKey<6>);
+#[bindings_proc::aead(
     algorithm: aes256gcm,
     prefix: haberdashery,
     profile: haswell,
@@ -32,20 +23,23 @@ mod constants {
     profile: skylakex,
     profile: tigerlake,
 )]
-pub struct Aes256Gcm([core::arch::x86_64::__m128i; 21]);
 impl Aead for Aes256Gcm {
-    type BaseImpl = BaseKey<LANES>;
+    const KEY_LEN: usize = 32;
+    const NONCE_LEN: usize = 12;
+    const TAG_LEN: usize = 16;
+    const STRUCT_SIZE: usize = 336;
+    const STRUCT_ALIGNMENT: usize = 16;
     #[inline(always)]
     fn init(&mut self, key: &[u8]) -> bool {
-        self.to_base_mut().init(key)
+        self.0.init(key)
     }
     #[inline(always)]
     fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
-        self.to_base().encrypt(nonce, aad, data, tag)
+        self.0.encrypt(nonce, aad, data, tag)
     }
     #[inline(always)]
     fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
-        self.to_base().decrypt(nonce, aad, data, tag)
+        self.0.decrypt(nonce, aad, data, tag)
     }
     #[inline(always)]
     fn is_supported() -> bool {

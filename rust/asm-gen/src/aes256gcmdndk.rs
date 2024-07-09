@@ -5,12 +5,11 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use ffi_util::Reader;
-use ffi_util::ReaderWriter;
-use ffi_util::Writer;
-
 use crate::aes256::Aes256;
 use crate::aes256gcm::Aes256GcmKey;
+use crate::ffi::reader::Reader;
+use crate::ffi::reader_writer::ReaderWriter;
+use crate::ffi::writer::Writer;
 use crate::intrinsics::m128i::M128i;
 
 const KEY_LEN: usize = 32;
@@ -27,14 +26,14 @@ pub struct Aes256GcmDndkKey {
     aes: Aes256,
 }
 impl From<[u8; KEY_LEN]> for Aes256GcmDndkKey {
-    #[inline(always)]
+    #[inline]
     fn from(key: [u8; KEY_LEN]) -> Self {
         Self { aes: key.into() }
     }
 }
 #[allow(unused)]
 impl Aes256GcmDndkKey {
-    #[inline(always)]
+    #[inline]
     fn split_nonce(nonce: [u8; NONCE_LEN]) -> (M128i, M128i) {
         let nonce: [[u8; 4]; 6] = unsafe { core::mem::transmute(nonce) };
         let nonce: [u32; 6] = nonce.map(u32::from_le_bytes);
@@ -43,8 +42,8 @@ impl Aes256GcmDndkKey {
             [1, nonce[3], nonce[4], nonce[5]].into(),
         )
     }
-    #[inline(always)]
-    fn derive(&self, nonce: [u8; NONCE_LEN]) -> ([M128i; 2], [M128i; 2]) {
+    #[inline]
+    fn derive(&self, nonce: [u8; NONCE_LEN]) -> [M128i; 2] {
         let nonce = Self::split_nonce(nonce);
         let b = [
             nonce.0 ^ [0, 0, 0, 0], // B0
@@ -53,41 +52,25 @@ impl Aes256GcmDndkKey {
             nonce.1 ^ [2, 0, 0, 0], // B3
             nonce.0 ^ [4, 0, 0, 0], // B4
             nonce.1 ^ [4, 0, 0, 0], // B5
-            nonce.0 ^ [6, 0, 0, 0], // B6
-            nonce.1 ^ [6, 0, 0, 0], // B7
-            nonce.0 ^ [8, 0, 0, 0], // B8
-            nonce.1 ^ [8, 0, 0, 0], // B9
         ];
         let x = self.aes.encrypt(b);
-        #[allow(clippy::eq_op)] // Indexes 0 and 1 are intentionally a no-op
         let y = [
-            x[0] ^ x[0],
-            x[1] ^ x[1],
-            x[2] ^ x[0],
-            x[3] ^ x[1],
-            x[4] ^ x[0],
-            x[5] ^ x[1],
-            x[6] ^ x[0],
-            x[7] ^ x[1],
-            x[8] ^ x[0],
-            x[9] ^ x[1],
+            x[2] ^ x[0], // Y0
+            x[3] ^ x[1], // Y1
+            x[4] ^ x[0], // Y2
+            x[5] ^ x[1], // Y3
         ];
-        let key = [
+        [
+            y[0] ^ y[1], //
             y[2] ^ y[3], //
-            y[4] ^ y[5], //
-        ];
-        let commit = [
-            y[6] ^ y[7], //
-            y[8] ^ y[9], //
-        ];
-        (key, commit)
+        ]
     }
-    #[inline(always)]
+    #[inline]
     fn make_state(&self, nonce: [u8; NONCE_LEN]) -> Aes256GcmDndkState {
-        let (key, _commit) = self.derive(nonce);
+        let key = self.derive(nonce);
         Aes256GcmDndkState(Aes256GcmKey::new(key))
     }
-    #[inline(always)]
+    #[inline]
     pub fn init(&mut self, key: &[u8]) -> bool {
         let Ok(key) = <[u8; KEY_LEN]>::try_from(key) else {
             return false;
@@ -95,7 +78,7 @@ impl Aes256GcmDndkKey {
         *self = Self::from(key);
         true
     }
-    #[inline(always)]
+    #[inline]
     pub fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
         if tag.len() != TAG_LEN {
             return false;
@@ -114,7 +97,7 @@ impl Aes256GcmDndkKey {
         };
         self.make_state(nonce).encrypt(aad, data, tag)
     }
-    #[inline(always)]
+    #[inline]
     pub fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
         if tag.len() != TAG_LEN {
             return false;
@@ -137,14 +120,14 @@ impl Aes256GcmDndkKey {
 
 struct Aes256GcmDndkState(Aes256GcmKey<6>);
 impl Aes256GcmDndkState {
-    #[inline(always)]
+    #[inline]
     fn encrypt(&self, aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
         // The aes-gcm key is single-use, derived from the DNDK nonce, so it's safe to pass an
         // all-zero nonce to aes-gcm internally.
         let nonce = [0u8; crate::aes256gcm::NONCE_LEN];
         self.0.encrypt(&nonce, aad, data, tag)
     }
-    #[inline(always)]
+    #[inline]
     fn decrypt(&self, aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
         // The aes-gcm key is single-use, derived from the DNDK nonce, so it's safe to pass an
         // all-zero nonce to aes-gcm internally.
@@ -160,7 +143,6 @@ mod tests {
         key: &'static str,
         nonce: &'static str,
         derived: &'static str,
-        commit: &'static str,
         aad: &'static str,
         plaintext: &'static str,
         ciphertext: &'static str,
@@ -173,12 +155,11 @@ mod tests {
             let aead = Aes256GcmDndkKey::from(key);
             {
                 let nonce = nonce.clone().try_into().unwrap();
-                let (derived, commit) = aead.derive(nonce);
+                let derived = aead.derive(nonce);
                 assert_eq!(
                     derived[0].to_string() + &derived[1].to_string(),
                     self.derived
                 );
-                assert_eq!(commit[0].to_string() + &commit[1].to_string(), self.commit);
             }
 
             let aad = hex::decode(self.aad).unwrap();
@@ -252,7 +233,6 @@ mod tests {
                 key: "0000000000000000000000000000000000000000000000000000000000000000",
                 nonce: "000000000000000000000000000000000000000000000000",
                 derived: "c0ade2dfe459352f99fd0affc01ba7d47f6d55e8639dac8c45b515a168a7c499",
-                commit: "6c5dcdb4b702cc105d93e22c5a7c81a0908bc6ec685c2f4e111b5c2eac2b8bc7",
                 aad: "",
                 plaintext: "",
                 ciphertext: "",
@@ -262,7 +242,6 @@ mod tests {
                 key: "0000000000000000000000000000000000000000000000000000000000000000",
                 nonce: "000000000000000000000000000000000000000000000000",
                 derived: "c0ade2dfe459352f99fd0affc01ba7d47f6d55e8639dac8c45b515a168a7c499",
-                commit: "6c5dcdb4b702cc105d93e22c5a7c81a0908bc6ec685c2f4e111b5c2eac2b8bc7",
                 aad: "",
                 plaintext: "0000000000000000",
                 ciphertext: "4354b64869429b05",
@@ -272,7 +251,6 @@ mod tests {
                 key: "0000000000000000000000000000000000000000000000000000000000000000",
                 nonce: "000000000000000000000000000000000000000000000000",
                 derived: "c0ade2dfe459352f99fd0affc01ba7d47f6d55e8639dac8c45b515a168a7c499",
-                commit: "6c5dcdb4b702cc105d93e22c5a7c81a0908bc6ec685c2f4e111b5c2eac2b8bc7",
                 aad: "0000000000000000",
                 plaintext: "",
                 ciphertext: "",
@@ -282,7 +260,6 @@ mod tests {
                 key: "0000000000000000000000000000000000000000000000000000000000000000",
                 nonce: "000000000000000000000000000000000000000000000000",
                 derived: "c0ade2dfe459352f99fd0affc01ba7d47f6d55e8639dac8c45b515a168a7c499",
-                commit: "6c5dcdb4b702cc105d93e22c5a7c81a0908bc6ec685c2f4e111b5c2eac2b8bc7",
                 aad: "0000000000000000",
                 plaintext: "0000000000000000",
                 ciphertext: "4354b64869429b05",
@@ -292,7 +269,6 @@ mod tests {
                 key: "ac26691099c7538d03aa670a25c13747917e09edd0f7a71844218b4bd0664d3e",
                 nonce: "9a01aa58977d7589e0de2f7eaae921330f215260767c7dc5",
                 derived: "ce67fb719e2c9fee140fb5be3985baf4564f47ecf8b3d81ae9be425f9adcd1cf",
-                commit: "12dca7d626091bc402fbf1ca90eb73b5429ce5efa9fc752e039acc8e7d9a819c",
                 aad: "",
                 plaintext: "",
                 ciphertext: "",
@@ -302,7 +278,6 @@ mod tests {
                 key: "ac26691099c7538d03aa670a25c13747917e09edd0f7a71844218b4bd0664d3e",
                 nonce: "9a01aa58977d7589e0de2f7eaae921330f215260767c7dc5",
                 derived: "ce67fb719e2c9fee140fb5be3985baf4564f47ecf8b3d81ae9be425f9adcd1cf",
-                commit: "12dca7d626091bc402fbf1ca90eb73b5429ce5efa9fc752e039acc8e7d9a819c",
                 aad: "",
                 plaintext: "828bdfe3ef1fbe",
                 ciphertext: "a909fd0a9d4f1b",
@@ -312,7 +287,6 @@ mod tests {
                 key: "ac26691099c7538d03aa670a25c13747917e09edd0f7a71844218b4bd0664d3e",
                 nonce: "9a01aa58977d7589e0de2f7eaae921330f215260767c7dc5",
                 derived: "ce67fb719e2c9fee140fb5be3985baf4564f47ecf8b3d81ae9be425f9adcd1cf",
-                commit: "12dca7d626091bc402fbf1ca90eb73b5429ce5efa9fc752e039acc8e7d9a819c",
                 aad: "912fe205339c18",
                 plaintext: "",
                 ciphertext: "",
@@ -322,7 +296,6 @@ mod tests {
                 key: "ac26691099c7538d03aa670a25c13747917e09edd0f7a71844218b4bd0664d3e",
                 nonce: "9a01aa58977d7589e0de2f7eaae921330f215260767c7dc5",
                 derived: "ce67fb719e2c9fee140fb5be3985baf4564f47ecf8b3d81ae9be425f9adcd1cf",
-                commit: "12dca7d626091bc402fbf1ca90eb73b5429ce5efa9fc752e039acc8e7d9a819c",
                 aad: "912fe205339c18",
                 plaintext: "828bdfe3ef1fbe",
                 ciphertext: "a909fd0a9d4f1b",
@@ -332,7 +305,6 @@ mod tests {
                 key: "0100000000000000000000000000000000000000000000000000000000000000",
                 nonce: "000102030405060708090a0b0c0d0e0f1011121314151617",
                 derived: "18c272b0158afa71ed99b64e5e39daaaaae37e70fa1b46407256c0b6f8531a64",
-                commit: "1fd1839805fce095052919629ca8947766d08eeee135cdf261228bfd4a796bbb",
                 aad: "1100000001",
                 plaintext: "11000001",
                 ciphertext: "e6de36f2",
@@ -342,7 +314,6 @@ mod tests {
                 key: "0100000000000000000000000000000000000000000000000000000000000000",
                 nonce: "000102030405060708090a0b0c0d0e0f1011121314151617",
                 derived: "18c272b0158afa71ed99b64e5e39daaaaae37e70fa1b46407256c0b6f8531a64",
-                commit: "1fd1839805fce095052919629ca8947766d08eeee135cdf261228bfd4a796bbb",
                 aad: "0100000011",
                 plaintext: "11000001",
                 ciphertext: "e6de36f2",
@@ -352,7 +323,6 @@ mod tests {
                 key: "0000000000000000000000000000000000000000000000000000000000000000",
                 nonce: "000000000000000000000000000000000000000000000000",
                 derived: "c0ade2dfe459352f99fd0affc01ba7d47f6d55e8639dac8c45b515a168a7c499",
-                commit: "6c5dcdb4b702cc105d93e22c5a7c81a0908bc6ec685c2f4e111b5c2eac2b8bc7",
                 aad: "",
                 plaintext: "",
                 ciphertext: "",
@@ -362,7 +332,6 @@ mod tests {
                 key: "0100000000000000000000000000000000000000000000000000000000000000",
                 nonce: "000102030405060708090a0b0c0d0e0f1011121314151617",
                 derived: "18c272b0158afa71ed99b64e5e39daaaaae37e70fa1b46407256c0b6f8531a64",
-                commit: "1fd1839805fce095052919629ca8947766d08eeee135cdf261228bfd4a796bbb",
                 aad: "0100000011",
                 plaintext: "",
                 ciphertext: "",
@@ -372,7 +341,6 @@ mod tests {
                 key: "0100000000000000000000000000000000000000000000000000000000000000",
                 nonce: "000102030405060708090a0b0c0d0e0f1011121314151617",
                 derived: "18c272b0158afa71ed99b64e5e39daaaaae37e70fa1b46407256c0b6f8531a64",
-                commit: "1fd1839805fce095052919629ca8947766d08eeee135cdf261228bfd4a796bbb",
                 aad: "0100000011",
                 plaintext: "11000001",
                 ciphertext: "e6de36f2",
@@ -382,7 +350,6 @@ mod tests {
                 key: "0100000000000000000000000000000000000000000000000000000000000000",
                 nonce: "000102030405060708090a0b0c0d0e0f1011121314151617",
                 derived: "18c272b0158afa71ed99b64e5e39daaaaae37e70fa1b46407256c0b6f8531a64",
-                commit: "1fd1839805fce095052919629ca8947766d08eeee135cdf261228bfd4a796bbb",
                 aad: "",
                 plaintext: "11000001",
                 ciphertext: "e6de36f2",

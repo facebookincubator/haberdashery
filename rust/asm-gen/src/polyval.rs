@@ -5,16 +5,15 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use ffi_util::Reader;
-
 use crate::clmulfoil::*;
-use crate::intrinsics::m128i::*;
+use crate::ffi::reader::Reader;
+use crate::intrinsics::m128i::M128i;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PolyvalKey<const N: usize>([M128i; N]);
 impl<const N: usize> PolyvalKey<N> {
-    #[inline(always)]
+    #[inline]
     pub fn new(key: M128i) -> Self {
         let mut table = [key; N];
         for i in 1..N {
@@ -25,33 +24,33 @@ impl<const N: usize> PolyvalKey<N> {
         }
         Self(table)
     }
-    #[inline(always)]
+    #[cfg_attr(feature = "asm_gen", inline(always))]
     pub fn hash(self, v: impl HashInput) -> PolyvalState<N> {
         let mut state = PolyvalState::<N>::from(self);
         state.hash(v);
         state
     }
-    #[inline(always)]
+    #[inline]
     pub fn keys(&self) -> [M128i; N] {
         self.0
     }
 }
 impl<const N: usize> Default for PolyvalKey<N> {
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self([M128i::zero(); N])
     }
 }
 impl<const N: usize> ClMulFoil<M128i> for PolyvalKey<N> {
     type Output = ClMulFoilProduct<M128i>;
-    #[inline(always)]
+    #[inline]
     fn clmul_foil(self, right: M128i) -> Self::Output {
         self.0[0].clmul_foil(right)
     }
 }
 impl<const N: usize, const M: usize> ClMulFoil<[M128i; M]> for PolyvalKey<N> {
     type Output = ClMulFoilProduct<M128i>;
-    #[inline(always)]
+    #[inline]
     fn clmul_foil(self, right: [M128i; M]) -> Self::Output {
         debug_assert!(M <= N);
         let mut result = self.clmul_foil(right[M - 1]);
@@ -64,13 +63,13 @@ impl<const N: usize, const M: usize> ClMulFoil<[M128i; M]> for PolyvalKey<N> {
 
 impl<const N: usize> core::ops::Index<usize> for PolyvalKey<N> {
     type Output = M128i;
-    #[inline(always)]
+    #[inline]
     fn index(&self, i: usize) -> &Self::Output {
         &self.0[i]
     }
 }
 impl<const N: usize> core::ops::IndexMut<usize> for PolyvalKey<N> {
-    #[inline(always)]
+    #[inline]
     fn index_mut(&mut self, i: usize) -> &mut Self::Output {
         &mut self.0[i]
     }
@@ -83,7 +82,7 @@ pub struct PolyvalState<const N: usize> {
     pub hash: M128i,
 }
 impl<const N: usize> From<PolyvalKey<N>> for PolyvalState<N> {
-    #[inline(always)]
+    #[inline]
     fn from(key: PolyvalKey<N>) -> Self {
         Self {
             key,
@@ -92,24 +91,24 @@ impl<const N: usize> From<PolyvalKey<N>> for PolyvalState<N> {
     }
 }
 impl<const N: usize> PolyvalState<N> {
-    #[inline(always)]
+    #[inline]
     pub fn new(key: PolyvalKey<N>, hash: M128i) -> Self {
         Self { key, hash }
     }
-    #[inline(always)]
+    #[inline]
     pub fn hash(&mut self, v: impl HashInput) -> Self {
         v.hash(self);
         *self
     }
-    #[inline(always)]
+    #[inline]
     pub fn result(&self) -> M128i {
         self.hash
     }
-    #[inline(always)]
+    #[inline]
     pub fn set_raw_hash(&mut self, v: M128i) {
         self.hash = v;
     }
-    #[inline(always)]
+    #[inline]
     pub fn keys(&self) -> [M128i; N] {
         self.key.keys()
     }
@@ -119,13 +118,13 @@ pub trait HashInput {
     fn hash<const N: usize>(self, state: &mut PolyvalState<N>);
 }
 impl HashInput for M128i {
-    #[inline(always)]
+    #[inline]
     fn hash<const N: usize>(self, state: &mut PolyvalState<N>) {
         state.hash = state.key.clmul_foil(state.hash ^ self).reduce();
     }
 }
 impl<const M: usize> HashInput for [M128i; M] {
-    #[inline(always)]
+    #[inline]
     fn hash<const N: usize>(mut self, state: &mut PolyvalState<N>) {
         if M <= N {
             self[0] ^= state.hash;
@@ -137,38 +136,32 @@ impl<const M: usize> HashInput for [M128i; M] {
         }
     }
 }
-impl<const M: usize> HashInput for M128iArray<M> {
-    #[inline(always)]
-    fn hash<const N: usize>(self, state: &mut PolyvalState<N>) {
-        state.hash(<[M128i; M]>::from(self));
-    }
-}
 impl HashInput for &[u8] {
-    #[inline(always)]
+    #[inline]
     fn hash<const N: usize>(self, state: &mut PolyvalState<N>) {
         state.hash(Reader::from(self));
     }
 }
 impl HashInput for Reader<'_> {
-    #[inline(always)]
+    #[cfg_attr(feature = "asm_gen", inline(always))]
     fn hash<const N: usize>(mut self, state: &mut PolyvalState<N>) {
         if cfg!(feature = "avx512f") {
-            while let Some(M128iArray::<N>(block)) = self.read() {
+            for block in self.iter::<[M128i; N]>() {
                 state.hash(block);
             }
-        } else if let Some(M128iArray::<N>(mut block)) = self.read() {
+        } else if let Some(mut block) = self.read::<[M128i; N]>() {
             block[0] ^= state.hash;
             let mut hash = state.key.clmul_foil(block);
-            while let Some(M128iArray::<N>(mut block)) = self.read() {
+            for mut block in self.iter::<[M128i; N]>() {
                 block[0] ^= hash.reduce();
                 hash = state.key.clmul_foil(block);
             }
             state.hash = hash.reduce();
         }
-        while let Some(block) = self.read::<M128i>() {
+        for block in self.iter::<M128i>() {
             state.hash(block);
         }
-        if let Some((block, _len)) = self.remainder::<M128i>() {
+        if let Some(block) = self.remainder::<M128i>() {
             state.hash(block);
         }
     }

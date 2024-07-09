@@ -10,65 +10,99 @@ set -eu -o pipefail
 
 PROJECT_DIR="$( cd -P "$(dirname "${BASH_SOURCE[0]}")/.."; pwd )"
 readonly PROJECT_DIR
+DESCRIPTOR_DIR="${PROJECT_DIR}/descriptors"
+readonly DESCRIPTOR_DIR
+BINDINGS_DIR="${PROJECT_DIR}/bindings"
+readonly BINDINGS_DIR
 
-generate_aead() {
-  local -r ALG="${1}"
-
-  # rust sys
-  rm -f "${PROJECT_DIR}"/rust/sys/src/aead/"${ALG}".rs
-  rm -f "${PROJECT_DIR}"/rust/sys/benchmarks/src/aead/"${ALG}".rs
-  rm -f "${PROJECT_DIR}"/rust/sys/traits/src/aead/"${ALG}".rs
-  rm -f "${PROJECT_DIR}"/rust/sys/src/aead/"${ALG}"/*.rs
-  rm -f "${PROJECT_DIR}"/rust/sys/benchmarks/src/aead/"${ALG}"/*.rs
-  rm -f "${PROJECT_DIR}"/rust/sys/traits/src/aead/"${ALG}"/*.rs
-  cargo run -- \
-    --language=rust_sys \
-    --out-dir="${PROJECT_DIR}/rust/sys/src" \
-    --descriptor-dir="${PROJECT_DIR}/descriptor_yaml/${ALG}" \
-    --primitive=aead
-
-  # c
-  rm -f "${PROJECT_DIR}"/c/aead/"${ALG}"/*.h
-  rm -f "${PROJECT_DIR}"/c/aead/"${ALG}"/*.c
-  cargo run -- \
-    --language=c \
-    --out-dir="${PROJECT_DIR}/c" \
-    --descriptor-dir="${PROJECT_DIR}/descriptor_yaml/${ALG}" \
-    --primitive=aead
+echo_with_date() {
+  date=$(date)
+  echo -e "[${date}]\t${1}"
 }
 
-generate_mac() {
-  local -r ALG="${1}"
+rust_sys() {
+  echo_with_date "bindings/rust_sys generating"
+  rm -rf "${BINDINGS_DIR}/rust_sys"
+  cd "${PROJECT_DIR}/rust/bindings"
+  cargo run -q -- \
+    --bindings-path="${BINDINGS_DIR}"  \
+    --descriptor-path="${DESCRIPTOR_DIR}" \
+    --name=rust_sys
 
-  # rust sys
-  rm -f "${PROJECT_DIR}"/rust/sys/src/mac/"${ALG}".rs
-  rm -f "${PROJECT_DIR}"/rust/sys/benchmarks/src/mac/"${ALG}".rs
-  rm -f "${PROJECT_DIR}"/rust/sys/traits/src/mac/"${ALG}".rs
-  rm -f "${PROJECT_DIR}"/rust/sys/src/mac/"${ALG}"/*.rs
-  rm -f "${PROJECT_DIR}"/rust/sys/benchmarks/src/mac/"${ALG}"/*.rs
-  rm -f "${PROJECT_DIR}"/rust/sys/traits/src/mac/"${ALG}"/*.rs
-  cargo run -- \
-    --language=rust_sys \
-    --out-dir="${PROJECT_DIR}/rust/sys/src" \
-    --descriptor-dir="${PROJECT_DIR}/descriptor_yaml/${ALG}" \
-    --primitive=mac
+  echo_with_date "bindings/rust_sys testing"
+  cargo test -q --all-features
+  cargo test -q --all-features --release
+}
 
-  # c
-  rm -f "${PROJECT_DIR}"/c/mac/"${ALG}"/*.h
-  rm -f "${PROJECT_DIR}"/c/mac/"${ALG}"/*.c
-  cargo run -- \
-    --language=c \
-    --out-dir="${PROJECT_DIR}/c" \
-    --descriptor-dir="${PROJECT_DIR}/descriptor_yaml/${ALG}" \
-    --primitive=mac
+rust_lib() {
+  echo_with_date "bindings/rust_lib generating"
+  rm -f "${BINDINGS_DIR}/rust_lib/src/Cargo.toml"
+  rm -f "${BINDINGS_DIR}/rust_lib/src/aead.rs"
+  rm -f "${BINDINGS_DIR}/rust_lib/src/mac.rs"
+  rm -rf "${BINDINGS_DIR}/rust_lib/src/aead"
+  rm -rf "${BINDINGS_DIR}/rust_lib/src/mac"
+  cd "${PROJECT_DIR}/rust/bindings"
+  cargo run -q -- \
+    --bindings-path="${BINDINGS_DIR}"  \
+    --descriptor-path="${DESCRIPTOR_DIR}" \
+    --name=rust_lib
+  echo_with_date "bindings/rust_lib testing"
+  cd "${BINDINGS_DIR}/rust_lib"
+  cargo test -q
+}
+
+rust_bench() {
+  echo_with_date "bindings/rust_bench generating"
+  rm -f "${BINDINGS_DIR}/rust_bench/src/Cargo.toml"
+  cd "${PROJECT_DIR}/rust/bindings"
+  cargo run -q -- \
+    --bindings-path="${BINDINGS_DIR}"  \
+    --descriptor-path="${DESCRIPTOR_DIR}" \
+    --name=rust_bench
+
+  echo_with_date "bindings/rust_bench testing"
+  cd "${BINDINGS_DIR}/rust_bench"
+  cargo test -q --all-targets 1>/dev/null
+}
+
+c89() {
+  echo_with_date "bindings/c89 generating"
+  rm -rf "${BINDINGS_DIR}/c89"
+  cd "${PROJECT_DIR}/rust/bindings"
+  cargo run -q -- \
+    --bindings-path="${BINDINGS_DIR}"  \
+    --descriptor-path="${DESCRIPTOR_DIR}" \
+    --name=c89
+  echo_with_date "bindings/c89 testing"
+  cd "${BINDINGS_DIR}/c89/aead"
+  make
+  cd "${BINDINGS_DIR}/c89/mac"
+  make
+}
+
+openssl_evp() {
+  echo_with_date "bindings/openssl_evp generating"
+  rm -rf "${BINDINGS_DIR}/openssl_evp"
+  cd "${PROJECT_DIR}/rust/bindings"
+  cargo run -q -- \
+    --bindings-path="${BINDINGS_DIR}"  \
+    --descriptor-path="${DESCRIPTOR_DIR}" \
+    --name=openssl_evp
+  echo_with_date "bindings/openssl_evp testing"
+  cd "${BINDINGS_DIR}/openssl_evp/aead_streaming"
+  make
 }
 
 main() {
-  cd "${PROJECT_DIR}/rust/template-bindings"
-  generate_aead aes256gcm
-  generate_aead aes256gcmdndk
-  generate_aead aes256gcmsiv
-  generate_mac sivmac
+  if [ $# -eq 0 ]; then
+    rust_sys
+    rust_lib
+    rust_bench
+    c89
+    openssl_evp
+  else
+    "${1}"
+  fi
 }
 
 main "$@"

@@ -5,12 +5,17 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use ffi_util::Reader;
-use ffi_util::Writer;
-
 use crate::aes256::Aes256;
-use crate::intrinsics::m128i::*;
-use crate::polyval::PolyvalKey;
+#[cfg(not(feature = "vpclmulqdq"))]
+use crate::clmul::clmul128foil::*;
+#[cfg(feature = "vpclmulqdq")]
+use crate::clmul::clmul256foil::*;
+use crate::ffi::reader::Reader;
+use crate::ffi::writer::Writer;
+use crate::intrinsics::m128i::M128i;
+#[cfg(feature = "vpclmulqdq")]
+use crate::intrinsics::m256i::*;
+use crate::ops::*;
 
 const KEY_LEN: usize = 32;
 const TAG_LEN: usize = 16;
@@ -18,17 +23,19 @@ const TAG_LEN: usize = 16;
 const MAX_BYTES: usize = 1 << 36;
 const TAG_MASK: [u32; 4] = [0xff_ff_ff_ff, 0xff_ff_ff_ff, 0xff_ff_ff_ff, 0x7f_ff_ff_ff];
 
-#[derive(Default)]
 pub struct SivMacKey<const N: usize> {
     aes: Aes256,
-    polyval: PolyvalKey<N>,
+    #[cfg(not(feature = "vpclmulqdq"))]
+    polyval: ClMul128FoilPowerTable<N>,
+    #[cfg(feature = "vpclmulqdq")]
+    polyval: ClMul256FoilPowerTable<N>,
 }
 
 impl<const N: usize> From<[u8; KEY_LEN]> for SivMacKey<N> {
-    #[inline(always)]
+    #[inline]
     fn from(key: [u8; KEY_LEN]) -> Self {
         let (_aes, subkeys) = Aes256::new_and_encrypt(
-            M128iArray::from(key).into(),
+            Array::from(key).into(),
             [
                 M128i::from([0, 0, 0, 0]),
                 M128i::from([1, 0, 0, 0]),
@@ -38,18 +45,27 @@ impl<const N: usize> From<[u8; KEY_LEN]> for SivMacKey<N> {
                 M128i::from([5, 0, 0, 0]),
             ],
         );
-        Self {
-            aes: Aes256::new([
-                subkeys[2].unpacklo64(subkeys[3]),
-                subkeys[4].unpacklo64(subkeys[5]),
-            ]),
-            polyval: PolyvalKey::new(subkeys[0].unpacklo64(subkeys[1])),
-        }
+        let aes_key = [
+            subkeys[2].unpacklo64(subkeys[3]),
+            subkeys[4].unpacklo64(subkeys[5]),
+        ];
+        let polyval_key = subkeys[0].unpacklo64(subkeys[1]);
+        Self::new(aes_key, polyval_key)
     }
 }
 
 impl<const N: usize> SivMacKey<N> {
-    #[inline(always)]
+    #[inline]
+    fn new(aes_key: [M128i; 2], polyval_key: M128i) -> Self {
+        Self {
+            aes: Aes256::new(aes_key),
+            #[cfg(not(feature = "vpclmulqdq"))]
+            polyval: ClMul128FoilPowerTable::new(polyval_key),
+            #[cfg(feature = "vpclmulqdq")]
+            polyval: ClMul256FoilPowerTable::new(polyval_key),
+        }
+    }
+    #[inline]
     pub fn init(&mut self, key: &[u8]) -> bool {
         let Ok(key) = <[u8; KEY_LEN]>::try_from(key) else {
             return false;
@@ -57,27 +73,139 @@ impl<const N: usize> SivMacKey<N> {
         *self = Self::from(key);
         true
     }
-    #[inline(always)]
-    fn sign_internal(&self, message: Reader) -> M128i {
+
+    #[cfg(feature = "vpclmulqdq")]
+    #[cfg_attr(feature = "asm_gen", inline(always))]
+    fn hash_internal(&self, mut message: Reader) -> M128i {
         // Append the message as raw blocks and finalize the polyval by encoding the length.
         // This follows aes-256-gcms-siv when taking aad=message, plaintext=empty.
-        let len = message.len();
-        let hash = self
-            .polyval
-            .hash(message)
-            .hash(M128i::from([8 * len as u64, 0]))
-            .result();
-        self.aes.encrypt(hash & TAG_MASK)
+        let bitlen = 8 * message.len() as u64;
+        let len_block = [bitlen, 0];
+        let mut state = M256i::zero();
+        for mut array in message.iter::<[M256i; N]>() {
+            array[0] ^= state;
+            state = self.polyval.clmul256foil(array).reduce();
+        }
+        for block in message.iter::<M256i>() {
+            state = self.polyval[0].clmul256foil(block ^ state).reduce();
+        }
+        let len_block: M128i = len_block.into();
+        if !message.is_empty() && message.len() <= M128i::SIZE {
+            if let Some(block) = message.read::<M128i>() {
+                return self.polyval.reduce256(state, [block, len_block].into());
+            }
+            if let Some(block) = message.remainder::<M128i>() {
+                return self.polyval.reduce256(state, [block, len_block].into());
+            }
+            unreachable!("Should never happen");
+        }
+        if let Some(block) = message.remainder::<M256i>() {
+            state = self.polyval[0].clmul256foil(state ^ block).reduce();
+        }
+        self.polyval.reduce(state, len_block)
     }
-    #[inline(always)]
+
+    #[cfg(not(feature = "vpclmulqdq"))]
+    #[cfg_attr(feature = "asm_gen", inline(always))]
+    fn hash_internal(&self, mut message: Reader) -> M128i {
+        // Append the message as raw blocks and finalize the polyval by encoding the length.
+        // This follows aes-256-gcms-siv when taking aad=message, plaintext=empty.
+        let bitlen = 8 * message.len() as u64;
+        let len_block = [bitlen, 0];
+        let mut state = M128i::zero();
+        if cfg!(feature = "avx512f") {
+            for mut array in message.iter::<[M128i; N]>() {
+                array[0] ^= state;
+                state = self.polyval.clmul128foil(array).reduce();
+            }
+        } else if let Some(array) = message.read::<[M128i; N]>() {
+            let mut partial = self.polyval.clmul128foil(array);
+            for mut array in message.iter::<[M128i; N]>() {
+                array[0] ^= partial.reduce();
+                partial = self.polyval.clmul128foil(array);
+            }
+            state = partial.reduce();
+        }
+        let mut message = message.split_remainder::<M128i, N>();
+        // If N is 1, then we've already consumed full 16-byte blocks.
+        // Comput the remainder (if any) and the length block separately.
+        if N == 1 {
+            if let Some(block) = message.read_remainder() {
+                state = self.polyval[0].clmul128foil(state ^ block).reduce();
+            }
+            state = self.polyval[0].clmul128foil(state ^ len_block).reduce();
+        } else if let Some(remainder) = message.read_remainder() {
+            // If there's a remainder block and N-1 full blocks remaining, we process the full
+            // blocks separately from the remainder and length block.
+            if let Some(block) = message.next() {
+                // clamped_index is the index of the last full block and may be as large as N - 1.
+                let clamped_index = message.clamped_len();
+                // If clamped_index < N - 1, then there's room for both the remainder and length
+                // blocks. We'll do a conditional add and exhaust the full-block iterator.
+                let mut clamped_index = (clamped_index + 2).unwrap_or(clamped_index);
+                let mut partial = self.polyval[clamped_index].clmul128foil(state ^ block);
+                for block in &mut message {
+                    clamped_index -= 1;
+                    partial ^= self.polyval[clamped_index].clmul128foil(block);
+                }
+                if clamped_index == 0 {
+                    // If clamped_index is zero, then the conditional add from earlier failed, so we'll
+                    // reduce and do another round computing the remainder and length blocks.
+                    state = partial.reduce();
+                } else {
+                    // If we exhausted the iterator and clamped_index is non-zero, it must be 2,
+                    // so there's space for the remainder and length blocks. We fold these in and
+                    // return early.
+                    debug_assert_eq!(clamped_index, 2);
+                    partial ^= self.polyval[1].clmul128foil(remainder);
+                    partial ^= self.polyval.clmul128foil_u64(bitlen);
+                    return partial.reduce();
+                }
+            }
+            // If the number of full blocks was either 0 or N - 1, then we consume the remainder
+            // and length blocks together.
+            let mut partial = self.polyval[1].clmul128foil(state ^ remainder);
+            partial ^= self.polyval.clmul128foil_u64(bitlen);
+            state = partial.reduce();
+        } else {
+            // If there was no remainder block, we can always include the length block.
+            // Since we're including the length_block, clamped_index is the maximum index.
+            let mut clamped_index = message.clamped_len();
+            if let Some(block) = message.next() {
+                // If there are full blocks remaining, we fold the current state into the first
+                // block and compute
+                let mut partial = self.polyval[clamped_index].clmul128foil(state ^ block);
+                for block in message {
+                    clamped_index -= 1;
+                    partial ^= self.polyval[clamped_index].clmul128foil(block);
+                }
+                // There's always exactly one spot left for the length block
+                debug_assert_eq!(clamped_index, 1);
+                partial ^= self.polyval.clmul128foil_u64(bitlen);
+                state = partial.reduce();
+            } else {
+                // If there were no full blocks remaining, hash in the length block by itself.
+                state = self.polyval[0].clmul128foil(state ^ len_block).reduce();
+            }
+        }
+        state
+    }
+    #[cfg_attr(feature = "asm_gen", inline(always))]
+    fn sign_internal(&self, message: Reader) -> M128i {
+        self.aes.encrypt(self.hash_internal(message) & TAG_MASK)
+    }
+    #[inline]
     pub fn sign(&self, message: Reader, mut tag_writer: Writer) -> bool {
+        if tag_writer.len() != TAG_LEN {
+            return false;
+        }
         if message.len() > MAX_BYTES {
             return false;
         }
         let tag = self.sign_internal(message);
         TAG_LEN == tag_writer.write(tag)
     }
-    #[inline(always)]
+    #[inline]
     pub fn verify(&self, message: Reader, mut tag: Reader) -> bool {
         if message.len() > MAX_BYTES {
             return false;
@@ -91,14 +219,14 @@ impl<const N: usize> SivMacKey<N> {
 
 #[cfg(test)]
 mod tests {
-    use ffi_util::ReaderWriter;
-
     use super::*;
+    use crate::ffi::reader_writer::ReaderWriter;
 
     const LANES: usize = 8;
 
     #[test]
     fn vectors() {
+        #[allow(unused)]
         struct TestVector {
             key: &'static str,
             aes_key: Option<&'static str>,
@@ -123,17 +251,12 @@ mod tests {
                         aes_key,
                     );
                 }
+                #[cfg(not(feature = "vpclmulqdq"))]
                 if let Some(polyval_key) = self.polyval_key {
                     assert_eq!(mac.polyval[0], polyval_key);
                 }
                 if let Some(hash) = self.hash {
-                    assert_eq!(
-                        mac.polyval
-                            .hash(message.as_slice())
-                            .hash(M128i::from([8 * message.len() as u64, 0]))
-                            .result(),
-                        hash
-                    );
+                    assert_eq!(mac.hash_internal(Reader::from(message.as_slice())), hash);
                 }
                 if let Some(pre_hash) = self.pre_hash {
                     assert_eq!(mac.aes.decrypt(tag.into()), pre_hash);

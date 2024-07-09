@@ -1,0 +1,24 @@
+[package]
+name = "perf-counters"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["benchbench"]
+# additional fencing to benchmark the benchmark overhead
+benchbench = []
+
+[lib]
+bench = false
+
+[[bench]]
+name = "bench"
+harness = false
+
+[dependencies]
+nix = { version = "0.27.1", features = ["sched"] }
+perf-event-open-sys = "4.0.0"
+perf-events = { path = "../perf-events" }
+
+[dev-dependencies]
+sflags = { path = "../sflags" }

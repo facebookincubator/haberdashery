@@ -12,7 +12,7 @@ PROJECT_DIR="$( cd -P "$(dirname "${BASH_SOURCE[0]}")/.."; pwd )"
 readonly PROJECT_DIR
 
 cargo_test() {
-  local -r CRATE="rust/${1}"; shift
+  local -r CRATE="${1}"; shift
   echo "*** Started  testing ${CRATE} ${*}"
   cd "${PROJECT_DIR}/${CRATE}"
   cargo test -q "${@}"
@@ -21,25 +21,24 @@ cargo_test() {
 
 main() {
   if [ $# -eq 0 ]; then
-    cargo_test asm-checksums
-    cargo_test asm-gen
-    cargo_test cozybuf
-    cargo_test cozybuf/cozybuf-example
-    cargo_test cozybuf/cozybuf-proc
-    cargo_test cpuid
-    cargo_test ffi-util
-    cargo_test hex
-    cargo_test nano-bench-proc
-    cargo_test nano-bench
-    cargo_test random
-    cargo_test sys
-    cargo_test sys/traits
-    cargo_test sys/benchmarks
-    cargo_test template-bindings
-    cargo_test template-descriptor
-    cargo_test template-proc
-    cargo_test test-vectors
-    cargo_test units
+    cargo_test rust/asm-gen
+    cargo_test rust/bindings
+    cargo_test rust/bindings/bindings-proc
+    cargo_test rust/cozybuf
+    cargo_test rust/cozybuf/cozybuf-example
+    cargo_test rust/cozybuf/cozybuf-proc
+    cargo_test rust/cpuid
+    cargo_test rust/hex
+    cargo_test rust/nano-bench-proc
+    cargo_test rust/nano-bench
+    cargo_test rust/random
+    cargo_test rust/sflags
+    cargo_test rust/sflags/test-helper
+    cargo_test rust/test-vectors
+    cargo_test rust/units
+    cargo_test bindings/rust_sys --all-features
+    cargo_test bindings/rust_lib
+    cargo_test bindings/rust_bench
   else
     cargo_test "$@"
   fi

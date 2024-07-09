@@ -1,0 +1,74 @@
+# @generated
+
+[package]
+name = "haberdashery-sys"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+doctest = false
+
+[features]
+default = []
+aes192gcm_broadwell = ["dep:aes192gcm_broadwell"]
+aes192gcm_haswell = ["dep:aes192gcm_haswell"]
+aes192gcm_skylake = ["dep:aes192gcm_skylake"]
+aes192gcm_skylakex = ["dep:aes192gcm_skylakex"]
+aes192gcm_tigerlake = ["dep:aes192gcm_tigerlake"]
+aes256gcm_broadwell = ["dep:aes256gcm_broadwell"]
+aes256gcm_haswell = ["dep:aes256gcm_haswell"]
+aes256gcm_skylake = ["dep:aes256gcm_skylake"]
+aes256gcm_skylakex = ["dep:aes256gcm_skylakex"]
+aes256gcm_streaming_broadwell = ["dep:aes256gcm_streaming_broadwell"]
+aes256gcm_streaming_haswell = ["dep:aes256gcm_streaming_haswell"]
+aes256gcm_streaming_skylake = ["dep:aes256gcm_streaming_skylake"]
+aes256gcm_streaming_skylakex = ["dep:aes256gcm_streaming_skylakex"]
+aes256gcm_streaming_tigerlake = ["dep:aes256gcm_streaming_tigerlake"]
+aes256gcm_tigerlake = ["dep:aes256gcm_tigerlake"]
+aes256gcmdndk_broadwell = ["dep:aes256gcmdndk_broadwell"]
+aes256gcmdndk_haswell = ["dep:aes256gcmdndk_haswell"]
+aes256gcmdndk_skylake = ["dep:aes256gcmdndk_skylake"]
+aes256gcmdndk_skylakex = ["dep:aes256gcmdndk_skylakex"]
+aes256gcmdndk_tigerlake = ["dep:aes256gcmdndk_tigerlake"]
+aes256gcmsiv_broadwell = ["dep:aes256gcmsiv_broadwell"]
+aes256gcmsiv_haswell = ["dep:aes256gcmsiv_haswell"]
+aes256gcmsiv_skylake = ["dep:aes256gcmsiv_skylake"]
+aes256gcmsiv_skylakex = ["dep:aes256gcmsiv_skylakex"]
+aes256gcmsiv_tigerlake = ["dep:aes256gcmsiv_tigerlake"]
+sivmac_broadwell = ["dep:sivmac_broadwell"]
+sivmac_haswell = ["dep:sivmac_haswell"]
+sivmac_skylake = ["dep:sivmac_skylake"]
+sivmac_skylakex = ["dep:sivmac_skylakex"]
+sivmac_tigerlake = ["dep:sivmac_tigerlake"]
+
+[dependencies]
+aes192gcm_broadwell = { path = "units/aes192gcm_broadwell", optional = true }
+aes192gcm_haswell = { path = "units/aes192gcm_haswell", optional = true }
+aes192gcm_skylake = { path = "units/aes192gcm_skylake", optional = true }
+aes192gcm_skylakex = { path = "units/aes192gcm_skylakex", optional = true }
+aes192gcm_tigerlake = { path = "units/aes192gcm_tigerlake", optional = true }
+aes256gcm_broadwell = { path = "units/aes256gcm_broadwell", optional = true }
+aes256gcm_haswell = { path = "units/aes256gcm_haswell", optional = true }
+aes256gcm_skylake = { path = "units/aes256gcm_skylake", optional = true }
+aes256gcm_skylakex = { path = "units/aes256gcm_skylakex", optional = true }
+aes256gcm_streaming_broadwell = { path = "units/aes256gcm_streaming_broadwell", optional = true }
+aes256gcm_streaming_haswell = { path = "units/aes256gcm_streaming_haswell", optional = true }
+aes256gcm_streaming_skylake = { path = "units/aes256gcm_streaming_skylake", optional = true }
+aes256gcm_streaming_skylakex = { path = "units/aes256gcm_streaming_skylakex", optional = true }
+aes256gcm_streaming_tigerlake = { path = "units/aes256gcm_streaming_tigerlake", optional = true }
+aes256gcm_tigerlake = { path = "units/aes256gcm_tigerlake", optional = true }
+aes256gcmdndk_broadwell = { path = "units/aes256gcmdndk_broadwell", optional = true }
+aes256gcmdndk_haswell = { path = "units/aes256gcmdndk_haswell", optional = true }
+aes256gcmdndk_skylake = { path = "units/aes256gcmdndk_skylake", optional = true }
+aes256gcmdndk_skylakex = { path = "units/aes256gcmdndk_skylakex", optional = true }
+aes256gcmdndk_tigerlake = { path = "units/aes256gcmdndk_tigerlake", optional = true }
+aes256gcmsiv_broadwell = { path = "units/aes256gcmsiv_broadwell", optional = true }
+aes256gcmsiv_haswell = { path = "units/aes256gcmsiv_haswell", optional = true }
+aes256gcmsiv_skylake = { path = "units/aes256gcmsiv_skylake", optional = true }
+aes256gcmsiv_skylakex = { path = "units/aes256gcmsiv_skylakex", optional = true }
+aes256gcmsiv_tigerlake = { path = "units/aes256gcmsiv_tigerlake", optional = true }
+sivmac_broadwell = { path = "units/sivmac_broadwell", optional = true }
+sivmac_haswell = { path = "units/sivmac_haswell", optional = true }
+sivmac_skylake = { path = "units/sivmac_skylake", optional = true }
+sivmac_skylakex = { path = "units/sivmac_skylakex", optional = true }
+sivmac_tigerlake = { path = "units/sivmac_tigerlake", optional = true }

@@ -5,17 +5,18 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use ffi_util::Reader;
-use ffi_util::ReaderWriter;
-use ffi_util::Writer;
-
 use crate::aes256::Aes256;
 use crate::clmulfoil::ClMulFoil;
 use crate::counter128::CounterBe128;
+use crate::ffi::reader::Reader;
+use crate::ffi::reader_writer::ReaderWriter;
+use crate::ffi::writer::Writer;
 use crate::ghash::ghash_key;
 use crate::ghash::ByteReverse;
 use crate::ghash::GhashState;
-use crate::intrinsics::m128i::*;
+use crate::intrinsics::m128i::M128i;
+use crate::ops::ArrayOps;
+use crate::ops::Cast;
 use crate::partial::PartialBlock;
 use crate::polyval::PolyvalKey;
 
@@ -37,7 +38,7 @@ pub struct Aes256GcmKey<const N: usize> {
     ghash: PolyvalKey<N>,
 }
 impl<const N: usize> Default for Aes256GcmKey<N> {
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self {
             aes: Aes256::default(),
@@ -46,20 +47,20 @@ impl<const N: usize> Default for Aes256GcmKey<N> {
     }
 }
 impl<const N: usize> From<[u8; KEY_LEN]> for Aes256GcmKey<N> {
-    #[inline(always)]
+    #[inline]
     fn from(key: [u8; KEY_LEN]) -> Self {
-        Self::new(M128iArray::from(key).into())
+        Self::new(key.cast())
     }
 }
 
 impl<const N: usize> Aes256GcmKey<N> {
-    #[inline(always)]
+    #[inline]
     pub fn new(key: [M128i; 2]) -> Self {
         let (aes, ghash) = Aes256::new_and_encrypt(key, [M128i::zero()]);
         let ghash = ghash_key(ghash[0]);
         Self { aes, ghash }
     }
-    #[inline(always)]
+    #[inline]
     pub fn init(&mut self, key: &[u8]) -> bool {
         let Ok(key) = <[u8; KEY_LEN]>::try_from(key) else {
             return false;
@@ -67,7 +68,7 @@ impl<const N: usize> Aes256GcmKey<N> {
         *self = Self::from(key);
         true
     }
-    #[inline(always)]
+    #[inline]
     pub fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
         if tag.len() != TAG_LEN {
             return false;
@@ -92,7 +93,7 @@ impl<const N: usize> Aes256GcmKey<N> {
         }
         state.encrypt_finalize(self, tag) == TAG_LEN
     }
-    #[inline(always)]
+    #[inline]
     pub fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
         if tag.len() != TAG_LEN {
             return false;
@@ -130,7 +131,7 @@ pub struct Aes256GcmState<const N: usize> {
 }
 #[allow(unused)]
 impl<const N: usize> Aes256GcmState<N> {
-    #[inline(always)]
+    #[inline]
     pub fn init(&mut self, key: &Aes256GcmKey<N>, nonce: &[u8]) -> bool {
         let Ok(nonce) = <[u8; NONCE_LEN]>::try_from(nonce) else {
             return false;
@@ -151,8 +152,8 @@ impl<const N: usize> Aes256GcmState<N> {
         };
         true
     }
-    #[inline(always)]
-    pub fn aad_update(&mut self, key: &Aes256GcmKey<N>, aad: Reader) -> usize {
+    #[cfg_attr(feature = "asm_gen", inline(always))]
+    pub fn aad_update(&mut self, key: &Aes256GcmKey<N>, mut aad: Reader) -> usize {
         if aad.is_empty() {
             return 0;
         }
@@ -167,19 +168,18 @@ impl<const N: usize> Aes256GcmState<N> {
         }
         let len = aad.len();
         let mut ghash = GhashState::new(key.ghash, self.ghash);
-        let (mut aad, block) = self.partial.fill_aad(aad);
-        if let Some(block) = block {
+        if let Some(block) = self.partial.fill_aad(&mut aad) {
             ghash.hash(block);
         }
         if cfg!(feature = "avx512f") {
-            while let Some(M128iArray::<N>(block)) = aad.read() {
+            for block in aad.iter::<[M128i; N]>() {
                 ghash.hash(block);
             }
-        } else if let Some(M128iArray::<N>(block)) = aad.read() {
+        } else if let Some(block) = aad.read::<[M128i; N]>() {
             let mut block = block.byte_reverse();
             block[0] ^= ghash.raw();
             let mut hash = key.ghash.clmul_foil(block);
-            while let Some(M128iArray::<N>(block)) = aad.read() {
+            for mut block in aad.iter::<[M128i; N]>() {
                 ghash.set_raw_hash(hash.reduce());
                 let mut block = block.byte_reverse();
                 block[0] ^= ghash.raw();
@@ -187,17 +187,18 @@ impl<const N: usize> Aes256GcmState<N> {
             }
             ghash.set_raw_hash(hash.reduce());
         }
-        while let Some(block) = aad.read::<M128i>() {
+        for block in aad.iter::<M128i>() {
             ghash.hash(block);
         }
-        if let Some((block, len)) = aad.remainder::<M128i>() {
-            self.partial = PartialBlock::new_aad(block, len);
+        let remainder_len = aad.len();
+        if let Some(block) = aad.remainder::<M128i>() {
+            self.partial = PartialBlock::new_aad(block, remainder_len);
         }
         self.ghash = ghash.raw();
         self.aad_len += len;
         len
     }
-    #[inline(always)]
+    #[inline]
     fn finalize_aad(&mut self, key: &Aes256GcmKey<N>) {
         if let Some(block) = self.partial.remainder() {
             let mut ghash = GhashState::new(key.ghash, self.ghash);
@@ -206,15 +207,15 @@ impl<const N: usize> Aes256GcmState<N> {
             self.partial = PartialBlock::default();
         }
     }
-    #[inline(always)]
+    #[inline]
     pub fn iteration_asm(
         &mut self,
         key: &Aes256GcmKey<N>,
         hash: &mut GhashState<N>,
-        auth: M128iArray<N>,
+        auth: [M128i; N],
         counters: [M128i; N],
-        plaintext: M128iArray<N>,
-    ) -> M128iArray<N> {
+        plaintext: [M128i; N],
+    ) -> [M128i; N] {
         let auth = auth.byte_reverse();
         // Constructor performs first round of AES and auth
         let mut state =
@@ -236,10 +237,10 @@ impl<const N: usize> Aes256GcmState<N> {
         // Performs last round of AES
         let (pads, new_hash) = state.finish();
         hash.set_raw_hash(new_hash);
-        plaintext ^ pads
+        plaintext.ops() ^ pads
     }
-    #[inline(always)]
-    pub fn encrypt_update(&mut self, key: &Aes256GcmKey<N>, data: ReaderWriter) -> usize {
+    #[inline]
+    pub fn encrypt_update(&mut self, key: &Aes256GcmKey<N>, mut data: ReaderWriter) -> usize {
         if data.is_empty() {
             return 0;
         }
@@ -254,45 +255,45 @@ impl<const N: usize> Aes256GcmState<N> {
         }
         let len = data.len();
         let mut ghash = GhashState::new(key.ghash, self.ghash);
-        let (mut data, block) = self.partial.fill_crypt(data);
-        if let Some((_, block)) = block {
+        if let Some((_, block)) = self.partial.fill_crypt(&mut data) {
             ghash.hash(block);
         }
-        if let Some((block, writer)) = data.read::<M128iArray<N>>() {
+        if let Some((block, writer)) = data.read::<[M128i; N]>() {
             let ctr = self.ctr.increment_traunch::<N>();
-            let mut last_block = block ^ key.aes.encrypt(ctr);
+            let mut last_block = block.ops() ^ key.aes.encrypt(ctr);
             writer.write(last_block);
-            while let Some((block, writer)) = data.read::<M128iArray<N>>() {
+            for (block, writer) in data.iter::<[M128i; N]>() {
                 let ctr = self.ctr.increment_traunch::<N>();
                 last_block = match N {
                     6 => self.iteration_asm(key, &mut ghash, last_block, ctr, block),
                     _ => {
                         ghash.hash(last_block);
-                        block ^ key.aes.encrypt(ctr)
+                        block.ops() ^ key.aes.encrypt(ctr)
                     }
                 };
                 writer.write(last_block);
             }
             ghash.hash(last_block);
         }
-        while let Some((block, writer)) = data.read::<M128i>() {
+        for (block, writer) in data.iter::<M128i>() {
             let ctr = self.ctr.increment();
             let block = key.aes.encrypt(ctr) ^ block;
             writer.write(block);
             ghash.hash(block);
         }
-        if let Some((block, len, writer)) = data.read_remainder::<M128i>() {
+        if let Some((block, writer)) = data.remainder::<M128i>() {
             let ctr = self.ctr.increment();
             let pad = key.aes.encrypt(ctr);
             let block = pad ^ block;
-            writer.write_remainder(block);
+            let len = writer.len();
+            writer.write(block);
             self.partial = PartialBlock::new(pad, block, len);
         }
         self.ghash = ghash.raw();
         self.crypt_len += len;
         len
     }
-    #[inline(always)]
+    #[inline]
     pub fn decrypt_update(&mut self, key: &Aes256GcmKey<N>, mut data: ReaderWriter) -> usize {
         if data.is_empty() {
             return 0;
@@ -308,43 +309,43 @@ impl<const N: usize> Aes256GcmState<N> {
         }
         let len = data.len();
         let mut ghash = GhashState::new(key.ghash, self.ghash);
-        let (mut data, block) = self.partial.fill_crypt(data);
-        if let Some((pad, block)) = block {
+        if let Some((pad, block)) = self.partial.fill_crypt(&mut data) {
             ghash.hash(block ^ pad);
         }
-        while let Some((block, writer)) = data.read::<M128iArray<N>>() {
+        for (block, writer) in data.iter::<[M128i; N]>() {
             let ctr = self.ctr.increment_traunch::<N>();
             let block = match N {
                 6 => self.iteration_asm(key, &mut ghash, block, ctr, block),
                 _ => {
                     ghash.hash(block);
-                    block ^ key.aes.encrypt(ctr)
+                    block.ops() ^ key.aes.encrypt(ctr)
                 }
             };
             writer.write(block);
         }
-        while let Some((block, writer)) = data.read::<M128i>() {
+        for (block, writer) in data.iter::<M128i>() {
             ghash.hash(block);
             let ctr = self.ctr.increment();
             let block = key.aes.encrypt(ctr) ^ block;
             writer.write(block);
         }
-        if let Some((block, len, writer)) = data.read_remainder::<M128i>() {
+        if let Some((block, writer)) = data.remainder::<M128i>() {
             let ctr = self.ctr.increment();
             let pad = key.aes.encrypt(ctr);
             let block = pad ^ block;
-            writer.write_remainder(block);
+            let len = writer.len();
+            writer.write(block);
             self.partial = PartialBlock::new(pad, block, len);
         }
         self.ghash = ghash.raw();
         self.crypt_len += len;
         len
     }
-    #[inline(always)]
+    #[inline]
     pub fn encrypt_finalize(&mut self, key: &Aes256GcmKey<N>, mut tag: Writer) -> usize {
         tag.write(self.finalize(key, true))
     }
-    #[inline(always)]
+    #[inline]
     pub fn decrypt_finalize(&mut self, key: &Aes256GcmKey<N>, mut tag: Reader) -> bool {
         if tag.len() != TAG_LEN {
             return false;
@@ -353,7 +354,7 @@ impl<const N: usize> Aes256GcmState<N> {
         let computed_tag = self.finalize(key, false);
         computed_tag.crypto_equals(tag)
     }
-    #[inline(always)]
+    #[inline]
     pub fn finalize(&mut self, key: &Aes256GcmKey<N>, is_encrypt: bool) -> M128i {
         let mut ghash = GhashState::new(key.ghash, self.ghash);
         if self.crypt_len == 0 {

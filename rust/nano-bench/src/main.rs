@@ -113,13 +113,15 @@ fn convert(src_path: &Path, dst_path: &Path) {
     }
 
     let mut file = std::fs::File::create(dst_path).unwrap();
-    let fixed_table = fixed_table.build().with(Style::markdown()).to_string();
-    let length_table = length_table.build().with(Style::markdown()).to_string();
-    let metadata_table = metadata_table(&metadata);
     let w = &mut file;
     writeln!(w, "[//]: # (@{})\n", "generated").unwrap();
+    let fixed_table = fixed_table.build().with(Style::markdown()).to_string();
     writeln!(w, "{fixed_table}\n").unwrap();
-    writeln!(w, "{length_table}\n").unwrap();
+    if length_table.count_rows() > 0 {
+        let length_table = length_table.build().with(Style::markdown()).to_string();
+        writeln!(w, "{length_table}\n").unwrap();
+    }
+    let metadata_table = metadata_table(&metadata);
     writeln!(w, "{metadata_table}").unwrap();
 }
 

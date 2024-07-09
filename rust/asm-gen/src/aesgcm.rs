@@ -20,7 +20,7 @@ pub struct RoundState<const N: usize, const R: usize> {
     auth_index: usize,
 }
 impl<const N: usize, const R: usize> RoundState<N, R> {
-    #[inline(always)]
+    #[inline]
     pub fn new(
         aes: impl Into<AesRoundKeys<R>>,
         mut crypt_data: [M128i; N],
@@ -42,7 +42,7 @@ impl<const N: usize, const R: usize> RoundState<N, R> {
             auth_index: 0,
         }
     }
-    #[inline(always)]
+    #[inline]
     pub fn step(&mut self) {
         if self.aes_index * N <= self.auth_index * (R - 1) {
             self.crypt();
@@ -50,13 +50,13 @@ impl<const N: usize, const R: usize> RoundState<N, R> {
             self.crypt_cmul();
         }
     }
-    #[inline(always)]
+    #[inline]
     pub fn crypt(&mut self) {
         debug_assert!(self.aes_index < R - 1);
         self.aes.encrypt_round(&mut self.crypt_data, self.aes_index);
         self.aes_index += 1;
     }
-    #[inline(always)]
+    #[inline]
     pub fn finish(mut self) -> ([M128i; N], M128i) {
         // Finish up any remaining clmul rounds
         while self.auth_index < N {
@@ -70,12 +70,12 @@ impl<const N: usize, const R: usize> RoundState<N, R> {
         self.crypt_last();
         (self.crypt_data, self.product.reduce())
     }
-    #[inline(always)]
+    #[inline]
     pub fn crypt_last(&mut self) {
         debug_assert!(self.aes_index == R - 1);
         self.aes.encrypt_round_last(&mut self.crypt_data);
     }
-    #[inline(always)]
+    #[inline]
     pub fn crypt_cmul(&mut self) {
         debug_assert!(self.aes_index < R);
         debug_assert!(self.auth_index < N);

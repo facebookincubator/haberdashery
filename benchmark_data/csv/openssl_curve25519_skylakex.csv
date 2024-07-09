@@ -1,0 +1,6 @@
+# @generated
+operation,length,avg,standard_deviation,runs,iters_per_run,metadata
+ecdh,,125837.55034696923,2560.3898510783997,60,19214,algorithm=curve25519;cpu=IntelSkylakeX (06_55H);library=openssl;path=openssl_curve25519_skylakex;primitive=ecdh;profile=skylakex;version=3.3.0
+ecdh_raw,,122264.75508398964,3353.5493660918282,60,19427,algorithm=curve25519;cpu=IntelSkylakeX (06_55H);library=openssl;path=openssl_curve25519_skylakex;primitive=ecdh;profile=skylakex;version=3.3.0
+keygen,,165663.95040502082,5532.693905213583,60,13703,algorithm=curve25519;cpu=IntelSkylakeX (06_55H);library=openssl;path=openssl_curve25519_skylakex;primitive=ecdh;profile=skylakex;version=3.3.0
+keygen_raw,,165019.5855065916,5113.5967233753845,60,14387,algorithm=curve25519;cpu=IntelSkylakeX (06_55H);library=openssl;path=openssl_curve25519_skylakex;primitive=ecdh;profile=skylakex;version=3.3.0

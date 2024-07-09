@@ -7,7 +7,7 @@
 
 use crate::intrinsics::m128i::M128i;
 
-#[inline(always)]
+#[inline]
 pub fn vaesenc<const N: usize>(data: &mut [M128i; N], key: M128i) {
     if cfg!(feature = "aes") {
         vaesenc_asm(data, key);
@@ -16,7 +16,7 @@ pub fn vaesenc<const N: usize>(data: &mut [M128i; N], key: M128i) {
     }
 }
 
-#[inline(always)]
+#[inline]
 pub fn vaesenclast<const N: usize>(data: &mut [M128i; N], key: M128i) {
     if cfg!(feature = "aes") {
         vaesenclast_asm(data, key);
@@ -25,18 +25,18 @@ pub fn vaesenclast<const N: usize>(data: &mut [M128i; N], key: M128i) {
     }
 }
 
-#[inline(always)]
+#[inline]
 fn vaesenc_ref<const N: usize>(data: &mut [M128i; N], key: M128i) {
     data.iter_mut().for_each(|data| *data = data.aesenc(key));
 }
 
-#[inline(always)]
+#[inline]
 fn vaesenclast_ref<const N: usize>(data: &mut [M128i; N], key: M128i) {
     data.iter_mut()
         .for_each(|data| *data = data.aesenclast(key));
 }
 
-#[inline(always)]
+#[inline]
 fn vaesenc_asm<const N: usize>(data: &mut [M128i; N], key: M128i) {
     match N {
         4 => unsafe {
@@ -115,7 +115,7 @@ fn vaesenc_asm<const N: usize>(data: &mut [M128i; N], key: M128i) {
     }
 }
 
-#[inline(always)]
+#[inline]
 fn vaesenclast_asm<const N: usize>(data: &mut [M128i; N], key: M128i) {
     match N {
         4 => unsafe {

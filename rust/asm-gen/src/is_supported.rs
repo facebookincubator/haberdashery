@@ -5,7 +5,7 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-#[inline(always)]
+#[inline]
 pub fn is_supported() -> bool {
     if cfg!(feature = "haswell") {
         cpuid::haswell().is_supported()

@@ -11,26 +11,26 @@ use crate::intrinsics::m128i::M128i;
 #[derive(Default, Clone)]
 pub struct Counter128(M128i);
 impl From<M128i> for Counter128 {
-    #[inline(always)]
+    #[inline]
     fn from(ctr: M128i) -> Self {
         Self(ctr)
     }
 }
 impl From<Counter128> for M128i {
-    #[inline(always)]
+    #[inline]
     fn from(ctr: Counter128) -> Self {
         ctr.0
     }
 }
 impl Counter128 {
-    #[inline(always)]
+    #[inline]
     pub fn increment(&mut self) -> M128i {
         let ctr = self.0;
         self.0 = ctr.add32([1, 0, 0, 0]);
         ctr
     }
     #[allow(clippy::needless_range_loop)]
-    #[inline(always)]
+    #[inline]
     pub fn increment_traunch<const N: usize>(&mut self) -> [M128i; N] {
         let mut traunch = [self.0; N];
         for i in 1..N {
@@ -45,25 +45,25 @@ impl Counter128 {
 #[derive(Default, Clone)]
 pub struct CounterBe128(M128i);
 impl From<M128i> for CounterBe128 {
-    #[inline(always)]
+    #[inline]
     fn from(ctr: M128i) -> Self {
         Self(ctr.byte_reverse())
     }
 }
 impl From<CounterBe128> for M128i {
-    #[inline(always)]
+    #[inline]
     fn from(ctr: CounterBe128) -> Self {
         ctr.0.byte_reverse()
     }
 }
 impl CounterBe128 {
-    #[inline(always)]
+    #[inline]
     pub fn increment(&mut self) -> M128i {
         let ctr = self.0.byte_reverse();
         self.0 = self.0.add32([1, 0, 0, 0]);
         ctr
     }
-    #[inline(always)]
+    #[inline]
     pub fn increment_traunch<const N: usize>(&mut self) -> [M128i; N] {
         let mut traunch = [self.0.byte_reverse(); N];
         #[allow(clippy::needless_range_loop)]

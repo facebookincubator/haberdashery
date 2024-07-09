@@ -20,8 +20,6 @@ main() {
     local -r ALG="${1}"; shift
     "${ALG}"/generate.sh "$@"
   fi
-  cd "${PROJECT_DIR}/rust/asm-checksums"
-  cargo run > "${PROJECT_DIR}/asm/sha256sums.txt"
 }
 
 main "$@"

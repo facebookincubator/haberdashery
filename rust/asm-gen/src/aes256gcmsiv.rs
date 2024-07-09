@@ -5,13 +5,13 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use ffi_util::Reader;
-use ffi_util::ReaderWriter;
-use ffi_util::Writer;
-
 use crate::aes256::Aes256;
 use crate::counter128::Counter128;
-use crate::intrinsics::m128i::*;
+use crate::ffi::reader::Reader;
+use crate::ffi::reader_writer::ReaderWriter;
+use crate::ffi::writer::Writer;
+use crate::intrinsics::m128i::M128i;
+use crate::ops::ArrayOps;
 use crate::polyval::PolyvalKey;
 use crate::polyval::PolyvalState;
 
@@ -31,13 +31,13 @@ pub struct Aes256GcmSivKey {
     aes: Aes256,
 }
 impl From<[u8; KEY_LEN]> for Aes256GcmSivKey {
-    #[inline(always)]
+    #[inline]
     fn from(key: [u8; KEY_LEN]) -> Self {
         Self { aes: key.into() }
     }
 }
 impl Aes256GcmSivKey {
-    #[inline(always)]
+    #[inline]
     pub fn init(&mut self, key: &[u8]) -> bool {
         let Ok(key) = <[u8; KEY_LEN]>::try_from(key) else {
             return false;
@@ -45,7 +45,7 @@ impl Aes256GcmSivKey {
         *self = Self::from(key);
         true
     }
-    #[inline(always)]
+    #[inline]
     pub fn encrypt<const N: usize>(
         &self,
         nonce: &[u8],
@@ -69,7 +69,7 @@ impl Aes256GcmSivKey {
         Context::<N>::derive(&self.aes, nonce).encrypt(aad, data, tag);
         true
     }
-    #[inline(always)]
+    #[inline]
     pub fn decrypt<const N: usize>(
         &self,
         nonce: &[u8],
@@ -97,7 +97,7 @@ struct Context<const N: usize> {
     ctr: M128i,
 }
 impl<const N: usize> Context<N> {
-    #[inline(always)]
+    #[inline]
     fn derive(aes: &Aes256, nonce: [u8; NONCE_LEN]) -> Self {
         let nonce: [[u8; 4]; 3] = unsafe { core::mem::transmute(nonce) };
         let nonce = [
@@ -133,7 +133,8 @@ impl<const N: usize> Context<N> {
     fn encrypt(&mut self, aad: Reader, mut data: ReaderWriter, mut tag: Writer) {
         debug_assert_eq!(tag.len(), TAG_LEN);
         let lengths = M128i::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
-        let plaintext = data.as_reader();
+        let (ptr, len) = unsafe { data.reader_ptr() };
+        let plaintext = unsafe { Reader::new(ptr, len) };
         let hash = self
             .polyval
             .hash(aad)
@@ -143,17 +144,17 @@ impl<const N: usize> Context<N> {
         let computed_tag = self.tag(hash);
         tag.write(computed_tag);
         let mut ctr: Counter128 = (computed_tag | COUNTER_MASK).into();
-        while let Some((block, writer)) = data.read::<M128iArray<N>>() {
+        for (block, writer) in data.iter::<[M128i; N]>() {
             let counters = ctr.increment_traunch::<N>();
-            let block = block ^ self.aes.encrypt(counters);
+            let block = block.ops() ^ self.aes.encrypt(counters);
             writer.write(block);
         }
-        while let Some((block, writer)) = data.read::<M128i>() {
+        for (block, writer) in data.iter::<M128i>() {
             let ctr = ctr.increment();
             let block = block ^ self.aes.encrypt(ctr);
             writer.write(block);
         }
-        if let Some((block, _len, writer)) = data.read_remainder::<M128i>() {
+        if let Some((block, writer)) = data.remainder::<M128i>() {
             let ctr = M128i::from(ctr);
             let block = block ^ self.aes.encrypt(ctr);
             writer.write(block);
@@ -165,9 +166,9 @@ impl<const N: usize> Context<N> {
         &mut self,
         auth: [M128i; N],
         counters: [M128i; N],
-        plaintext: M128iArray<N>,
+        plaintext: [M128i; N],
         polyval: &mut PolyvalState<N>,
-    ) -> M128iArray<N> {
+    ) -> [M128i; N] {
         // Constructor performs first round of AES and auth
         let mut state = crate::aesgcm::RoundState::new(
             self.aes,
@@ -193,7 +194,7 @@ impl<const N: usize> Context<N> {
         // Performs last round of AES
         let (pads, new_hash) = state.finish();
         *polyval = PolyvalState::new(self.polyval, new_hash);
-        plaintext ^ pads
+        plaintext.ops() ^ pads
     }
     #[allow(unused)]
     fn decrypt(&mut self, aad: Reader, mut data: ReaderWriter, mut tag: Reader) -> bool {
@@ -204,33 +205,33 @@ impl<const N: usize> Context<N> {
         let mut hash = self.polyval.hash(aad);
 
         let mut ctr: Counter128 = (tag | COUNTER_MASK).into();
-        if let Some((block, writer)) = data.read::<M128iArray<N>>() {
+        if let Some((block, writer)) = data.read::<[M128i; N]>() {
             let counters = ctr.increment_traunch::<N>();
-            let mut last_block = block ^ self.aes.encrypt(counters);
+            let mut last_block = block.ops() ^ self.aes.encrypt(counters);
             writer.write(last_block);
-            while let Some((block, writer)) = data.read::<M128iArray<N>>() {
+            for (block, writer) in data.iter::<[M128i; N]>() {
                 let counters = ctr.increment_traunch::<N>();
                 last_block = match N {
-                    6 => self.iteration_asm(last_block.into(), counters, block, &mut hash),
+                    6 => self.iteration_asm(last_block, counters, block, &mut hash),
                     _ => {
                         hash.hash(last_block);
-                        block ^ self.aes.encrypt(counters)
+                        block.ops() ^ self.aes.encrypt(counters)
                     }
                 };
                 writer.write(last_block);
             }
             hash.hash(last_block);
         }
-        while let Some((block, writer)) = data.read::<M128i>() {
+        for (block, writer) in data.iter::<M128i>() {
             let ctr = ctr.increment();
             let block = block ^ self.aes.encrypt(ctr);
             writer.write(block);
             hash.hash(block);
         }
-        if let Some((block, _len, writer)) = data.read_remainder::<M128i>() {
+        if let Some((block, writer)) = data.remainder::<M128i>() {
             let ctr = M128i::from(ctr);
             let block = block ^ self.aes.encrypt(ctr);
-            let block = writer.write_remainder(block);
+            let block = writer.write(block);
             hash.hash(block);
         }
         hash.hash(lengths);
@@ -422,9 +423,7 @@ mod tests {
     }
 
     #[test]
-    // Ignore this test when used with buck
-    // buck doesn't have the aes-gcm-siv crate (which is for the best)
-    #[cfg(not(feature = "buck2"))]
+    #[cfg(feature = "uses_cargo")]
     fn comparison() {
         use aes_gcm_siv::AeadInPlace;
         use aes_gcm_siv::KeyInit;

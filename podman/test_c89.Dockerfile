@@ -13,6 +13,7 @@ RUN apk add \
   --no-cache
 WORKDIR src
 COPY asm asm
-COPY c c
+COPY bindings/c89 bindings/c89
+COPY bindings/c89_make_test_runner.sh bindings/c89_make_test_runner.sh
 COPY scripts scripts
 CMD ["/bin/bash", "/src/scripts/make.sh"]

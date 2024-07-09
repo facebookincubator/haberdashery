@@ -26,12 +26,12 @@ pub fn haswell() -> FeatureSet {
         | FXSR
         | AVX
         | XSAVE
-        | PCLMUL
+        | PCLMULQDQ
         | FSGSBASE
-        | RDRND
+        | RDRAND
         | F16C
         | AVX2
-        | BMI
+        | BMI1
         | BMI2
         | FMA
         | AES
@@ -67,20 +67,20 @@ pub fn cannonlake() -> FeatureSet {
         | PKU
         | AVX512VBMI
         | AVX512IFMA
-        | SHA
+        | SHA_NI
 }
 #[inline(always)]
 pub fn icelake() -> FeatureSet {
     // GCC's icelake extensions minus xsavec, xsaves, lzcnt
     cannonlake() // line break
-        | AVX512VNNI
+        | AVX512_VNNI
         | GFNI
         | VAES
-        | AVX512VBMI2
+        | AVX512_VBMI2
         | VPCLMULQDQ
-        | AVX512BITALG
+        | AVX512_BITALG
         | RDPID
-        | AVX512VPOPCNTDQ
+        | AVX512_VPOPCNTDQ
 }
 #[inline(always)]
 pub fn tigerlake() -> FeatureSet {
@@ -88,7 +88,7 @@ pub fn tigerlake() -> FeatureSet {
     skylake() // line break
         | MOVDIRI
         | MOVDIR64B
-        | AVX512VP2INTERSECT
+        | AVX512_VP2INTERSECT
         | KL
 }
 #[inline(always)]
@@ -104,11 +104,11 @@ pub fn zen3() -> FeatureSet {
         | SSE4_2
         | POPCNT
         | AVX
-        | PCLMUL
+        | PCLMULQDQ
         | FSGSBASE
         | F16C
         | AVX2
-        | BMI
+        | BMI1
         | BMI2
         | CLWB
         | FMA
@@ -117,7 +117,7 @@ pub fn zen3() -> FeatureSet {
         | AES
         | CLFLUSHOPT
         | PKU
-        | SHA
+        | SHA_NI
         | VAES
         | VPCLMULQDQ
         | RDPID
@@ -133,11 +133,11 @@ pub fn zen4() -> FeatureSet {
         | AVX512CD
         | AVX512BW
         | AVX512VL
-        | AVX512BF16
+        | AVX512_BF16
         | AVX512VBMI
-        | AVX512VBMI2
-        | AVX512VNNI
-        | AVX512BITALG
-        | AVX512VPOPCNTDQ
+        | AVX512_VBMI2
+        | AVX512_VNNI
+        | AVX512_BITALG
+        | AVX512_VPOPCNTDQ
         | GFNI
 }
