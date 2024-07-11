@@ -1,9 +1,0 @@
-# @generated
-prefix: haberdashery
-algorithm: aes256gcm
-profile: haswell
-struct_name: Aes256Gcm
-struct_members:
-- name: value
-  ty: __m128i
-  len: '21'
