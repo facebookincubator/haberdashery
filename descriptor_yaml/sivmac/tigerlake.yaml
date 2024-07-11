@@ -1,9 +1,0 @@
-# @generated
-prefix: haberdashery
-algorithm: sivmac
-profile: tigerlake
-struct_name: SivMac
-struct_members:
-- name: value
-  ty: __m128i
-  len: '23'

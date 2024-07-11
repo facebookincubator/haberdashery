@@ -1,7 +1,0 @@
-# @generated
-- name: KEY_LEN
-  value: '32'
-- name: NONCE_LEN
-  value: '24'
-- name: TAG_LEN
-  value: '16'
