@@ -5,6 +5,8 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+use crate::array;
+
 pub trait Randomizable {
     fn random() -> Self;
 }
@@ -15,46 +17,46 @@ impl<const N: usize, T: Randomizable> Randomizable for [T; N] {
 }
 impl Randomizable for usize {
     fn random() -> Self {
-        super::usize()
+        Self::from_le_bytes(array())
     }
 }
 impl Randomizable for u64 {
     fn random() -> Self {
-        super::u64()
+        Self::from_le_bytes(array())
     }
 }
 impl Randomizable for u32 {
     fn random() -> Self {
-        super::u32()
+        Self::from_le_bytes(array())
     }
 }
 impl Randomizable for u16 {
     fn random() -> Self {
-        super::u16()
+        Self::from_le_bytes(array())
     }
 }
 impl Randomizable for u8 {
     fn random() -> Self {
-        super::u8()
+        Self::from_le_bytes(array())
     }
 }
 impl Randomizable for i64 {
     fn random() -> Self {
-        super::i64()
+        Self::from_le_bytes(array())
     }
 }
 impl Randomizable for i32 {
     fn random() -> Self {
-        super::i32()
+        Self::from_le_bytes(array())
     }
 }
 impl Randomizable for i16 {
     fn random() -> Self {
-        super::i16()
+        Self::from_le_bytes(array())
     }
 }
 impl Randomizable for i8 {
     fn random() -> Self {
-        super::i8()
+        Self::from_le_bytes(array())
     }
 }

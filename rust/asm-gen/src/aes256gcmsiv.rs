@@ -5,15 +5,18 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+use core::marker::PhantomData;
+
 use crate::aes256::Aes256;
+use crate::clmul::clmul128foil::*;
+use crate::clmul::clmul256karatsuba::*;
 use crate::counter128::Counter128;
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;
 use crate::intrinsics::m128i::M128i;
+use crate::intrinsics::m256i::M256i;
 use crate::ops::ArrayOps;
-use crate::polyval::PolyvalKey;
-use crate::polyval::PolyvalState;
 
 pub const KEY_LEN: usize = 32;
 pub const NONCE_LEN: usize = 12;
@@ -25,18 +28,32 @@ const MAX_CRYPT_BYTES: usize = 1 << 36;
 const COUNTER_MASK: [u32; 4] = [0, 0, 0, 0x80000000];
 const TAG_MASK: [u32; 4] = [0xff_ff_ff_ff, 0xff_ff_ff_ff, 0xff_ff_ff_ff, 0x7f_ff_ff_ff];
 
+pub struct SIMD128;
+pub struct SIMD256;
+
 #[repr(C)]
 #[derive(Default)]
-pub struct Aes256GcmSivKey {
+pub struct Aes256GcmSivKey<I = SIMD128> {
     aes: Aes256,
+    _p: PhantomData<I>,
 }
 impl From<[u8; KEY_LEN]> for Aes256GcmSivKey {
     #[inline]
     fn from(key: [u8; KEY_LEN]) -> Self {
-        Self { aes: key.into() }
+        Self {
+            aes: key.into(),
+            _p: PhantomData,
+        }
     }
 }
-impl Aes256GcmSivKey {
+impl<I> Aes256GcmSivKey<I> {
+    #[inline]
+    fn from(key: [u8; KEY_LEN]) -> Self {
+        Self {
+            aes: key.into(),
+            _p: PhantomData,
+        }
+    }
     #[inline]
     pub fn init(&mut self, key: &[u8]) -> bool {
         let Ok(key) = <[u8; KEY_LEN]>::try_from(key) else {
@@ -46,6 +63,43 @@ impl Aes256GcmSivKey {
         true
     }
     #[inline]
+    pub fn encrypt_check(
+        &self,
+        nonce: &[u8],
+        aad: &Reader,
+        data: &ReaderWriter,
+        tag: &Writer,
+    ) -> Option<[u8; NONCE_LEN]> {
+        if aad.len() > MAX_AAD_BYTES {
+            return None;
+        }
+        if data.len() > MAX_CRYPT_BYTES {
+            return None;
+        }
+        if tag.len() != TAG_LEN {
+            return None;
+        }
+        nonce.try_into().ok()
+    }
+    #[inline]
+    pub fn decrypt_check(
+        &self,
+        nonce: &[u8],
+        aad: &Reader,
+        data: &ReaderWriter,
+    ) -> Option<[u8; NONCE_LEN]> {
+        if aad.len() > MAX_AAD_BYTES {
+            return None;
+        }
+        if data.len() > MAX_CRYPT_BYTES {
+            return None;
+        }
+        nonce.try_into().ok()
+    }
+}
+
+impl Aes256GcmSivKey<SIMD128> {
+    #[inline]
     pub fn encrypt<const N: usize>(
         &self,
         nonce: &[u8],
@@ -53,21 +107,13 @@ impl Aes256GcmSivKey {
         data: ReaderWriter,
         tag: Writer,
     ) -> bool {
-        let Ok(nonce) = <[u8; NONCE_LEN]>::try_from(nonce) else {
-            return false;
-        };
-        if aad.len() > MAX_AAD_BYTES {
-            return false;
+        match self.encrypt_check(nonce, &aad, &data, &tag) {
+            Some(nonce) => {
+                Context128::<N>::derive(&self.aes, nonce).encrypt(aad, data, tag);
+                true
+            }
+            None => false,
         }
-        if data.len() > MAX_CRYPT_BYTES {
-            return false;
-        }
-        if tag.len() != TAG_LEN {
-            return false;
-        }
-
-        Context::<N>::derive(&self.aes, nonce).encrypt(aad, data, tag);
-        true
     }
     #[inline]
     pub fn decrypt<const N: usize>(
@@ -77,71 +123,123 @@ impl Aes256GcmSivKey {
         data: ReaderWriter,
         tag: Reader,
     ) -> bool {
-        let Ok(nonce) = <[u8; NONCE_LEN]>::try_from(nonce) else {
-            return false;
-        };
-        if aad.len() > MAX_AAD_BYTES {
-            return false;
+        match self.decrypt_check(nonce, &aad, &data) {
+            Some(nonce) => Context128::<N>::derive(&self.aes, nonce).decrypt(aad, data, tag),
+            None => false,
         }
-        if data.len() > MAX_CRYPT_BYTES {
-            return false;
-        }
-
-        Context::<N>::derive(&self.aes, nonce).decrypt(aad, data, tag)
     }
 }
 
-struct Context<const N: usize> {
-    polyval: PolyvalKey<N>,
+impl Aes256GcmSivKey<SIMD256> {
+    #[inline]
+    pub fn encrypt<const N: usize>(
+        &self,
+        nonce: &[u8],
+        aad: Reader,
+        data: ReaderWriter,
+        tag: Writer,
+    ) -> bool {
+        match self.encrypt_check(nonce, &aad, &data, &tag) {
+            Some(nonce) => {
+                Context256::<N>::derive(&self.aes, nonce).encrypt(aad, data, tag);
+                true
+            }
+            None => false,
+        }
+    }
+    #[inline]
+    pub fn decrypt<const N: usize>(
+        &self,
+        nonce: &[u8],
+        aad: Reader,
+        data: ReaderWriter,
+        tag: Reader,
+    ) -> bool {
+        match self.decrypt_check(nonce, &aad, &data) {
+            Some(nonce) => Context256::<N>::derive(&self.aes, nonce).decrypt(aad, data, tag),
+            None => false,
+        }
+    }
+}
+
+#[inline]
+fn derive_sivmac_key(aes: &Aes256, nonce: [u8; NONCE_LEN]) -> (M128i, Aes256, M128i) {
+    let nonce: [[u8; 4]; 3] = unsafe { core::mem::transmute(nonce) };
+    let nonce = [
+        u32::from_le_bytes(nonce[0]),
+        u32::from_le_bytes(nonce[1]),
+        u32::from_le_bytes(nonce[2]),
+    ];
+    let ctr = M128i::from([nonce[0], nonce[1], nonce[2], 0]);
+    let nonce = M128i::from([0, nonce[0], nonce[1], nonce[2]]);
+    let subkeys = aes.encrypt([
+        nonce ^ [0, 0, 0, 0],
+        nonce ^ [1, 0, 0, 0],
+        nonce ^ [2, 0, 0, 0],
+        nonce ^ [3, 0, 0, 0],
+        nonce ^ [4, 0, 0, 0],
+        nonce ^ [5, 0, 0, 0],
+    ]);
+    let polyval_key = subkeys[0].unpacklo64(subkeys[1]);
+    let aes = Aes256::new([
+        subkeys[2].unpacklo64(subkeys[3]),
+        subkeys[4].unpacklo64(subkeys[5]),
+    ]);
+    (polyval_key, aes, ctr)
+}
+struct Context128<const N: usize> {
+    polyval: ClMul128FoilPowerTable<N>,
     aes: Aes256,
     ctr: M128i,
+    hash: M128i,
 }
-impl<const N: usize> Context<N> {
+impl<const N: usize> Context128<N> {
     #[inline]
     fn derive(aes: &Aes256, nonce: [u8; NONCE_LEN]) -> Self {
-        let nonce: [[u8; 4]; 3] = unsafe { core::mem::transmute(nonce) };
-        let nonce = [
-            u32::from_le_bytes(nonce[0]),
-            u32::from_le_bytes(nonce[1]),
-            u32::from_le_bytes(nonce[2]),
-        ];
-        let ctr = M128i::from([nonce[0], nonce[1], nonce[2], 0]);
-        let nonce = M128i::from([0, nonce[0], nonce[1], nonce[2]]);
-        let subkeys = aes.encrypt([
-            nonce ^ [0, 0, 0, 0],
-            nonce ^ [1, 0, 0, 0],
-            nonce ^ [2, 0, 0, 0],
-            nonce ^ [3, 0, 0, 0],
-            nonce ^ [4, 0, 0, 0],
-            nonce ^ [5, 0, 0, 0],
-        ]);
+        let (polyval_key, aes, ctr) = derive_sivmac_key(aes, nonce);
         Self {
-            polyval: PolyvalKey::new(subkeys[0].unpacklo64(subkeys[1])),
-            aes: Aes256::new([
-                subkeys[2].unpacklo64(subkeys[3]),
-                subkeys[4].unpacklo64(subkeys[5]),
-            ]),
+            polyval: ClMul128FoilPowerTable::new(polyval_key),
+            aes,
             ctr,
+            hash: M128i::zero(),
         }
     }
-    #[allow(unused)]
+    #[inline]
     pub fn tag(&mut self, hash: M128i) -> M128i {
         let tag = (hash ^ self.ctr) & TAG_MASK;
         self.aes.encrypt(tag)
     }
-    #[allow(unused)]
+    #[inline]
+    pub fn hash_m128i(&mut self, block: M128i) {
+        self.hash = self.polyval[0].clmul128foil(self.hash ^ block).reduce();
+    }
+    #[inline]
+    pub fn hash_array(&mut self, mut array: [M128i; N]) {
+        array[0] ^= self.hash;
+        self.hash = self.polyval.clmul128foil(array).reduce();
+    }
+    #[inline]
+    pub fn hash(&mut self, mut message: Reader) {
+        for array in message.iter::<[M128i; N]>() {
+            self.hash_array(array);
+        }
+        for block in message.iter::<M128i>() {
+            self.hash_m128i(block);
+        }
+        if let Some(block) = message.remainder::<M128i>() {
+            self.hash_m128i(block);
+        }
+    }
+    #[inline]
     fn encrypt(&mut self, aad: Reader, mut data: ReaderWriter, mut tag: Writer) {
         debug_assert_eq!(tag.len(), TAG_LEN);
         let lengths = M128i::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
         let (ptr, len) = unsafe { data.reader_ptr() };
         let plaintext = unsafe { Reader::new(ptr, len) };
-        let hash = self
-            .polyval
-            .hash(aad)
-            .hash(plaintext)
-            .hash(lengths)
-            .result();
-        let computed_tag = self.tag(hash);
+        self.hash(aad);
+        self.hash(plaintext);
+        self.hash_m128i(lengths);
+        let computed_tag = self.tag(self.hash);
         tag.write(computed_tag);
         let mut ctr: Counter128 = (computed_tag | COUNTER_MASK).into();
         for (block, writer) in data.iter::<[M128i; N]>() {
@@ -161,13 +259,12 @@ impl<const N: usize> Context<N> {
         }
     }
 
-    #[allow(unused)]
+    #[inline]
     pub fn iteration_asm(
         &mut self,
         auth: [M128i; N],
         counters: [M128i; N],
         plaintext: [M128i; N],
-        polyval: &mut PolyvalState<N>,
     ) -> [M128i; N] {
         // Constructor performs first round of AES and auth
         let mut state = crate::aesgcm::RoundState::new(
@@ -175,7 +272,7 @@ impl<const N: usize> Context<N> {
             counters,
             auth,
             self.polyval.keys(),
-            polyval.result(),
+            self.hash,
         );
         // 13 rounds of aes + 6 rounds of auth
         state.step();
@@ -193,16 +290,16 @@ impl<const N: usize> Context<N> {
         state.step();
         // Performs last round of AES
         let (pads, new_hash) = state.finish();
-        *polyval = PolyvalState::new(self.polyval, new_hash);
+        self.hash = new_hash;
         plaintext.ops() ^ pads
     }
-    #[allow(unused)]
+    #[inline]
     fn decrypt(&mut self, aad: Reader, mut data: ReaderWriter, mut tag: Reader) -> bool {
         let lengths = M128i::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
         let Some(tag) = tag.read::<M128i>() else {
             return false;
         };
-        let mut hash = self.polyval.hash(aad);
+        self.hash(aad);
 
         let mut ctr: Counter128 = (tag | COUNTER_MASK).into();
         if let Some((block, writer)) = data.read::<[M128i; N]>() {
@@ -212,30 +309,145 @@ impl<const N: usize> Context<N> {
             for (block, writer) in data.iter::<[M128i; N]>() {
                 let counters = ctr.increment_traunch::<N>();
                 last_block = match N {
-                    6 => self.iteration_asm(last_block, counters, block, &mut hash),
+                    6 => self.iteration_asm(last_block, counters, block),
                     _ => {
-                        hash.hash(last_block);
+                        self.hash_array(last_block);
                         block.ops() ^ self.aes.encrypt(counters)
                     }
                 };
                 writer.write(last_block);
             }
-            hash.hash(last_block);
+            self.hash_array(last_block);
         }
         for (block, writer) in data.iter::<M128i>() {
             let ctr = ctr.increment();
             let block = block ^ self.aes.encrypt(ctr);
             writer.write(block);
-            hash.hash(block);
+            self.hash_m128i(block);
         }
         if let Some((block, writer)) = data.remainder::<M128i>() {
             let ctr = M128i::from(ctr);
             let block = block ^ self.aes.encrypt(ctr);
             let block = writer.write(block);
-            hash.hash(block);
+            self.hash_m128i(block);
         }
-        hash.hash(lengths);
-        self.tag(hash.result()).crypto_equals(tag)
+        self.hash_m128i(lengths);
+        self.tag(self.hash).crypto_equals(tag)
+    }
+}
+
+struct Context256<const N: usize> {
+    polyval: ClMul256KaratsubaPowerTable<N>,
+    aes: Aes256,
+    ctr: M128i,
+    state: M256i,
+}
+impl<const N: usize> Context256<N> {
+    const BLOCK_LEN: usize = 16;
+    #[inline]
+    fn derive(aes: &Aes256, nonce: [u8; NONCE_LEN]) -> Self {
+        let (polyval_key, aes, ctr) = derive_sivmac_key(aes, nonce);
+        Self {
+            polyval: ClMul256KaratsubaPowerTable::new(polyval_key),
+            aes,
+            ctr,
+            state: M256i::zero(),
+        }
+    }
+    #[inline]
+    pub fn tag(&mut self, hash: M128i) -> M128i {
+        let tag = (hash ^ self.ctr) & TAG_MASK;
+        self.aes.encrypt(tag)
+    }
+    #[inline]
+    pub fn hash_m256i(&mut self, block: M256i) {
+        self.state = self.polyval[0]
+            .clmul256karatsuba(block ^ self.state)
+            .reduce();
+    }
+    #[inline]
+    pub fn hash_array(&mut self, mut array: [M256i; N]) {
+        array[0] ^= self.state;
+        self.state = self.polyval.clmul256karatsuba(array).reduce();
+    }
+    #[inline]
+    pub fn hash(&mut self, message: Reader) {
+        self.state = self.polyval.clmul256karatsuba_reader(self.state, message);
+    }
+    #[inline]
+    fn encrypt(&mut self, aad: Reader, mut data: ReaderWriter, mut tag: Writer) {
+        debug_assert_eq!(tag.len(), TAG_LEN);
+        let lengths = M128i::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
+        let (ptr, len) = unsafe { data.reader_ptr() };
+        let plaintext = unsafe { Reader::new(ptr, len) };
+        self.hash(aad);
+        self.hash(plaintext);
+        let hash = self.polyval.reduce(self.state, lengths);
+        let computed_tag = self.tag(hash);
+        tag.write(computed_tag);
+        let mut ctr: Counter128 = (computed_tag | COUNTER_MASK).into();
+        for (block, writer) in data.iter::<[M256i; N]>() {
+            let counters = ctr.increment_traunch_256::<N>();
+            let block = block.ops() ^ self.aes.encrypt(counters);
+            writer.write(block);
+        }
+        for (block, writer) in data.iter::<M256i>() {
+            let counter = ctr.increment_traunch_256::<1>()[0];
+            let block = block ^ self.aes.encrypt(counter);
+            writer.write(block);
+        }
+        if let Some((block, writer)) = data.remainder::<M256i>() {
+            let counter = ctr.increment();
+            let counter = M256i::from([counter, M128i::from(ctr)]);
+            let block = block ^ self.aes.encrypt(counter);
+            writer.write(block);
+        }
+    }
+    #[inline]
+    fn decrypt(&mut self, aad: Reader, mut data: ReaderWriter, mut tag: Reader) -> bool {
+        let lengths = M128i::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
+        let Some(tag) = tag.read::<M128i>() else {
+            return false;
+        };
+        self.hash(aad);
+
+        let mut ctr: Counter128 = (tag | COUNTER_MASK).into();
+        if let Some((block, writer)) = data.read::<[M256i; N]>() {
+            let counters = ctr.increment_traunch_256::<N>();
+            let mut last_block = block.ops() ^ self.aes.encrypt(counters);
+            writer.write(last_block);
+            for (block, writer) in data.iter::<[M256i; N]>() {
+                self.hash_array(last_block);
+                let counters = ctr.increment_traunch_256::<N>();
+                last_block = block.ops() ^ self.aes.encrypt(counters);
+                writer.write(last_block);
+            }
+            self.hash_array(last_block);
+        }
+        for (block, writer) in data.iter::<M256i>() {
+            let counter = ctr.increment_traunch_256::<1>()[0];
+            let block = block ^ self.aes.encrypt(counter);
+            writer.write(block);
+            self.hash_m256i(block);
+        }
+        let bytes_remaining = data.len();
+        if let Some((block, writer)) = data.remainder::<M256i>() {
+            let counter = ctr.increment();
+            let counter = M256i::from([counter, M128i::from(ctr)]);
+            let block = block ^ self.aes.encrypt(counter);
+            let block = writer.write(block);
+            if bytes_remaining > Self::BLOCK_LEN {
+                self.hash_m256i(block);
+            } else {
+                self.state = self
+                    .polyval
+                    .key()
+                    .clmul256karatsuba(block ^ self.state)
+                    .reduce();
+            }
+        }
+        let hash = self.polyval.reduce(self.state, lengths);
+        self.tag(hash).crypto_equals(tag)
     }
 }
 
@@ -245,6 +457,80 @@ mod tests {
 
     const ENCRYPT_LANES: usize = 8;
     const DECRYPT_LANES: usize = 6;
+
+    #[derive(Default)]
+    pub struct Test;
+    impl Aes256GcmSivKey<Test> {
+        #[inline]
+        pub fn encrypt<const N: usize>(
+            &self,
+            nonce: &[u8],
+            aad: Reader,
+            data: ReaderWriter,
+            tag: Writer,
+        ) -> bool {
+            let Some(nonce) = self.encrypt_check(nonce, &aad, &data, &tag) else {
+                return false;
+            };
+
+            let (reader_ptr, reader_len) = unsafe { data.reader_ptr() };
+            let (writer_ptr, writer_len) = unsafe { data.writer_ptr_for_test() };
+            let (tag_prt, tag_len) = unsafe { tag.writer_ptr() };
+            assert_eq!(reader_len, writer_len);
+            Context128::<N>::derive(&self.aes, nonce).encrypt(aad.clone_for_test(), data, tag);
+
+            if cpuid::VPCLMULQDQ.is_supported() {
+                let tag = unsafe { core::slice::from_raw_parts_mut(tag_prt, tag_len) };
+                let ciphertext = unsafe { core::slice::from_raw_parts(writer_ptr, writer_len) };
+                let plaintext = unsafe { core::slice::from_raw_parts(reader_ptr, reader_len) };
+                let mut other_ciphertext = vec![0u8; writer_len];
+                let mut other_tag = [0u8; TAG_LEN];
+                Context256::<N>::derive(&self.aes, nonce).encrypt(
+                    aad,
+                    ReaderWriter::from_slices(plaintext, &mut other_ciphertext).unwrap(),
+                    Writer::from(other_tag.as_mut_slice()),
+                );
+                assert!(ciphertext.iter().eq(other_ciphertext.iter()));
+                assert!(tag.iter().eq(other_tag.iter()));
+            }
+            true
+        }
+        #[inline]
+        pub fn decrypt<const N: usize>(
+            &self,
+            nonce: &[u8],
+            aad: Reader,
+            data: ReaderWriter,
+            tag: Reader,
+        ) -> bool {
+            let Some(nonce) = self.decrypt_check(nonce, &aad, &data) else {
+                return false;
+            };
+            let (reader_ptr, reader_len) = unsafe { data.reader_ptr() };
+            let (writer_ptr, writer_len) = unsafe { data.writer_ptr_for_test() };
+            assert_eq!(reader_len, writer_len);
+            let res = Context128::<N>::derive(&self.aes, nonce).decrypt(
+                aad.clone_for_test(),
+                data,
+                tag.clone_for_test(),
+            );
+            if cpuid::VPCLMULQDQ.is_supported() {
+                let plaintext = unsafe { core::slice::from_raw_parts(writer_ptr, writer_len) };
+                let ciphertext = unsafe { core::slice::from_raw_parts(reader_ptr, reader_len) };
+                let mut other_plaintext = vec![0u8; writer_len];
+                assert_eq!(
+                    res,
+                    Context256::<N>::derive(&self.aes, nonce).decrypt(
+                        aad,
+                        ReaderWriter::from_slices(ciphertext, &mut other_plaintext).unwrap(),
+                        tag
+                    )
+                );
+                assert!(plaintext.iter().eq(other_plaintext.iter()));
+            }
+            res
+        }
+    }
 
     struct TestVector {
         plaintext: &'static str,
@@ -265,7 +551,7 @@ mod tests {
             let mut ciphertext = vec![0u8; plaintext.len()];
             let mut tag = [0u8; TAG_LEN];
             {
-                let mut aes = Aes256GcmSivKey::default();
+                let mut aes = Aes256GcmSivKey::<Test>::default();
                 assert!(aes.init(&key));
                 assert!(aes.encrypt::<N>(
                     &nonce,
@@ -329,7 +615,7 @@ mod tests {
             let nonce: [u8; NONCE_LEN] = nonce.try_into().unwrap();
             {
                 let aes = Aes256::from(key);
-                let mut ctx = Context::<N>::derive(&aes, nonce);
+                let mut ctx = Context128::<N>::derive(&aes, nonce);
                 assert_eq!(ctx.polyval.keys()[0], self.auth_key, "auth_key");
                 assert_eq!(
                     [ctx.aes[0].encode_hex(), ctx.aes[1].encode_hex()].concat(),
@@ -346,7 +632,7 @@ mod tests {
             }
             {
                 let aes = Aes256::from(key);
-                let mut ctx = Context::<N>::derive(&aes, nonce);
+                let mut ctx = Context128::<N>::derive(&aes, nonce);
                 let mut plaintext = vec![0u8; plaintext.len()];
                 assert!(ctx.decrypt(
                     aad.as_slice().into(),
@@ -364,7 +650,7 @@ mod tests {
                 ));
                 let mut bad_nonce = nonce.clone();
                 bad_nonce[0] ^= 0x01;
-                assert!(!Context::<N>::derive(&aes, bad_nonce).decrypt(
+                assert!(!Context128::<N>::derive(&aes, bad_nonce).decrypt(
                     aad.as_slice().into(),
                     ReaderWriter::from_slices(&ciphertext, &mut plaintext).unwrap(),
                     tag.as_slice().into(),
@@ -423,7 +709,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "uses_cargo")]
+    #[cfg(not(fbcode_build))]
     fn comparison() {
         use aes_gcm_siv::AeadInPlace;
         use aes_gcm_siv::KeyInit;
@@ -470,7 +756,7 @@ mod tests {
                 let tag = other
                     .encrypt_in_place_detached(nonce.as_slice().into(), &aad, &mut ciphertext)
                     .unwrap();
-                let mut aes = Aes256GcmSivKey::default();
+                let mut aes = Aes256GcmSivKey::<Test>::default();
                 assert!(aes.init(&key));
                 let mut decrypted = vec![0u8; plaintext.len()];
                 assert!(aes.decrypt::<6>(
@@ -482,7 +768,7 @@ mod tests {
                 assert_eq!(plaintext, decrypted);
             }
             {
-                let mut aes = Aes256GcmSivKey::default();
+                let mut aes = Aes256GcmSivKey::<Test>::default();
                 assert!(aes.init(&key));
                 let mut tag = [0u8; TAG_LEN];
                 assert!(aes.encrypt::<6>(
@@ -514,7 +800,7 @@ mod tests {
 
         fn verify_cozybuf<const N: usize>(v: &AeadTestVector) {
             let key: [u8; KEY_LEN] = v.key.as_slice().try_into().unwrap();
-            let aead = Aes256GcmSivKey::from(key);
+            let aead = Aes256GcmSivKey::<Test>::from(key);
             let mut ciphertext = vec![0u8; v.plaintext.len()];
             let mut tag = [0u8; TAG_LEN];
             assert!(aead.encrypt::<N>(

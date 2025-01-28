@@ -5,6 +5,10 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+use core::arch::x86_64::*;
+
+use intrinsics::__m128i::*;
+
 use crate::intrinsics::m128i::M128i;
 
 #[inline]
@@ -40,76 +44,52 @@ fn vaesenclast_ref<const N: usize>(data: &mut [M128i; N], key: M128i) {
 fn vaesenc_asm<const N: usize>(data: &mut [M128i; N], key: M128i) {
     match N {
         4 => unsafe {
-            core::arch::asm!(
-                "vaesenc {key}, {data0}, {data0}",
-                "vaesenc {key}, {data1}, {data1}",
-                "vaesenc {key}, {data2}, {data2}",
-                "vaesenc {key}, {data3}, {data3}",
-                data0 = inout(xmm_reg) data[0].0,
-                data1 = inout(xmm_reg) data[1].0,
-                data2 = inout(xmm_reg) data[2].0,
-                data3 = inout(xmm_reg) data[3].0,
-                key = in(xmm_reg) *key,
-                options(
-                    att_syntax,
-                    nomem,
-                    nostack,
-                    preserves_flags,
-                    pure,
-                ),
-            );
+            #[transliteral::assembly]
+            unsafe fn aesenc(data: &mut [__m128i; 4], key: __m128i) {
+                data[0] = data[0]._mm_aesenc_si128(key);
+                data[1] = data[1]._mm_aesenc_si128(key);
+                data[2] = data[2]._mm_aesenc_si128(key);
+                data[3] = data[3]._mm_aesenc_si128(key);
+            }
+            *data = {
+                let mut data = core::array::from_fn(|i| data[i].into());
+                aesenc(&mut data, key.into());
+                core::array::from_fn(|i| data[i].into())
+            };
         },
         6 => unsafe {
-            core::arch::asm!(
-                "vaesenc {key}, {data0}, {data0}",
-                "vaesenc {key}, {data1}, {data1}",
-                "vaesenc {key}, {data2}, {data2}",
-                "vaesenc {key}, {data3}, {data3}",
-                "vaesenc {key}, {data4}, {data4}",
-                "vaesenc {key}, {data5}, {data5}",
-                data0 = inout(xmm_reg) data[0].0,
-                data1 = inout(xmm_reg) data[1].0,
-                data2 = inout(xmm_reg) data[2].0,
-                data3 = inout(xmm_reg) data[3].0,
-                data4 = inout(xmm_reg) data[4].0,
-                data5 = inout(xmm_reg) data[5].0,
-                key = in(xmm_reg) *key,
-                options(
-                    att_syntax,
-                    nomem,
-                    nostack,
-                    preserves_flags,
-                    pure,
-                ),
-            );
+            #[transliteral::assembly]
+            unsafe fn aesenc(data: &mut [__m128i; 6], key: __m128i) {
+                data[0] = data[0]._mm_aesenc_si128(key);
+                data[1] = data[1]._mm_aesenc_si128(key);
+                data[2] = data[2]._mm_aesenc_si128(key);
+                data[3] = data[3]._mm_aesenc_si128(key);
+                data[4] = data[4]._mm_aesenc_si128(key);
+                data[5] = data[5]._mm_aesenc_si128(key);
+            }
+            *data = {
+                let mut data = core::array::from_fn(|i| data[i].into());
+                aesenc(&mut data, key.into());
+                core::array::from_fn(|i| data[i].into())
+            };
         },
         8 => unsafe {
-            core::arch::asm!(
-                "vaesenc {key}, {data0}, {data0}",
-                "vaesenc {key}, {data1}, {data1}",
-                "vaesenc {key}, {data2}, {data2}",
-                "vaesenc {key}, {data3}, {data3}",
-                "vaesenc {key}, {data4}, {data4}",
-                "vaesenc {key}, {data5}, {data5}",
-                "vaesenc {key}, {data6}, {data6}",
-                "vaesenc {key}, {data7}, {data7}",
-                data0 = inout(xmm_reg) data[0].0,
-                data1 = inout(xmm_reg) data[1].0,
-                data2 = inout(xmm_reg) data[2].0,
-                data3 = inout(xmm_reg) data[3].0,
-                data4 = inout(xmm_reg) data[4].0,
-                data5 = inout(xmm_reg) data[5].0,
-                data6 = inout(xmm_reg) data[6].0,
-                data7 = inout(xmm_reg) data[7].0,
-                key = in(xmm_reg) *key,
-                options(
-                    att_syntax,
-                    nomem,
-                    nostack,
-                    preserves_flags,
-                    pure,
-                ),
-            );
+            #[transliteral::assembly]
+            unsafe fn aesenc(data: &mut [__m128i; 8], key: __m128i) {
+                data[0] = data[0]._mm_aesenc_si128(key);
+                data[1] = data[1]._mm_aesenc_si128(key);
+                data[2] = data[2]._mm_aesenc_si128(key);
+                data[3] = data[3]._mm_aesenc_si128(key);
+                data[4] = data[4]._mm_aesenc_si128(key);
+                data[5] = data[5]._mm_aesenc_si128(key);
+                data[6] = data[6]._mm_aesenc_si128(key);
+                data[7] = data[7]._mm_aesenc_si128(key);
+            }
+            *data = {
+                let mut data = core::array::from_fn(|i| data[i].into());
+                aesenc(&mut data, key.into());
+                core::array::from_fn(|i| data[i].into())
+            };
         },
         _ => vaesenc_ref(data, key),
     }
@@ -119,76 +99,52 @@ fn vaesenc_asm<const N: usize>(data: &mut [M128i; N], key: M128i) {
 fn vaesenclast_asm<const N: usize>(data: &mut [M128i; N], key: M128i) {
     match N {
         4 => unsafe {
-            core::arch::asm!(
-                "vaesenclast {key}, {data0}, {data0}",
-                "vaesenclast {key}, {data1}, {data1}",
-                "vaesenclast {key}, {data2}, {data2}",
-                "vaesenclast {key}, {data3}, {data3}",
-                data0 = inout(xmm_reg) data[0].0,
-                data1 = inout(xmm_reg) data[1].0,
-                data2 = inout(xmm_reg) data[2].0,
-                data3 = inout(xmm_reg) data[3].0,
-                key = in(xmm_reg) *key,
-                options(
-                    att_syntax,
-                    nomem,
-                    nostack,
-                    preserves_flags,
-                    pure,
-                ),
-            );
+            #[transliteral::assembly]
+            unsafe fn aesenclast(data: &mut [__m128i; 4], key: __m128i) {
+                data[0] = data[0]._mm_aesenclast_si128(key);
+                data[1] = data[1]._mm_aesenclast_si128(key);
+                data[2] = data[2]._mm_aesenclast_si128(key);
+                data[3] = data[3]._mm_aesenclast_si128(key);
+            }
+            *data = {
+                let mut data = core::array::from_fn(|i| data[i].into());
+                aesenclast(&mut data, key.into());
+                core::array::from_fn(|i| data[i].into())
+            };
         },
         6 => unsafe {
-            core::arch::asm!(
-                "vaesenclast {key}, {data0}, {data0}",
-                "vaesenclast {key}, {data1}, {data1}",
-                "vaesenclast {key}, {data2}, {data2}",
-                "vaesenclast {key}, {data3}, {data3}",
-                "vaesenclast {key}, {data4}, {data4}",
-                "vaesenclast {key}, {data5}, {data5}",
-                data0 = inout(xmm_reg) data[0].0,
-                data1 = inout(xmm_reg) data[1].0,
-                data2 = inout(xmm_reg) data[2].0,
-                data3 = inout(xmm_reg) data[3].0,
-                data4 = inout(xmm_reg) data[4].0,
-                data5 = inout(xmm_reg) data[5].0,
-                key = in(xmm_reg) *key,
-                options(
-                    att_syntax,
-                    nomem,
-                    nostack,
-                    preserves_flags,
-                    pure,
-                ),
-            );
+            #[transliteral::assembly]
+            unsafe fn aesenclast(data: &mut [__m128i; 6], key: __m128i) {
+                data[0] = data[0]._mm_aesenclast_si128(key);
+                data[1] = data[1]._mm_aesenclast_si128(key);
+                data[2] = data[2]._mm_aesenclast_si128(key);
+                data[3] = data[3]._mm_aesenclast_si128(key);
+                data[4] = data[4]._mm_aesenclast_si128(key);
+                data[5] = data[5]._mm_aesenclast_si128(key);
+            }
+            *data = {
+                let mut data = core::array::from_fn(|i| data[i].into());
+                aesenclast(&mut data, key.into());
+                core::array::from_fn(|i| data[i].into())
+            };
         },
         8 => unsafe {
-            core::arch::asm!(
-                "vaesenclast {key}, {data0}, {data0}",
-                "vaesenclast {key}, {data1}, {data1}",
-                "vaesenclast {key}, {data2}, {data2}",
-                "vaesenclast {key}, {data3}, {data3}",
-                "vaesenclast {key}, {data4}, {data4}",
-                "vaesenclast {key}, {data5}, {data5}",
-                "vaesenclast {key}, {data6}, {data6}",
-                "vaesenclast {key}, {data7}, {data7}",
-                data0 = inout(xmm_reg) data[0].0,
-                data1 = inout(xmm_reg) data[1].0,
-                data2 = inout(xmm_reg) data[2].0,
-                data3 = inout(xmm_reg) data[3].0,
-                data4 = inout(xmm_reg) data[4].0,
-                data5 = inout(xmm_reg) data[5].0,
-                data6 = inout(xmm_reg) data[6].0,
-                data7 = inout(xmm_reg) data[7].0,
-                key = in(xmm_reg) *key,
-                options(
-                    att_syntax,
-                    nomem,
-                    nostack,
-                    preserves_flags,
-                    pure,
-                ),
-            );
+            #[transliteral::assembly]
+            unsafe fn aesenclast(data: &mut [__m128i; 8], key: __m128i) {
+                data[0] = data[0]._mm_aesenclast_si128(key);
+                data[1] = data[1]._mm_aesenclast_si128(key);
+                data[2] = data[2]._mm_aesenclast_si128(key);
+                data[3] = data[3]._mm_aesenclast_si128(key);
+                data[4] = data[4]._mm_aesenclast_si128(key);
+                data[5] = data[5]._mm_aesenclast_si128(key);
+                data[6] = data[6]._mm_aesenclast_si128(key);
+                data[7] = data[7]._mm_aesenclast_si128(key);
+            }
+            *data = {
+                let mut data = core::array::from_fn(|i| data[i].into());
+                aesenclast(&mut data, key.into());
+                core::array::from_fn(|i| data[i].into())
+            };
         },
         _ => vaesenclast_ref(data, key),
     }

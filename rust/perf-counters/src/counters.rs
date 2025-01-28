@@ -103,7 +103,8 @@ impl<'a> RdpmcEnd<'a> {
             self.counter.event,
             self.end
                 .wrapping_add_signed(offset)
-                .wrapping_sub(self.start.wrapping_add_signed(self.offset)),
+                .wrapping_sub(self.start.wrapping_add_signed(self.offset))
+                & crate::perf_event::rdpmc::mask(),
         )
     }
 }

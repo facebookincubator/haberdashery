@@ -28,14 +28,14 @@ int {prefix}_{algorithm:Flat}_{profile}_init(
     {prefix:Snake}_{algorithm:Flat}_{profile:Snake}_t *aead,
     const unsigned char *key,         size_t key_len);
 int {prefix}_{algorithm:Flat}_{profile}_encrypt(
-    {prefix:Snake}_{algorithm:Flat}_{profile:Snake}_t *const aead,
+    const {prefix:Snake}_{algorithm:Flat}_{profile:Snake}_t *aead,
     const unsigned char *nonce,       size_t nonce_len,
     const unsigned char *aad,         size_t aad_len,
     const unsigned char *plaintext,   size_t plaintext_len,
     unsigned char *ciphertext,        size_t ciphertext_len,
     unsigned char *tag,               size_t tag_len);
 int {prefix}_{algorithm:Flat}_{profile}_decrypt(
-    {prefix:Snake}_{algorithm:Flat}_{profile:Snake}_t *const aead,
+    const {prefix:Snake}_{algorithm:Flat}_{profile:Snake}_t *aead,
     const unsigned char *nonce,       size_t nonce_len,
     const unsigned char *aad,         size_t aad_len,
     const unsigned char *ciphertext,  size_t ciphertext_len,

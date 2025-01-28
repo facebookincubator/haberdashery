@@ -16,6 +16,5 @@ hex = "0.4.3"
 [dependencies]
 cpuid = { path = "../cpuid" }
 libsodium-sys-stable = { version = "1.20.3", features = ["optimized"] }
-linkme = "0.3.17"
-nano-bench = { path = "../nano-bench" }
+perf-caliper = { path = "../perf-caliper" }
 random = { path = "../random" }

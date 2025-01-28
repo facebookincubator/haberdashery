@@ -4,5 +4,8 @@
 name = "sivmac_tigerlake"
 edition = "2021"
 
+[features]
+asm-path = []
+
 [lib]
 doctest = false

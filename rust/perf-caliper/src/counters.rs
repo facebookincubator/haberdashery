@@ -20,7 +20,20 @@ const PORTS: &[Event] = &[
     Event::UopsExecutedPortPort1,
     Event::UopsExecutedPortPort5,
 ];
+const PORTS234: &[Event] = &[
+    Event::Cycles,
+    Event::UopsExecutedPortPort2,
+    Event::UopsExecutedPortPort3,
+    Event::UopsExecutedPortPort4,
+];
+const PORTS567: &[Event] = &[
+    Event::Cycles,
+    Event::UopsExecutedPortPort5,
+    Event::UopsExecutedPortPort6,
+    Event::UopsExecutedPortPort7,
+];
 const PORTS8: &[Event] = &[
+    Event::Cycles,
     Event::UopsExecutedPortPort0,
     Event::UopsExecutedPortPort1,
     Event::UopsExecutedPortPort2,
@@ -28,7 +41,6 @@ const PORTS8: &[Event] = &[
     Event::UopsExecutedPortPort4,
     Event::UopsExecutedPortPort5,
     Event::UopsExecutedPortPort6,
-    Event::UopsExecutedPortPort7,
 ];
 const POWER: &[Event] = &[
     Event::Cycles,
@@ -62,7 +74,9 @@ pub fn counters() -> Counters {
 
     let events: Vec<Event> = if let Some(group) = EVENT_GROUP.as_ref() {
         match group.as_str() {
-            "" | "ports" => PORTS,
+            "" | "ports" | "ports015" => PORTS,
+            "ports234" => PORTS234,
+            "ports567" => PORTS567,
             "ports8" => PORTS8,
             "uops8" => UOPS8,
             "power" => POWER,

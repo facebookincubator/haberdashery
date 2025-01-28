@@ -6,6 +6,7 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 mod aead;
+mod hash;
 mod mac;
 
 use std::path::Path;
@@ -17,8 +18,11 @@ use crate::Descriptors;
 pub fn bindings() {
     let crate_path = crate::BINDINGS_PATH.join("rust_lib");
     let aead_descriptors = unit_bindings(&crate_path, "aead", aead::SRC);
+    let hash_descriptors = unit_bindings(&crate_path, "hash", hash::SRC);
     let mac_descriptors = unit_bindings(&crate_path, "mac", mac::SRC);
-    let descriptors = aead_descriptors.concat(mac_descriptors);
+    let descriptors = aead_descriptors
+        .concat(hash_descriptors)
+        .concat(mac_descriptors);
     write_cargo_toml(&crate_path, &descriptors);
 }
 
@@ -67,8 +71,7 @@ doctest = false
 
 [dependencies]
 haberdashery-sys = { path = "../rust_sys" }
-linkme = { version = "0.3.17", optional = true }
-nano-bench = { path = "../../rust/nano-bench", optional = true }
+perf-caliper = { path = "../../rust/perf-caliper", optional = true }
 
 [dev-dependencies]
 anyhow = "1.0.82"
@@ -77,6 +80,6 @@ static-env = { path = "../../rust/static-env" }
 test-vectors = { path = "../../rust/test-vectors" }
 
 [features]
-bench = ["linkme", "nano-bench"]
+bench = ["perf-caliper"]
 gen = []
 "#;

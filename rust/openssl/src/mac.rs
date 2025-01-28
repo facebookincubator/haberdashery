@@ -5,12 +5,12 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use crate::evp_mac_ctx::MacCtx;
+use crate::wrapper::hmac_ctx::HmacCtx;
 
 pub trait Mac {
     const KEY_LEN: usize;
     const TAG_LEN: usize;
-    fn ctx(&mut self) -> &mut MacCtx;
+    fn ctx(&mut self) -> &mut HmacCtx;
     #[inline(always)]
     fn init(&mut self, key: &[u8]) -> bool {
         self.ctx().key_init(key)

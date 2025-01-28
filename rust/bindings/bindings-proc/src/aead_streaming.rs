@@ -22,13 +22,17 @@ pub fn bindings(attributes: &str, item: TokenStream) -> TokenStream {
     let mut result = TokenStream::default();
     let state_ty = parser.self_ty();
     let key_ty = syn::parse2::<syn::Type>(
-        quote!(<#state_ty as haberdashery_asm_gen::ffi::aead_streaming::AeadStreaming>::Key),
+        quote!(<#state_ty as crate::ffi::aead_streaming::AeadStreaming>::Key),
     )
     .unwrap();
     let descriptors = parser.descriptors();
     descriptors.iter().for_each(|descriptor| {
         let profile = &descriptor["profile"];
-        result.extend(quote!(#[cfg(feature = #profile)]));
+        if profile == "skylakex" {
+            result.extend(quote!(#[cfg(any(not(feature = "asm_gen"), feature = #profile))]));
+        } else {
+            result.extend(quote!(#[cfg(all(feature = "asm_gen", feature = #profile))]));
+        }
         result.extend(item.clone());
         result.extend(parser.assert_size(&key_ty, "key_struct_size", profile));
         result.extend(parser.assert_alignment(&key_ty, "key_struct_alignment", profile));
@@ -91,7 +95,7 @@ fn profile_binding(key_ty: &Type, state_ty: &Type, descriptor: &Descriptor) -> T
             aad: *const u8,
             aad_len: usize,
         ) -> usize {
-            let aad = unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(aad, aad_len) };
+            let aad = unsafe { crate::ffi::reader::Reader::new(aad, aad_len) };
             this.aad_update(key, aad)
         }
         #fn_encrypt_update(
@@ -102,7 +106,7 @@ fn profile_binding(key_ty: &Type, state_ty: &Type, descriptor: &Descriptor) -> T
             ciphertext: *mut u8,
             ciphertext_len: usize,
         ) -> usize {
-            let Some(data) = haberdashery_asm_gen::ffi::reader_writer::ReaderWriter::from_ptrs(
+            let Some(data) = crate::ffi::reader_writer::ReaderWriter::from_ptrs(
                 plaintext,
                 plaintext_len,
                 ciphertext,
@@ -118,7 +122,7 @@ fn profile_binding(key_ty: &Type, state_ty: &Type, descriptor: &Descriptor) -> T
             tag: *mut u8,
             tag_len: usize,
         ) -> usize {
-            let tag = haberdashery_asm_gen::ffi::writer::Writer::new(tag, tag_len);
+            let tag = crate::ffi::writer::Writer::new(tag, tag_len);
             this.encrypt_finalize(key, tag)
         }
         #fn_decrypt_update(
@@ -129,7 +133,7 @@ fn profile_binding(key_ty: &Type, state_ty: &Type, descriptor: &Descriptor) -> T
             plaintext: *mut u8,
             plaintext_len: usize,
         ) -> usize {
-            let Some(data) = haberdashery_asm_gen::ffi::reader_writer::ReaderWriter::from_ptrs(
+            let Some(data) = crate::ffi::reader_writer::ReaderWriter::from_ptrs(
                 ciphertext,
                 ciphertext_len,
                 plaintext,
@@ -145,7 +149,7 @@ fn profile_binding(key_ty: &Type, state_ty: &Type, descriptor: &Descriptor) -> T
             tag: *mut u8,
             tag_len: usize,
         ) -> i32 {
-            let tag = unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(tag, tag_len) };
+            let tag = unsafe { crate::ffi::reader::Reader::new(tag, tag_len) };
             match this.decrypt_finalize(key, tag) {
                 true => 1,
                 false => 0,
@@ -215,8 +219,7 @@ mod tests {
                     aad: *const u8,
                     aad_len: usize,
                 ) -> usize {
-                    let aad =
-                        unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(aad, aad_len) };
+                    let aad = unsafe { crate::ffi::reader::Reader::new(aad, aad_len) };
                     this.aad_update(key, aad)
                 }
                 #[no_mangle]
@@ -229,14 +232,12 @@ mod tests {
                     ciphertext: *mut u8,
                     ciphertext_len: usize,
                 ) -> usize {
-                    let Some(data) =
-                        haberdashery_asm_gen::ffi::reader_writer::ReaderWriter::from_ptrs(
-                            plaintext,
-                            plaintext_len,
-                            ciphertext,
-                            ciphertext_len,
-                        )
-                    else {
+                    let Some(data) = crate::ffi::reader_writer::ReaderWriter::from_ptrs(
+                        plaintext,
+                        plaintext_len,
+                        ciphertext,
+                        ciphertext_len,
+                    ) else {
                         return 0;
                     };
                     this.encrypt_update(key, data)
@@ -249,7 +250,7 @@ mod tests {
                     tag: *mut u8,
                     tag_len: usize,
                 ) -> usize {
-                    let tag = haberdashery_asm_gen::ffi::writer::Writer::new(tag, tag_len);
+                    let tag = crate::ffi::writer::Writer::new(tag, tag_len);
                     this.encrypt_finalize(key, tag)
                 }
                 #[no_mangle]
@@ -262,14 +263,12 @@ mod tests {
                     plaintext: *mut u8,
                     plaintext_len: usize,
                 ) -> usize {
-                    let Some(data) =
-                        haberdashery_asm_gen::ffi::reader_writer::ReaderWriter::from_ptrs(
-                            ciphertext,
-                            ciphertext_len,
-                            plaintext,
-                            plaintext_len,
-                        )
-                    else {
+                    let Some(data) = crate::ffi::reader_writer::ReaderWriter::from_ptrs(
+                        ciphertext,
+                        ciphertext_len,
+                        plaintext,
+                        plaintext_len,
+                    ) else {
                         return 0;
                     };
                     this.decrypt_update(key, data)
@@ -282,8 +281,7 @@ mod tests {
                     tag: *mut u8,
                     tag_len: usize,
                 ) -> i32 {
-                    let tag =
-                        unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(tag, tag_len) };
+                    let tag = unsafe { crate::ffi::reader::Reader::new(tag, tag_len) };
                     match this.decrypt_finalize(key, tag) {
                         true => 1,
                         false => 0,

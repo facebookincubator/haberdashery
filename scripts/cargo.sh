@@ -23,18 +23,21 @@ main() {
   if [ $# -eq 0 ]; then
     cargo_test rust/asm-gen
     cargo_test rust/bindings
-    cargo_test rust/bindings/bindings-proc
     cargo_test rust/cozybuf
     cargo_test rust/cozybuf/cozybuf-example
     cargo_test rust/cozybuf/cozybuf-proc
     cargo_test rust/cpuid
     cargo_test rust/hex
-    cargo_test rust/nano-bench-proc
-    cargo_test rust/nano-bench
+    cargo_test rust/intrinsics
+    cargo_test rust/perf-caliper
+    cargo_test rust/perf-counters
+    cargo_test rust/perf-events
     cargo_test rust/random
     cargo_test rust/sflags
     cargo_test rust/sflags/test-helper
+    cargo_test rust/static-env
     cargo_test rust/test-vectors
+    cargo_test rust/transliteral
     cargo_test rust/units
     cargo_test bindings/rust_sys --all-features
     cargo_test bindings/rust_lib

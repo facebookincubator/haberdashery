@@ -7,13 +7,13 @@
 
 use openssl_sys::*;
 
-use crate::evp_cipher_ctx::CipherCtx;
+use crate::wrapper::evp_cipher_ctx::EvpCipherCtx;
 
 pub trait Aead {
     const KEY_LEN: usize;
     const NONCE_LEN: usize;
     const TAG_LEN: usize;
-    fn ctx(&mut self) -> &mut CipherCtx;
+    fn ctx(&mut self) -> &mut EvpCipherCtx;
     fn cipher() -> *const EVP_CIPHER;
     #[inline(always)]
     fn cipher_init(&mut self) -> i32 {

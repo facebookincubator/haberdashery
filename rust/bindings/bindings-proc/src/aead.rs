@@ -23,7 +23,11 @@ pub fn bindings(attributes: &str, item: TokenStream) -> TokenStream {
     let descriptors = parser.descriptors();
     descriptors.iter().for_each(|descriptor| {
         let profile = &descriptor["profile"];
-        result.extend(quote!(#[cfg(feature = #profile)]));
+        if profile == "skylakex" {
+            result.extend(quote!(#[cfg(any(not(feature = "asm_gen"), feature = #profile))]));
+        } else {
+            result.extend(quote!(#[cfg(all(feature = "asm_gen", feature = #profile))]));
+        }
         result.extend(item.clone());
         result.extend(parser.assert_size(parser.self_ty(), "struct_size", profile));
         result.extend(parser.assert_alignment(parser.self_ty(), "struct_alignment", profile));
@@ -69,8 +73,8 @@ fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
             tag_len: usize,
         ) -> i32 {
             let nonce = unsafe { core::slice::from_raw_parts(nonce, nonce_len) };
-            let aad = unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(aad, aad_len) };
-            let Some(data) = haberdashery_asm_gen::ffi::reader_writer::ReaderWriter::from_ptrs(
+            let aad = unsafe { crate::ffi::reader::Reader::new(aad, aad_len) };
+            let Some(data) = crate::ffi::reader_writer::ReaderWriter::from_ptrs(
                 plaintext,
                 plaintext_len,
                 ciphertext,
@@ -78,7 +82,7 @@ fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
             ) else {
                 return 0;
             };
-            let tag = haberdashery_asm_gen::ffi::writer::Writer::new(tag, tag_len);
+            let tag = crate::ffi::writer::Writer::new(tag, tag_len);
             match this.encrypt(nonce, aad, data, tag) {
                 true => 1,
                 false => 0,
@@ -98,8 +102,8 @@ fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
             plaintext_len: usize,
         ) -> i32 {
             let nonce = unsafe { core::slice::from_raw_parts(nonce, nonce_len) };
-            let aad = unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(aad, aad_len) };
-            let Some(data) = haberdashery_asm_gen::ffi::reader_writer::ReaderWriter::from_ptrs(
+            let aad = unsafe { crate::ffi::reader::Reader::new(aad, aad_len) };
+            let Some(data) = crate::ffi::reader_writer::ReaderWriter::from_ptrs(
                 ciphertext,
                 ciphertext_len,
                 plaintext,
@@ -107,7 +111,7 @@ fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
             ) else {
                 return 0;
             };
-            let tag = unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(tag, tag_len) };
+            let tag = unsafe { crate::ffi::reader::Reader::new(tag, tag_len) };
             match this.decrypt(nonce, aad, data, tag) {
                 true => 1,
                 false => 0,
@@ -169,19 +173,16 @@ mod tests {
                     tag_len: usize,
                 ) -> i32 {
                     let nonce = unsafe { core::slice::from_raw_parts(nonce, nonce_len) };
-                    let aad =
-                        unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(aad, aad_len) };
-                    let Some(data) =
-                        haberdashery_asm_gen::ffi::reader_writer::ReaderWriter::from_ptrs(
-                            plaintext,
-                            plaintext_len,
-                            ciphertext,
-                            ciphertext_len,
-                        )
-                    else {
+                    let aad = unsafe { crate::ffi::reader::Reader::new(aad, aad_len) };
+                    let Some(data) = crate::ffi::reader_writer::ReaderWriter::from_ptrs(
+                        plaintext,
+                        plaintext_len,
+                        ciphertext,
+                        ciphertext_len,
+                    ) else {
                         return 0;
                     };
-                    let tag = haberdashery_asm_gen::ffi::writer::Writer::new(tag, tag_len);
+                    let tag = crate::ffi::writer::Writer::new(tag, tag_len);
                     match this.encrypt(nonce, aad, data, tag) {
                         true => 1,
                         false => 0,
@@ -203,20 +204,16 @@ mod tests {
                     plaintext_len: usize,
                 ) -> i32 {
                     let nonce = unsafe { core::slice::from_raw_parts(nonce, nonce_len) };
-                    let aad =
-                        unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(aad, aad_len) };
-                    let Some(data) =
-                        haberdashery_asm_gen::ffi::reader_writer::ReaderWriter::from_ptrs(
-                            ciphertext,
-                            ciphertext_len,
-                            plaintext,
-                            plaintext_len,
-                        )
-                    else {
+                    let aad = unsafe { crate::ffi::reader::Reader::new(aad, aad_len) };
+                    let Some(data) = crate::ffi::reader_writer::ReaderWriter::from_ptrs(
+                        ciphertext,
+                        ciphertext_len,
+                        plaintext,
+                        plaintext_len,
+                    ) else {
                         return 0;
                     };
-                    let tag =
-                        unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(tag, tag_len) };
+                    let tag = unsafe { crate::ffi::reader::Reader::new(tag, tag_len) };
                     match this.decrypt(nonce, aad, data, tag) {
                         true => 1,
                         false => 0,

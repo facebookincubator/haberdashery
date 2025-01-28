@@ -8,6 +8,7 @@
 pub mod aead;
 #[cfg(feature = "bench")]
 pub mod benchmark;
+pub mod hash;
 pub mod mac;
 pub mod traits;
 #[cfg(test)]

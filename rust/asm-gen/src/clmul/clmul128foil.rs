@@ -5,10 +5,12 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+use core::arch::x86_64::__m128i;
 use core::ops::BitXor;
 use core::ops::BitXorAssign;
 
 use crate::clamped_index::ClampedIndex;
+use crate::ffi::reader::Reader;
 use crate::intrinsics::m128i::M128i;
 
 pub trait ClMul128Foil: Copy {
@@ -51,6 +53,22 @@ pub struct ClMul128FoilProduct {
     pub lo: M128i,
     pub mid: M128i,
     pub hi: M128i,
+}
+impl From<[__m128i; 3]> for ClMul128FoilProduct {
+    #[inline]
+    fn from(v: [__m128i; 3]) -> Self {
+        Self {
+            lo: v[0].into(),
+            mid: v[1].into(),
+            hi: v[2].into(),
+        }
+    }
+}
+impl From<ClMul128FoilProduct> for [__m128i; 3] {
+    #[inline]
+    fn from(v: ClMul128FoilProduct) -> Self {
+        [v.lo.into(), v.mid.into(), v.hi.into()]
+    }
 }
 impl BitXor for ClMul128FoilProduct {
     type Output = Self;
@@ -96,9 +114,27 @@ impl ClMul128FoilProduct {
         target.clmul::<0x10>(poly) ^ target.shuffle32::<0b_01_00_11_10>()
     }
 }
+
+#[inline]
+fn mulx_polyval(v: M128i) -> M128i {
+    let remainder = v.right_bitshift64::<63>();
+    let v = v.left_bitshift64::<1>() ^ remainder.shuffle32::<0b01_00_11_10>();
+    let remainder = remainder.shuffle32::<0b11_10_11_11>();
+    v ^ remainder.left_bitshift64::<63>()
+        ^ remainder.left_bitshift64::<62>()
+        ^ remainder.left_bitshift64::<57>()
+}
+
 #[derive(Copy, Clone)]
 pub struct ClMul128FoilPowerTable<const N: usize>([M128i; N]);
+impl<const N: usize> Default for ClMul128FoilPowerTable<N> {
+    #[inline]
+    fn default() -> Self {
+        Self([M128i::ZERO; N])
+    }
+}
 impl<const N: usize> ClMul128FoilPowerTable<N> {
+    #[inline]
     pub fn new(key: M128i) -> Self {
         let mut table = [key; N];
         for i in 1..N {
@@ -108,6 +144,14 @@ impl<const N: usize> ClMul128FoilPowerTable<N> {
             }
         }
         Self(table)
+    }
+    #[inline]
+    pub fn new_ghash(key: M128i) -> Self {
+        Self::new(mulx_polyval(key.byte_reverse()))
+    }
+    #[inline]
+    pub fn keys(&self) -> [M128i; N] {
+        self.0
     }
     #[inline]
     pub fn clmul128foil(self, array: [M128i; N]) -> ClMul128FoilProduct {
@@ -123,7 +167,26 @@ impl<const N: usize> ClMul128FoilPowerTable<N> {
             hi: M128i::zero(),
         }
     }
+    #[inline]
+    pub fn clmul128foil_reader(
+        self,
+        mut state: ClMul128FoilProduct,
+        mut reader: Reader,
+    ) -> ClMul128FoilProduct {
+        for mut array in reader.iter::<[M128i; N]>() {
+            array[0] ^= state.reduce();
+            state = self.clmul128foil(array);
+        }
+        for block in reader.iter::<M128i>() {
+            state = self[0].clmul128foil(block ^ state.reduce());
+        }
+        if let Some(block) = reader.remainder::<M128i>() {
+            state = self[0].clmul128foil(block ^ state.reduce());
+        }
+        state
+    }
 }
+
 impl<const N: usize> core::ops::Index<ClampedIndex<N>> for ClMul128FoilPowerTable<N> {
     type Output = M128i;
     #[inline]
@@ -136,5 +199,62 @@ impl<const N: usize> core::ops::Index<usize> for ClMul128FoilPowerTable<N> {
     #[inline]
     fn index(&self, i: usize) -> &Self::Output {
         &self.0[i]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    impl core::cmp::PartialEq<Self> for ClMul128FoilProduct {
+        fn eq(&self, rhs: &Self) -> bool {
+            self.hi == rhs.hi && self.mid == rhs.mid && self.lo == rhs.lo
+        }
+    }
+    impl core::fmt::Debug for ClMul128FoilProduct {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            write!(
+                f,
+                "hi: {hi:?}, mid: {mid:?}, lo: {lo:?}",
+                hi = self.hi,
+                mid = self.mid,
+                lo = self.lo
+            )
+        }
+    }
+    impl core::fmt::Display for ClMul128FoilProduct {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            write!(
+                f,
+                "hi: {hi}, mid: {mid}, lo: {lo}",
+                hi = self.hi,
+                mid = self.mid,
+                lo = self.lo
+            )
+        }
+    }
+
+    #[test]
+    fn power() {
+        const N: usize = 8;
+
+        for _i in 0..128 {
+            let key = M128i::random();
+            let data = random::vec(N * M128i::SIZE + 15);
+            assert_eq!(
+                {
+                    let table = ClMul128FoilPowerTable::<1>::new(key);
+                    let state = ClMul128FoilProduct::default();
+                    let reader = Reader::from(data.as_slice());
+                    table.clmul128foil_reader(state, reader).reduce()
+                },
+                {
+                    let table = ClMul128FoilPowerTable::<N>::new(key);
+                    let state = ClMul128FoilProduct::default();
+                    let reader = Reader::from(data.as_slice());
+                    table.clmul128foil_reader(state, reader).reduce()
+                }
+            );
+        }
     }
 }

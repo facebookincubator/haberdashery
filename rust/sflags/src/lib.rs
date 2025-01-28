@@ -35,6 +35,13 @@ macro_rules! define{
         );
         $(sflags::define!($($tail)*);)*
     };
+    (--$name:ident: &[$ty:ty]$( = $default:expr)?$(;$($tail:tt)*)?) => {
+        sflags::_internal_define_ref!(
+            $name, Vec<$ty>, [$ty]
+            $(, || sflags::_internal::DefaultConvert::convert($default))*
+        );
+        $(sflags::define!($($tail)*);)*
+    };
     (--$name:ident: <$base_ty:ty as AsRef<$ref_ty:ty>>$( = $default:expr)?$(;$($tail:tt)*)?) => {
         sflags::_internal_define_ref!(
             $name, $base_ty, $ref_ty

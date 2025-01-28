@@ -25,3 +25,14 @@ pub fn rdpmc(event: u32) -> u64 {
     }
     (edx as u64) << 32 | eax as u64
 }
+#[inline]
+pub fn mask() -> u64 {
+    const SHIFT: usize = 16;
+    const MASK: u32 = 0xff;
+    let leaf_0ah = unsafe { core::arch::x86_64::__cpuid(0x0a) };
+    let mut width = (leaf_0ah.eax >> SHIFT) & MASK;
+    if width == 0 {
+        width = 40;
+    }
+    unsafe { core::arch::x86_64::_bzhi_u64(u64::MAX, width) }
+}

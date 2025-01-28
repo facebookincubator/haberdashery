@@ -10,6 +10,16 @@ doctest = false
 
 [features]
 default = []
+aes128gcm_broadwell = ["dep:aes128gcm_broadwell"]
+aes128gcm_haswell = ["dep:aes128gcm_haswell"]
+aes128gcm_skylake = ["dep:aes128gcm_skylake"]
+aes128gcm_skylakex = ["dep:aes128gcm_skylakex"]
+aes128gcm_streaming_broadwell = ["dep:aes128gcm_streaming_broadwell"]
+aes128gcm_streaming_haswell = ["dep:aes128gcm_streaming_haswell"]
+aes128gcm_streaming_skylake = ["dep:aes128gcm_streaming_skylake"]
+aes128gcm_streaming_skylakex = ["dep:aes128gcm_streaming_skylakex"]
+aes128gcm_streaming_tigerlake = ["dep:aes128gcm_streaming_tigerlake"]
+aes128gcm_tigerlake = ["dep:aes128gcm_tigerlake"]
 aes192gcm_broadwell = ["dep:aes192gcm_broadwell"]
 aes192gcm_haswell = ["dep:aes192gcm_haswell"]
 aes192gcm_skylake = ["dep:aes192gcm_skylake"]
@@ -42,6 +52,16 @@ sivmac_skylakex = ["dep:sivmac_skylakex"]
 sivmac_tigerlake = ["dep:sivmac_tigerlake"]
 
 [dependencies]
+aes128gcm_broadwell = { path = "units/aes128gcm_broadwell", optional = true }
+aes128gcm_haswell = { path = "units/aes128gcm_haswell", optional = true }
+aes128gcm_skylake = { path = "units/aes128gcm_skylake", optional = true }
+aes128gcm_skylakex = { path = "units/aes128gcm_skylakex", optional = true }
+aes128gcm_streaming_broadwell = { path = "units/aes128gcm_streaming_broadwell", optional = true }
+aes128gcm_streaming_haswell = { path = "units/aes128gcm_streaming_haswell", optional = true }
+aes128gcm_streaming_skylake = { path = "units/aes128gcm_streaming_skylake", optional = true }
+aes128gcm_streaming_skylakex = { path = "units/aes128gcm_streaming_skylakex", optional = true }
+aes128gcm_streaming_tigerlake = { path = "units/aes128gcm_streaming_tigerlake", optional = true }
+aes128gcm_tigerlake = { path = "units/aes128gcm_tigerlake", optional = true }
 aes192gcm_broadwell = { path = "units/aes192gcm_broadwell", optional = true }
 aes192gcm_haswell = { path = "units/aes192gcm_haswell", optional = true }
 aes192gcm_skylake = { path = "units/aes192gcm_skylake", optional = true }

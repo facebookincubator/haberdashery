@@ -5,6 +5,7 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+use core::mem::size_of;
 use core::ops::BitAnd;
 use core::ops::BitAndAssign;
 use core::ops::BitOr;
@@ -145,5 +146,94 @@ where
         for i in 0..N {
             self[i] |= rhs[i];
         }
+    }
+}
+
+impl<const N: usize> Array<u32, N> {
+    #[inline]
+    pub fn wrapping_add(self, rhs: [u32; N]) -> [u32; N] {
+        core::array::from_fn(|i| self[i].wrapping_add(rhs[i]))
+    }
+}
+
+impl<const N: usize> Array<u32, N> {
+    #[inline]
+    pub fn to_be_bytes<const M: usize>(self) -> [u8; M] {
+        const SIZE: usize = size_of::<u32>();
+        const { assert!(N * SIZE == M) };
+        let bytes: [[u8; SIZE]; N] = self.0.map(|x| x.to_be_bytes());
+        core::array::from_fn(|i| bytes[i / SIZE][i % SIZE])
+    }
+}
+
+impl<const N: usize> Array<u64, N> {
+    #[inline]
+    pub fn to_le_bytes<const M: usize>(self) -> [u8; M] {
+        const SIZE: usize = size_of::<u64>();
+        const { assert!(N * SIZE == M) };
+        let bytes: [[u8; SIZE]; N] = self.0.map(|x| x.to_le_bytes());
+        core::array::from_fn(|i| bytes[i / SIZE][i % SIZE])
+    }
+    #[inline]
+    pub fn to_be_bytes<const M: usize>(self) -> [u8; M] {
+        const SIZE: usize = size_of::<u64>();
+        const { assert!(N * SIZE == M) };
+        let bytes: [[u8; SIZE]; N] = self.0.map(|x| x.to_be_bytes());
+        core::array::from_fn(|i| bytes[i / SIZE][i % SIZE])
+    }
+}
+
+impl<const N: usize> Array<u8, N> {
+    #[inline]
+    pub fn cast<T: Pod>(self) -> T {
+        const { assert!(N == T::SIZE) };
+        unsafe { T::load(self.0.as_ptr()) }
+    }
+    #[inline]
+    pub fn to_u32_be<const M: usize>(self) -> [u32; M] {
+        const SIZE: usize = size_of::<u32>();
+        const { assert!(N == M * SIZE) };
+        let bytes: [[u8; SIZE]; M] =
+            core::array::from_fn(|i| core::array::from_fn(|j| self[i * SIZE + j]));
+        bytes.map(u32::from_be_bytes)
+    }
+    #[inline]
+    pub fn to_u64_le<const M: usize>(self) -> [u64; M] {
+        const SIZE: usize = size_of::<u64>();
+        const { assert!(N == M * SIZE) };
+        let bytes: [[u8; SIZE]; M] =
+            core::array::from_fn(|i| core::array::from_fn(|j| self[i * SIZE + j]));
+        bytes.map(u64::from_le_bytes)
+    }
+}
+
+impl<T, const N1: usize, const N2: usize> Array<[T; N1], N2> {
+    #[inline]
+    pub fn flatten<const N: usize>(self) -> [T; N] {
+        const { assert!(N1 * N2 == N) };
+        unsafe { core::mem::transmute_copy(&self) }
+    }
+}
+
+impl<T, const N: usize> Array<T, N> {
+    #[inline]
+    pub fn unflatten<const N1: usize, const N2: usize>(self) -> [[T; N1]; N2] {
+        const { assert!(N1 * N2 == N) };
+        unsafe { core::mem::transmute_copy(&self) }
+    }
+    #[inline]
+    pub fn map_into<S: From<T>>(self) -> [S; N] {
+        self.0.map(Into::into)
+    }
+    #[inline]
+    pub fn map_into_generic<S: From<T>, const M: usize>(self) -> [S; M] {
+        unsafe { core::mem::transmute_copy(&self) }
+    }
+    #[inline]
+    pub fn to_bytes<const M: usize, const N1: usize>(self) -> [u8; M]
+    where
+        [u8; N1]: From<T>,
+    {
+        self.map_into().ops().flatten()
     }
 }

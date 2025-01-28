@@ -5,7 +5,9 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-fn version(algorithm: Option<&str>, profile: Option<&str>) -> Option<String> {
+extern crate haberdashery_lib;
+
+fn version(algorithm: Option<&String>, profile: Option<&String>) -> Option<String> {
     let path = std::path::PathBuf::from(
         std::env::var("PROJECT_PATH")
             .as_ref()
@@ -25,15 +27,11 @@ fn version(algorithm: Option<&str>, profile: Option<&str>) -> Option<String> {
     version_line.split(' ').next().map(str::to_owned)
 }
 
-fn report_metadata_mod(metadata: &mut nano_bench::ReportMetadata) {
-    if let Some(path) = metadata.get("path") {
-        let path = path.replace("haberdashery_lib", "haberdashery");
-        let path = path.strip_suffix("_benchmarks").unwrap_or(&path);
-        metadata.put("path", path);
-    };
-    if let Some(version) = version(metadata.get("algorithm"), metadata.get("profile")) {
-        metadata.put("version", version);
-    }
-    metadata.put("library", "haberdashery");
+fn main() {
+    perf_caliper::benchmark_main::main(Some(|metadata| {
+        if let Some(version) = version(metadata.get("algorithm"), metadata.get("profile")) {
+            metadata.insert("version".to_string(), version);
+            metadata.remove("path");
+        }
+    }));
 }
-nano_bench::main! {haberdashery_lib, report_metadata_mod}

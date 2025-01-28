@@ -15,6 +15,8 @@ pub fn is_supported() -> bool {
         cpuid::skylake().is_supported()
     } else if cfg!(feature = "skylakex") {
         cpuid::skylakex().is_supported()
+    } else if cfg!(feature = "zen3") {
+        cpuid::zen3().is_supported()
     } else if cfg!(feature = "tigerlake") {
         cpuid::tigerlake().is_supported()
     } else {

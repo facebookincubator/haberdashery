@@ -22,11 +22,11 @@ int haberdashery_sivmac_broadwell_init(
     haberdashery_sivmac_broadwell_t *mac,
     const unsigned char *key,         size_t key_len);
 int haberdashery_sivmac_broadwell_sign(
-    haberdashery_sivmac_broadwell_t *const mac,
+    const haberdashery_sivmac_broadwell_t *mac,
     const unsigned char *message,     size_t message_len,
     unsigned char *tag,               size_t tag_len);
 int haberdashery_sivmac_broadwell_verify(
-    haberdashery_sivmac_broadwell_t *const mac,
+    const haberdashery_sivmac_broadwell_t *mac,
     const unsigned char *message,     size_t message_len,
     const unsigned char *tag,         size_t tag_len);
 int haberdashery_sivmac_broadwell_is_supported(void);

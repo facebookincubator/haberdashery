@@ -5,6 +5,12 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+#[cfg(any(not(feature = "asm_gen"), feature = "aes128gcm_streaming"))]
+pub mod aes128gcm_streaming;
+
+#[cfg(any(not(feature = "asm_gen"), feature = "aes256gcm_streaming"))]
+pub mod aes256gcm_streaming;
+
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;

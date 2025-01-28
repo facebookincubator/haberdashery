@@ -12,9 +12,9 @@ SCRIPT_DIR="$( cd -P "$(dirname "${BASH_SOURCE[0]}")"; pwd )"
 readonly SCRIPT_DIR
 
 main() {
-  cd "${SCRIPT_DIR}"
-  cargo run --features gen --bin aead -- rust > src/aead.rs
-  cargo run --features gen --bin mac -- rust > src/mac.rs
+  cd "${SCRIPT_DIR}/gen"
+  cargo run --bin aead -- rust > ../src/aead.rs
+  cargo run --bin mac -- rust > ../src/mac.rs
 }
 
 main "$@"

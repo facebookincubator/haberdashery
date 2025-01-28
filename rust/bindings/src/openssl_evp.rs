@@ -11,6 +11,7 @@ use std::path::Path;
 
 use crate::get_descriptors_from_flag;
 use crate::write_generated;
+use crate::Descriptor;
 use crate::Descriptors;
 
 pub fn bindings() {
@@ -23,6 +24,16 @@ pub fn bindings() {
         aead::TEST_SRC,
     );
 }
+pub fn insert_openssl_evp_function(descriptor: &Descriptor) -> Descriptor {
+    let alg = &descriptor["algorithm"];
+    let mut descriptor = descriptor.clone();
+    match alg.as_str() {
+        "aes128gcm" => descriptor.insert("openssl_func", "EVP_aes_128_gcm"),
+        "aes256gcm" => descriptor.insert("openssl_func", "EVP_aes_256_gcm"),
+        _ => {}
+    }
+    descriptor
+}
 pub fn unit_bindings(
     path: &Path,
     primitive: &str,
@@ -34,6 +45,7 @@ pub fn unit_bindings(
     let path = path.join(primitive);
     std::fs::create_dir_all(&path).unwrap_or_else(|e| panic!("{e}: Couldn't make path {path:?}"));
     for descriptor in descriptors.iter() {
+        let descriptor = insert_openssl_evp_function(descriptor);
         let name = &descriptor["name"];
         write_generated::c(
             path.join(format!("{name}.h")),

@@ -23,14 +23,14 @@ int haberdashery_aes256gcm_broadwell_init(
     haberdashery_aes256gcm_broadwell_t *aead,
     const unsigned char *key,         size_t key_len);
 int haberdashery_aes256gcm_broadwell_encrypt(
-    haberdashery_aes256gcm_broadwell_t *const aead,
+    const haberdashery_aes256gcm_broadwell_t *aead,
     const unsigned char *nonce,       size_t nonce_len,
     const unsigned char *aad,         size_t aad_len,
     const unsigned char *plaintext,   size_t plaintext_len,
     unsigned char *ciphertext,        size_t ciphertext_len,
     unsigned char *tag,               size_t tag_len);
 int haberdashery_aes256gcm_broadwell_decrypt(
-    haberdashery_aes256gcm_broadwell_t *const aead,
+    const haberdashery_aes256gcm_broadwell_t *aead,
     const unsigned char *nonce,       size_t nonce_len,
     const unsigned char *aad,         size_t aad_len,
     const unsigned char *ciphertext,  size_t ciphertext_len,

@@ -10,24 +10,35 @@ use core::time::Duration;
 use std::collections::BTreeMap;
 use std::time::Instant;
 
-use nano_bench::linkme::BenchmarkLink;
-use nano_bench::linkme::LengthBenchmarkLink;
-use nano_bench::linkme::BENCHMARKS;
-use nano_bench::linkme::LENGTH_BENCHMARKS;
 use perf_counters::counters::Counters;
 use perf_counters::counters::CountersElapsed;
 
 use crate::flags;
-use crate::measure::Measure;
+use crate::measure::MeasureImpl;
+
+#[linkme::distributed_slice]
+pub static BENCHMARKS: [BenchmarkLink];
+
+pub struct BenchmarkLink {
+    pub path: &'static str,
+    pub operation: &'static str,
+    pub function: BenchmarkFunction,
+    pub metadata: &'static [(&'static str, &'static str)],
+}
+
+pub enum BenchmarkFunction {
+    Single(fn(u64, &mut dyn crate::Measure)),
+    WithLength(fn(usize, u64, &mut dyn crate::Measure)),
+}
 
 pub struct Benchmark<'a> {
-    measure: Measure<'a>,
+    measure: MeasureImpl<'a>,
     bench: &'a BenchmarkEnum,
     iters: u64,
 }
 impl<'a> Benchmark<'a> {
     pub fn new(counters: &'a Counters, bench: &'a BenchmarkEnum) -> Self {
-        let mut measure = Measure::new(counters);
+        let mut measure = MeasureImpl::new(counters);
         if !*flags::BENCH || *flags::DRY_RUN {
             return Self {
                 measure,
@@ -78,7 +89,7 @@ impl ItersPerDuration {
             iters: flags::MIN_ITERS.value(),
         }
     }
-    pub fn recalibrate(&mut self, bench: &BenchmarkEnum, measure: &mut Measure) {
+    pub fn recalibrate(&mut self, bench: &BenchmarkEnum, measure: &mut MeasureImpl) {
         measure.reset();
         bench.run(self.iters, measure);
         let duration = measure.elapsed.take().unwrap().duration;
@@ -88,15 +99,18 @@ impl ItersPerDuration {
     }
 }
 
-pub enum BenchmarkEnum {
-    Benchmark(&'static BenchmarkLink),
-    LengthBenchmark(&'static LengthBenchmarkLink, usize),
+#[derive(Copy, Clone)]
+pub struct BenchmarkEnum {
+    bench: &'static BenchmarkLink,
+    length: Option<usize>,
 }
 impl BenchmarkEnum {
-    pub fn run(&self, iterations: u64, measure: &mut Measure) {
-        match self {
-            Self::Benchmark(bench) => (bench.function)(iterations, measure),
-            Self::LengthBenchmark(bench, length) => (bench.function)(*length, iterations, measure),
+    pub fn run(&self, iterations: u64, measure: &mut MeasureImpl) {
+        match self.bench.function {
+            BenchmarkFunction::Single(func) => (func)(iterations, measure),
+            BenchmarkFunction::WithLength(func) => {
+                (func)(self.length.unwrap(), iterations, measure)
+            }
         }
     }
     pub fn is_match(&self, values: Vec<&str>, key: &str) -> bool {
@@ -118,22 +132,13 @@ impl BenchmarkEnum {
         values.contains(&value)
     }
     fn metadata_internal(&self) -> &'static [(&'static str, &'static str)] {
-        match self {
-            Self::Benchmark(bench) => bench.metadata,
-            Self::LengthBenchmark(bench, _) => bench.metadata,
-        }
+        self.bench.metadata
     }
     fn path(&self) -> &'static str {
-        match self {
-            Self::Benchmark(bench) => bench.path,
-            Self::LengthBenchmark(bench, _) => bench.path,
-        }
+        self.bench.path
     }
     fn operation(&self) -> &'static str {
-        match self {
-            Self::Benchmark(bench) => bench.operation,
-            Self::LengthBenchmark(bench, _) => bench.operation,
-        }
+        self.bench.operation
     }
     pub fn get<'a>(&'a self, key: &str) -> Option<&'a str> {
         for kv in self.metadata_internal() {
@@ -148,10 +153,7 @@ impl BenchmarkEnum {
         }
     }
     pub fn length(&self) -> Option<usize> {
-        match self {
-            Self::Benchmark(_) => None,
-            Self::LengthBenchmark(_, length) => Some(*length),
-        }
+        self.length
     }
 }
 impl From<&BenchmarkEnum> for BTreeMap<String, String> {
@@ -184,10 +186,21 @@ impl Index<&str> for BenchmarkEnum {
     }
 }
 pub fn benchmarks(lengths: &[usize]) -> Vec<BenchmarkEnum> {
-    let mut result: Vec<BenchmarkEnum> = BENCHMARKS.iter().map(BenchmarkEnum::Benchmark).collect();
-    for bench in LENGTH_BENCHMARKS {
-        for &length in lengths {
-            result.push(BenchmarkEnum::LengthBenchmark(bench, length));
+    let mut result = vec![];
+    for bench in BENCHMARKS {
+        match bench.function {
+            BenchmarkFunction::Single(_) => result.push(BenchmarkEnum {
+                bench,
+                length: None,
+            }),
+            BenchmarkFunction::WithLength(_) => {
+                for &length in lengths {
+                    result.push(BenchmarkEnum {
+                        bench,
+                        length: Some(length),
+                    });
+                }
+            }
         }
     }
     result
@@ -214,6 +227,9 @@ impl BenchmarkResult {
     }
     pub fn metadata(&self) -> &BTreeMap<String, String> {
         &self.metadata
+    }
+    pub fn metadata_mut(&mut self) -> &mut BTreeMap<String, String> {
+        &mut self.metadata
     }
     pub fn perf(&self) -> CountersElapsed<f64> {
         let mut min = self.perf_data.first().unwrap();

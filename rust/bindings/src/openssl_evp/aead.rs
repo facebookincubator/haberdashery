@@ -299,11 +299,11 @@ int main(void) {
   if (0 != res) {
     return res;
   }
-  res = encrypt_decrypt(EVP_aes_256_gcm(), evp_cipher);
+  res = encrypt_decrypt({openssl_func}(), evp_cipher);
   if (0 != res) {
     return 16 + res;
   }
-  res = encrypt_decrypt(evp_cipher, EVP_aes_256_gcm());
+  res = encrypt_decrypt(evp_cipher, {openssl_func}());
   if (0 != res) {
     return 32 + res;
   }

@@ -6,16 +6,15 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 pub mod aead;
+mod aes128gcm;
 mod aes256gcm;
 mod chacha20_poly1305;
 mod cmac128;
-pub mod ctx;
 pub mod curve25519;
-mod evp_cipher_ctx;
-mod evp_mac_ctx;
-mod hmac_sha256;
+pub mod hmacsha256;
 pub mod mac;
 pub mod version;
+pub mod wrapper;
 
 pub fn version() -> crate::version::Version {
     crate::version::Version::default()

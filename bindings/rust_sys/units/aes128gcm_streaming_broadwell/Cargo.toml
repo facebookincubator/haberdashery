@@ -1,0 +1,11 @@
+# @generated
+
+[package]
+name = "aes128gcm_streaming_broadwell"
+edition = "2021"
+
+[features]
+asm-path = []
+
+[lib]
+doctest = false

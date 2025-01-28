@@ -46,6 +46,10 @@ impl M128i {
         unsafe { core::mem::transmute(bytes) }
     }
     #[inline]
+    pub const fn from_u32(bytes: [u32; 4]) -> Self {
+        unsafe { core::mem::transmute(bytes) }
+    }
+    #[inline]
     pub fn to_bytes(&self) -> [u8; Self::SIZE] {
         let mut bytes = [0u8; 16];
         unsafe { self.store(bytes.as_mut_ptr()) };
@@ -168,6 +172,12 @@ impl From<[u32; 4]> for M128i {
     #[inline]
     fn from(v: [u32; 4]) -> Self {
         unsafe { __m128i::_mm_set_epi32(v.map(|v| v as i32)) }
+    }
+}
+impl From<M128i> for [u32; 4] {
+    #[inline]
+    fn from(reg: M128i) -> Self {
+        unsafe { reg.cast() }
     }
 }
 unsafe impl Pod for M128i {
@@ -314,12 +324,28 @@ impl M128i {
         unsafe { self._mm_srli_si128::<IMM8>() }.into()
     }
     #[inline]
+    pub fn shift_right32<const IMM8: i32>(self) -> Self {
+        unsafe { self._mm_srli_epi32::<IMM8>() }.into()
+    }
+    #[inline]
+    pub fn rotate_right32<const IMM8: i32>(self) -> Self {
+        unsafe { self._mm_ror_epi32::<IMM8>() }.into()
+    }
+    #[inline]
     pub fn unpacklo64(self, other: M128i) -> Self {
         unsafe { self._mm_unpacklo_epi64(other) }
     }
     #[inline]
+    pub fn unpackhi64(self, other: M128i) -> Self {
+        unsafe { self._mm_unpackhi_epi64(other) }
+    }
+    #[inline]
     pub fn blend8(self, other: Self, mask: impl Into<Self>) -> Self {
         unsafe { self._mm_blendv_epi8(other, mask.into()) }
+    }
+    #[inline]
+    pub fn blend32<const IMM8: i32>(self, other: Self) -> Self {
+        unsafe { self._mm_blend_epi32::<IMM8>(other) }.into()
     }
     #[inline]
     pub fn cmpgt32(self, other: M128i) -> Self {
@@ -364,6 +390,14 @@ impl M128i {
     #[inline]
     pub fn broadcast256(self) -> M256i {
         unsafe { self._mm256_broadcastsi128_si256() }
+    }
+    #[inline]
+    pub fn align<const IMM8: i32>(self, other: Self) -> Self {
+        unsafe { self._mm_alignr_epi8::<IMM8>(other) }.into()
+    }
+    #[inline]
+    pub fn sha256roundx2(self, state: [Self; 2]) -> Self {
+        unsafe { state[0]._mm_sha256rnds2_epu32(state[1], self) }
     }
 }
 

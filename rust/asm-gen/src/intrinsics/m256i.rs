@@ -211,6 +211,22 @@ unsafe impl Pod for M256i {
 // Intrinsics wrappers
 impl M256i {
     #[inline]
+    pub fn aesenc(self, round_key: Self) -> Self {
+        unsafe { self._mm256_aesenc_epi128(round_key) }
+    }
+    #[inline]
+    pub fn aesenclast(self, round_key: Self) -> Self {
+        unsafe { self._mm256_aesenclast_epi128(round_key) }
+    }
+    #[inline]
+    pub fn aesdec(self, round_key: Self) -> Self {
+        unsafe { self._mm256_aesdec_epi128(round_key) }
+    }
+    #[inline]
+    pub fn aesdeclast(self, round_key: Self) -> Self {
+        unsafe { self._mm256_aesdeclast_epi128(round_key) }
+    }
+    #[inline]
     pub fn clmul<const IMM8: i32>(self, other: Self) -> Self {
         unsafe { self._mm256_clmulepi64_epi128::<IMM8>(other) }.into()
     }
@@ -225,6 +241,14 @@ impl M256i {
     #[inline]
     pub fn shuffle32<const IMM8: i32>(self) -> Self {
         unsafe { _mm256_shuffle_epi32::<IMM8>(self.into()) }.into()
+    }
+    #[inline]
+    pub fn unpacklo64(self, other: Self) -> Self {
+        unsafe { self._mm256_unpacklo_epi64(other) }
+    }
+    #[inline]
+    pub fn unpackhi64(self, other: Self) -> Self {
+        unsafe { self._mm256_unpackhi_epi64(other) }
     }
     /// Returns a copy with bytes outside of range zeroed out.
     /// Unsafe since we require a subrange of [0, 16].
@@ -338,6 +362,16 @@ mod tests {
             self.crypto_equals(rhs.clone().into())
         }
     }
+    impl core::cmp::PartialEq<&str> for M256i {
+        fn eq(&self, other: &&str) -> bool {
+            self.encode_hex() == *other
+        }
+    }
+    impl core::cmp::PartialEq<String> for M256i {
+        fn eq(&self, other: &String) -> bool {
+            self.encode_hex() == *other
+        }
+    }
     impl Debug for M256i {
         fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
             write!(f, r#""{}""#, &self.encode_hex())
@@ -349,6 +383,10 @@ mod tests {
         }
     }
     impl M256i {
+        pub fn from_hex(hex: &str) -> Result<Self, hex::FromHexError> {
+            use hex::FromHex;
+            Ok(<[u8; 32]>::from_hex(hex)?.into())
+        }
         pub fn encode_hex(self) -> String {
             hex::encode::<[u8; Self::SIZE]>(self.into())
         }

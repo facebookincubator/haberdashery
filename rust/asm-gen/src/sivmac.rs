@@ -6,14 +6,11 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use crate::aes256::Aes256;
-#[cfg(not(feature = "vpclmulqdq"))]
 use crate::clmul::clmul128foil::*;
-#[cfg(feature = "vpclmulqdq")]
-use crate::clmul::clmul256foil::*;
+use crate::clmul::clmul256karatsuba::*;
 use crate::ffi::reader::Reader;
 use crate::ffi::writer::Writer;
 use crate::intrinsics::m128i::M128i;
-#[cfg(feature = "vpclmulqdq")]
 use crate::intrinsics::m256i::*;
 use crate::ops::*;
 
@@ -23,46 +20,37 @@ const TAG_LEN: usize = 16;
 const MAX_BYTES: usize = 1 << 36;
 const TAG_MASK: [u32; 4] = [0xff_ff_ff_ff, 0xff_ff_ff_ff, 0xff_ff_ff_ff, 0x7f_ff_ff_ff];
 
-pub struct SivMacKey<const N: usize> {
+#[inline]
+fn derive_sivmac_key(key: [u8; KEY_LEN]) -> ([M128i; 2], M128i) {
+    let (_aes, subkeys) = Aes256::new_and_encrypt(
+        Array::from(key).into(),
+        [
+            M128i::from([0, 0, 0, 0]),
+            M128i::from([1, 0, 0, 0]),
+            M128i::from([2, 0, 0, 0]),
+            M128i::from([3, 0, 0, 0]),
+            M128i::from([4, 0, 0, 0]),
+            M128i::from([5, 0, 0, 0]),
+        ],
+    );
+    let aes_key = [
+        subkeys[2].unpacklo64(subkeys[3]),
+        subkeys[4].unpacklo64(subkeys[5]),
+    ];
+    let polyval_key = subkeys[0].unpacklo64(subkeys[1]);
+    (aes_key, polyval_key)
+}
+
+pub struct SivMacPower128<const N: usize> {
     aes: Aes256,
-    #[cfg(not(feature = "vpclmulqdq"))]
     polyval: ClMul128FoilPowerTable<N>,
-    #[cfg(feature = "vpclmulqdq")]
-    polyval: ClMul256FoilPowerTable<N>,
 }
-
-impl<const N: usize> From<[u8; KEY_LEN]> for SivMacKey<N> {
-    #[inline]
-    fn from(key: [u8; KEY_LEN]) -> Self {
-        let (_aes, subkeys) = Aes256::new_and_encrypt(
-            Array::from(key).into(),
-            [
-                M128i::from([0, 0, 0, 0]),
-                M128i::from([1, 0, 0, 0]),
-                M128i::from([2, 0, 0, 0]),
-                M128i::from([3, 0, 0, 0]),
-                M128i::from([4, 0, 0, 0]),
-                M128i::from([5, 0, 0, 0]),
-            ],
-        );
-        let aes_key = [
-            subkeys[2].unpacklo64(subkeys[3]),
-            subkeys[4].unpacklo64(subkeys[5]),
-        ];
-        let polyval_key = subkeys[0].unpacklo64(subkeys[1]);
-        Self::new(aes_key, polyval_key)
-    }
-}
-
-impl<const N: usize> SivMacKey<N> {
-    #[inline]
+impl<const N: usize> SivMacPower128<N> {
+    #[cfg(test)]
     fn new(aes_key: [M128i; 2], polyval_key: M128i) -> Self {
         Self {
             aes: Aes256::new(aes_key),
-            #[cfg(not(feature = "vpclmulqdq"))]
             polyval: ClMul128FoilPowerTable::new(polyval_key),
-            #[cfg(feature = "vpclmulqdq")]
-            polyval: ClMul256FoilPowerTable::new(polyval_key),
         }
     }
     #[inline]
@@ -70,43 +58,12 @@ impl<const N: usize> SivMacKey<N> {
         let Ok(key) = <[u8; KEY_LEN]>::try_from(key) else {
             return false;
         };
-        *self = Self::from(key);
+        let (aes_key, polyval_key) = derive_sivmac_key(key);
+        self.aes = Aes256::new(aes_key);
+        self.polyval = ClMul128FoilPowerTable::new(polyval_key);
         true
     }
-
-    #[cfg(feature = "vpclmulqdq")]
-    #[cfg_attr(feature = "asm_gen", inline(always))]
-    fn hash_internal(&self, mut message: Reader) -> M128i {
-        // Append the message as raw blocks and finalize the polyval by encoding the length.
-        // This follows aes-256-gcms-siv when taking aad=message, plaintext=empty.
-        let bitlen = 8 * message.len() as u64;
-        let len_block = [bitlen, 0];
-        let mut state = M256i::zero();
-        for mut array in message.iter::<[M256i; N]>() {
-            array[0] ^= state;
-            state = self.polyval.clmul256foil(array).reduce();
-        }
-        for block in message.iter::<M256i>() {
-            state = self.polyval[0].clmul256foil(block ^ state).reduce();
-        }
-        let len_block: M128i = len_block.into();
-        if !message.is_empty() && message.len() <= M128i::SIZE {
-            if let Some(block) = message.read::<M128i>() {
-                return self.polyval.reduce256(state, [block, len_block].into());
-            }
-            if let Some(block) = message.remainder::<M128i>() {
-                return self.polyval.reduce256(state, [block, len_block].into());
-            }
-            unreachable!("Should never happen");
-        }
-        if let Some(block) = message.remainder::<M256i>() {
-            state = self.polyval[0].clmul256foil(state ^ block).reduce();
-        }
-        self.polyval.reduce(state, len_block)
-    }
-
-    #[cfg(not(feature = "vpclmulqdq"))]
-    #[cfg_attr(feature = "asm_gen", inline(always))]
+    #[inline]
     fn hash_internal(&self, mut message: Reader) -> M128i {
         // Append the message as raw blocks and finalize the polyval by encoding the length.
         // This follows aes-256-gcms-siv when taking aad=message, plaintext=empty.
@@ -190,7 +147,66 @@ impl<const N: usize> SivMacKey<N> {
         }
         state
     }
-    #[cfg_attr(feature = "asm_gen", inline(always))]
+    #[inline]
+    fn sign_internal(&self, message: Reader) -> M128i {
+        self.aes.encrypt(self.hash_internal(message) & TAG_MASK)
+    }
+    #[inline]
+    pub fn sign(&self, message: Reader, mut tag_writer: Writer) -> bool {
+        if tag_writer.len() != TAG_LEN {
+            return false;
+        }
+        if message.len() > MAX_BYTES {
+            return false;
+        }
+        let tag = self.sign_internal(message);
+        TAG_LEN == tag_writer.write(tag)
+    }
+    #[inline]
+    pub fn verify(&self, message: Reader, mut tag: Reader) -> bool {
+        if message.len() > MAX_BYTES {
+            return false;
+        }
+        let Some(tag) = tag.read::<M128i>() else {
+            return false;
+        };
+        self.sign_internal(message).crypto_equals(tag)
+    }
+}
+pub struct SivMacPower256<const N: usize> {
+    aes: Aes256,
+    polyval: ClMul256KaratsubaPowerTable<N>,
+}
+impl<const N: usize> SivMacPower256<N> {
+    #[cfg(test)]
+    fn new(aes_key: [M128i; 2], polyval_key: M128i) -> Self {
+        Self {
+            aes: Aes256::new(aes_key),
+            polyval: ClMul256KaratsubaPowerTable::new(polyval_key),
+        }
+    }
+    #[inline]
+    pub fn init(&mut self, key: &[u8]) -> bool {
+        let Ok(key) = <[u8; KEY_LEN]>::try_from(key) else {
+            return false;
+        };
+        let (aes_key, polyval_key) = derive_sivmac_key(key);
+        self.aes = Aes256::new(aes_key);
+        self.polyval = ClMul256KaratsubaPowerTable::new(polyval_key);
+        true
+    }
+    #[inline]
+    fn hash_internal(&self, message: Reader) -> M128i {
+        // Append the message as raw blocks and finalize the polyval by encoding the length.
+        // This follows aes-256-gcms-siv when taking aad=message, plaintext=empty.
+        let bitlen = 8 * message.len() as u64;
+        let len_block: M128i = [bitlen, 0].into();
+        let state = self
+            .polyval
+            .clmul256karatsuba_reader(M256i::default(), message);
+        self.polyval.reduce(state, len_block)
+    }
+    #[inline]
     fn sign_internal(&self, message: Reader) -> M128i {
         self.aes.encrypt(self.hash_internal(message) & TAG_MASK)
     }
@@ -224,6 +240,65 @@ mod tests {
 
     const LANES: usize = 8;
 
+    pub struct SivMacKey<const N: usize> {
+        sivmac128: SivMacPower128<N>,
+        sivmac256: Option<SivMacPower256<N>>,
+    }
+    impl<const N: usize> From<[u8; KEY_LEN]> for SivMacKey<N> {
+        fn from(key: [u8; KEY_LEN]) -> Self {
+            let (aes_key, polyval_key) = derive_sivmac_key(key);
+            Self::new(aes_key, polyval_key)
+        }
+    }
+    impl<const N: usize> SivMacKey<N> {
+        fn new(aes_key: [M128i; 2], polyval_key: M128i) -> Self {
+            let sivmac256 = cpuid::VPCLMULQDQ
+                .is_supported()
+                .then(|| SivMacPower256::new(aes_key, polyval_key));
+            Self {
+                sivmac128: SivMacPower128::new(aes_key, polyval_key),
+                sivmac256,
+            }
+        }
+        pub fn aes(&self) -> &Aes256 {
+            &self.sivmac128.aes
+        }
+        pub fn polyval128(&self) -> &ClMul128FoilPowerTable<N> {
+            &self.sivmac128.polyval
+        }
+        fn hash_internal(&self, message: Reader) -> M128i {
+            self.sivmac128.hash_internal(message)
+        }
+        pub fn sign(&self, message: Reader, mut tag_writer: Writer) -> bool {
+            let mut tag = [0u8; TAG_LEN];
+            assert!(
+                self.sivmac128
+                    .sign(message.clone_for_test(), Writer::from(tag.as_mut_slice()))
+            );
+            let tag: M128i = tag.into();
+            tag_writer.write(tag);
+
+            if let Some(mac) = self.sivmac256.as_ref() {
+                let mut other = [0u8; TAG_LEN];
+                assert!(mac.sign(message, Writer::from(other.as_mut_slice())));
+                assert_eq!(tag, M128i::from(other));
+            }
+            true
+        }
+        pub fn verify(&self, message: Reader, tag: Reader) -> bool {
+            let verified = self
+                .sivmac128
+                .verify(message.clone_for_test(), tag.clone_for_test());
+            if let Some(mac) = self.sivmac256.as_ref() {
+                assert_eq!(
+                    verified,
+                    mac.verify(message.clone_for_test(), tag.clone_for_test())
+                );
+            }
+            verified
+        }
+    }
+
     #[test]
     fn vectors() {
         #[allow(unused)]
@@ -247,19 +322,18 @@ mod tests {
                 assert!(mac.verify(message.as_slice().into(), tag.as_slice().into()));
                 if let Some(aes_key) = self.aes_key {
                     assert_eq!(
-                        [mac.aes[0].encode_hex(), mac.aes[1].encode_hex()].concat(),
+                        [mac.aes()[0].encode_hex(), mac.aes()[1].encode_hex()].concat(),
                         aes_key,
                     );
                 }
-                #[cfg(not(feature = "vpclmulqdq"))]
                 if let Some(polyval_key) = self.polyval_key {
-                    assert_eq!(mac.polyval[0], polyval_key);
+                    assert_eq!(mac.polyval128()[0], polyval_key);
                 }
                 if let Some(hash) = self.hash {
                     assert_eq!(mac.hash_internal(Reader::from(message.as_slice())), hash);
                 }
                 if let Some(pre_hash) = self.pre_hash {
-                    assert_eq!(mac.aes.decrypt(tag.into()), pre_hash);
+                    assert_eq!(mac.aes().decrypt(tag.into()), pre_hash);
                 }
                 let mut bad_tag = tag.clone();
                 bad_tag[0] ^= 0x01;

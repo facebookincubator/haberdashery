@@ -15,6 +15,10 @@ impl<'a, 'b> ReaderWriter<'a, 'b> {
     pub unsafe fn reader_ptr(&self) -> (*const u8, usize) {
         (self.0.reader_ptr, self.0.len)
     }
+    #[cfg(test)]
+    pub unsafe fn writer_ptr_for_test(&self) -> (*mut u8, usize) {
+        (self.0.writer_ptr, self.0.len)
+    }
     #[inline]
     pub fn from_ptrs(
         reader_ptr: *const u8,

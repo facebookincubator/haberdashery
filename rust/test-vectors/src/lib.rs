@@ -5,12 +5,8 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-#[cfg(not(feature = "gen"))]
 mod aead;
-#[cfg(not(feature = "gen"))]
 mod mac;
 
-#[cfg(not(feature = "gen"))]
 pub use crate::aead::AeadTestVector;
-#[cfg(not(feature = "gen"))]
 pub use crate::mac::MacTestVector;

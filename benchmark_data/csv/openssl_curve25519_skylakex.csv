@@ -1,6 +1,6 @@
 # @generated
-operation,length,avg,standard_deviation,runs,iters_per_run,metadata
-ecdh,,125837.55034696923,2560.3898510783997,60,19214,algorithm=curve25519;cpu=IntelSkylakeX (06_55H);library=openssl;path=openssl_curve25519_skylakex;primitive=ecdh;profile=skylakex;version=3.3.0
-ecdh_raw,,122264.75508398964,3353.5493660918282,60,19427,algorithm=curve25519;cpu=IntelSkylakeX (06_55H);library=openssl;path=openssl_curve25519_skylakex;primitive=ecdh;profile=skylakex;version=3.3.0
-keygen,,165663.95040502082,5532.693905213583,60,13703,algorithm=curve25519;cpu=IntelSkylakeX (06_55H);library=openssl;path=openssl_curve25519_skylakex;primitive=ecdh;profile=skylakex;version=3.3.0
-keygen_raw,,165019.5855065916,5113.5967233753845,60,14387,algorithm=curve25519;cpu=IntelSkylakeX (06_55H);library=openssl;path=openssl_curve25519_skylakex;primitive=ecdh;profile=skylakex;version=3.3.0
+algorithm,library,operation,primitive,version,runs,iterations,UOPS_EXECUTED_PORT_PORT_0,UOPS_EXECUTED_PORT_PORT_1,UOPS_EXECUTED_PORT_PORT_5,cycles,tsc,tscp,usecs,cpu
+curve25519,openssl,keygen,ecdh,3.3.0,10,1342,65674.00298062593,109411.29284649776,70520.00596125187,160187.29806259315,102651.55737704918,102657.25037257824,98652,IntelSkylakeX (06_55H)
+curve25519,openssl,ecdh,ecdh,3.3.0,10,1818,69494.12486248625,70462.60231023103,64824.64741474148,122662.4906490649,72541.21782178218,72544.50605060506,94442,IntelSkylakeX (06_55H)
+curve25519,openssl,derive_init,ecdh,3.3.0,10,150253,408.5368345390774,398.7942403812237,398.2375726275016,1459.159817108477,888.7299288533341,888.7863137508069,95623,IntelSkylakeX (06_55H)
+curve25519,openssl,ecdh_raw,ecdh,3.3.0,10,1706,68696.28663540445,69660.71043376319,64031.5123094959,118620.47889800703,76710.8288393904,76715.02696365768,93715,IntelSkylakeX (06_55H)
