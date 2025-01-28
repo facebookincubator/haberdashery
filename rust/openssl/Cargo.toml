@@ -7,7 +7,7 @@ edition = "2021"
 bench = false
 
 [[bench]]
-name = "benches"
+name = "bench"
 harness = false
 
 [dev-dependencies]
@@ -15,7 +15,6 @@ hex = "0.4.3"
 
 [dependencies]
 cpuid = { path = "../cpuid" }
-linkme = "0.3.17"
-nano-bench = { path = "../nano-bench" }
 openssl-sys = { version = "0.9.93", features = ["vendored"] }
+perf-caliper = { path = "../perf-caliper" }
 random = { path = "../random" }

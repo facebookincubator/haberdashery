@@ -6,8 +6,24 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 pub mod benchmark;
+pub mod benchmark_main;
 pub mod counters;
 pub mod csv;
 pub mod flags;
+pub mod md;
 pub mod measure;
+mod perf;
 pub mod table;
+
+pub mod _internal {
+    pub mod linkme {
+        pub use linkme::*;
+    }
+}
+
+pub trait Measure {
+    fn start(&mut self);
+    fn stop(&mut self);
+    fn skip(&mut self);
+}
+pub use perf_caliper_proc::benchmark;

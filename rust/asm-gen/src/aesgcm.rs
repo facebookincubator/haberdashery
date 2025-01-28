@@ -7,11 +7,11 @@
 
 use crate::aes::AesRoundKeys;
 use crate::asm::vaesenc_vpclmulqdq_128::vaesenc_vpclmulqdq_128;
-use crate::clmulfoil::*;
+use crate::clmul::clmul128foil::*;
 use crate::intrinsics::m128i::M128i;
 
 pub struct RoundState<const N: usize, const R: usize> {
-    product: ClMulFoilProduct<M128i>,
+    product: ClMul128FoilProduct,
     aes: AesRoundKeys<R>,
     crypt_data: [M128i; N],
     auth_data: [M128i; N],
@@ -33,7 +33,7 @@ impl<const N: usize, const R: usize> RoundState<N, R> {
         let aes = aes.into();
         aes.encrypt_round_first(&mut crypt_data);
         Self {
-            product: ClMulFoilProduct::default(),
+            product: ClMul128FoilProduct::default(),
             aes,
             crypt_data,
             auth_data,

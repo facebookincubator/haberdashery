@@ -85,7 +85,7 @@ pub fn icelake() -> FeatureSet {
 #[inline(always)]
 pub fn tigerlake() -> FeatureSet {
     // GCC's tigerlake extensions minus xsavec, xsaves, lzcnt
-    skylake() // line break
+    icelake() // line break
         | MOVDIRI
         | MOVDIR64B
         | AVX512_VP2INTERSECT

@@ -1,5 +1,15 @@
 // @generated
 
+#[cfg(feature = "aes128gcm_broadwell")]
+pub mod aes128gcm_broadwell;
+#[cfg(feature = "aes128gcm_haswell")]
+pub mod aes128gcm_haswell;
+#[cfg(feature = "aes128gcm_skylake")]
+pub mod aes128gcm_skylake;
+#[cfg(feature = "aes128gcm_skylakex")]
+pub mod aes128gcm_skylakex;
+#[cfg(feature = "aes128gcm_tigerlake")]
+pub mod aes128gcm_tigerlake;
 #[cfg(feature = "aes192gcm_broadwell")]
 pub mod aes192gcm_broadwell;
 #[cfg(feature = "aes192gcm_haswell")]

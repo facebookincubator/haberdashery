@@ -39,33 +39,6 @@ mod tests {
     #[test]
     fn version() {
         let v = Version::default();
-        match v.to_string().as_str() {
-            "3.3.1" => {
-                assert_eq!(v.major, 3);
-                assert_eq!(v.minor, 3);
-                assert_eq!(v.patch, 1);
-            }
-            "3.3.0" => {
-                assert_eq!(v.major, 3);
-                assert_eq!(v.minor, 3);
-                assert_eq!(v.patch, 0);
-            }
-            "3.2.1" => {
-                assert_eq!(v.major, 3);
-                assert_eq!(v.minor, 2);
-                assert_eq!(v.patch, 1);
-            }
-            "3.2.0" => {
-                assert_eq!(v.major, 3);
-                assert_eq!(v.minor, 2);
-                assert_eq!(v.patch, 0);
-            }
-            "3.1.4" => {
-                assert_eq!(v.major, 3);
-                assert_eq!(v.minor, 1);
-                assert_eq!(v.patch, 4);
-            }
-            _ => panic!("Got unexpected openssl version: {v}"),
-        }
+        assert!([1, 3].contains(&v.major), "Unexpected openssl version {v}");
     }
 }

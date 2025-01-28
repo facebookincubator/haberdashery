@@ -6,6 +6,7 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use crate::intrinsics::m128i::M128i;
+use crate::intrinsics::m256i::M256i;
 
 #[repr(C)]
 #[derive(Default, Clone)]
@@ -37,6 +38,19 @@ impl Counter128 {
             traunch[i] = self.0.add32([i as u32, 0, 0, 0]);
         }
         self.0 = self.0.add32([N as u32, 0, 0, 0]);
+        traunch
+    }
+    #[allow(clippy::needless_range_loop)]
+    #[inline]
+    pub fn increment_traunch_256<const N: usize>(&mut self) -> [M256i; N] {
+        let mut traunch = [M256i::default(); N];
+        for i in 0..N {
+            traunch[i] = M256i::from([
+                self.0.add32([(2 * i) as u32, 0, 0, 0]),
+                self.0.add32([(2 * i + 1) as u32, 0, 0, 0]),
+            ]);
+        }
+        self.0 = self.0.add32([2 * N as u32, 0, 0, 0]);
         traunch
     }
 }

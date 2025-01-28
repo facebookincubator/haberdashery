@@ -96,12 +96,12 @@ impl BenchmarkData {
     }
 }
 
-#[nano_bench::benchmark(
+#[perf_caliper::benchmark(
     library:openssl,
     primitive:mac,
     algorithm:cmac128,
 )]
-fn init(iters: u64, measure: &mut dyn nano_bench::Measure) {
+fn init(iters: u64, measure: &mut dyn perf_caliper::Measure) {
     let mut data = BenchmarkData::new(0);
     measure.start();
     for _ in 0..iters {
@@ -109,12 +109,12 @@ fn init(iters: u64, measure: &mut dyn nano_bench::Measure) {
     }
     measure.stop();
 }
-#[nano_bench::benchmark(
+#[perf_caliper::benchmark(
     library:openssl,
     primitive:mac,
     algorithm:cmac128,
 )]
-fn sign(length: usize, iters: u64, measure: &mut dyn nano_bench::Measure) {
+fn sign(length: usize, iters: u64, measure: &mut dyn perf_caliper::Measure) {
     let mut data = BenchmarkData::new(length);
     measure.start();
     for _ in 0..iters {

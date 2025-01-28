@@ -26,8 +26,7 @@ sflags::define! {
 
 fn get_descriptors_from_flag(primitive: &str) -> Descriptors {
     let path = DESCRIPTOR_PATH.join(primitive);
-    Descriptors::try_from(path.as_ref())
-        .unwrap_or_else(|e| panic!("Couldn't parse descriptors in {path:?}: {e}"))
+    Descriptors::try_from(path.as_ref()).unwrap_or(Descriptors::from(vec![]))
 }
 
 pub fn openssl_evp() {

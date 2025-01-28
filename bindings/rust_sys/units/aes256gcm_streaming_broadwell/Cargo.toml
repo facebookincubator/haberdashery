@@ -4,5 +4,8 @@
 name = "aes256gcm_streaming_broadwell"
 edition = "2021"
 
+[features]
+asm-path = []
+
 [lib]
 doctest = false

@@ -7,3 +7,4 @@
 
 pub mod clmul128foil;
 pub mod clmul256foil;
+pub mod clmul256karatsuba;

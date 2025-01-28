@@ -22,11 +22,11 @@ int haberdashery_sivmac_tigerlake_init(
     haberdashery_sivmac_tigerlake_t *mac,
     const unsigned char *key,         size_t key_len);
 int haberdashery_sivmac_tigerlake_sign(
-    haberdashery_sivmac_tigerlake_t *const mac,
+    const haberdashery_sivmac_tigerlake_t *mac,
     const unsigned char *message,     size_t message_len,
     unsigned char *tag,               size_t tag_len);
 int haberdashery_sivmac_tigerlake_verify(
-    haberdashery_sivmac_tigerlake_t *const mac,
+    const haberdashery_sivmac_tigerlake_t *mac,
     const unsigned char *message,     size_t message_len,
     const unsigned char *tag,         size_t tag_len);
 int haberdashery_sivmac_tigerlake_is_supported(void);

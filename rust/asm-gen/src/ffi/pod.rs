@@ -96,3 +96,6 @@ unsafe impl<T: Pod, const N: usize> Pod for [T; N] {
         }
     }
 }
+
+unsafe impl Pod for u64 {}
+unsafe impl<const N: usize> Pod for [u8; N] {}

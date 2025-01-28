@@ -4,5 +4,8 @@
 name = "aes256gcmdndk_skylake"
 edition = "2021"
 
+[features]
+asm-path = []
+
 [lib]
 doctest = false

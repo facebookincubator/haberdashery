@@ -23,7 +23,11 @@ pub fn bindings(attributes: &str, item: TokenStream) -> TokenStream {
     let descriptors = parser.descriptors();
     descriptors.iter().for_each(|descriptor| {
         let profile = &descriptor["profile"];
-        result.extend(quote!(#[cfg(feature = #profile)]));
+        if profile == "skylakex" {
+            result.extend(quote!(#[cfg(any(not(feature = "asm_gen"), feature = #profile))]));
+        } else {
+            result.extend(quote!(#[cfg(all(feature = "asm_gen", feature = #profile))]));
+        }
         result.extend(item.clone());
         result.extend(parser.assert_size(parser.self_ty(), "struct_size", profile));
         result.extend(parser.assert_alignment(parser.self_ty(), "struct_alignment", profile));
@@ -62,8 +66,8 @@ fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
             tag: *mut u8,
             tag_len: usize,
         ) -> i32 {
-            let message = unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(message, message_len) };
-            let tag = haberdashery_asm_gen::ffi::writer::Writer::new(tag, tag_len);
+            let message = unsafe { crate::ffi::reader::Reader::new(message, message_len) };
+            let tag = crate::ffi::writer::Writer::new(tag, tag_len);
             match this.sign(message, tag) {
                 true => 1,
                 false => 0,
@@ -76,8 +80,8 @@ fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
             tag: *const u8,
             tag_len: usize,
         ) -> i32 {
-            let message = unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(message, message_len) };
-            let tag = unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(tag, tag_len) };
+            let message = unsafe { crate::ffi::reader::Reader::new(message, message_len) };
+            let tag = unsafe { crate::ffi::reader::Reader::new(tag, tag_len) };
             match this.verify(message, tag) {
                 true => 1,
                 false => 0,
@@ -132,10 +136,8 @@ mod tests {
                     tag: *mut u8,
                     tag_len: usize,
                 ) -> i32 {
-                    let message = unsafe {
-                        haberdashery_asm_gen::ffi::reader::Reader::new(message, message_len)
-                    };
-                    let tag = haberdashery_asm_gen::ffi::writer::Writer::new(tag, tag_len);
+                    let message = unsafe { crate::ffi::reader::Reader::new(message, message_len) };
+                    let tag = crate::ffi::writer::Writer::new(tag, tag_len);
                     match this.sign(message, tag) {
                         true => 1,
                         false => 0,
@@ -150,11 +152,8 @@ mod tests {
                     tag: *const u8,
                     tag_len: usize,
                 ) -> i32 {
-                    let message = unsafe {
-                        haberdashery_asm_gen::ffi::reader::Reader::new(message, message_len)
-                    };
-                    let tag =
-                        unsafe { haberdashery_asm_gen::ffi::reader::Reader::new(tag, tag_len) };
+                    let message = unsafe { crate::ffi::reader::Reader::new(message, message_len) };
+                    let tag = unsafe { crate::ffi::reader::Reader::new(tag, tag_len) };
                     match this.verify(message, tag) {
                         true => 1,
                         false => 0,

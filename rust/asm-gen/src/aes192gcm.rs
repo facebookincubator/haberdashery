@@ -6,18 +6,14 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use crate::aes192::Aes192;
-use crate::clmulfoil::ClMulFoil;
+use crate::clmul::clmul128foil::*;
 use crate::counter128::CounterBe128;
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;
-use crate::ghash::ghash_key;
-use crate::ghash::ByteReverse;
-use crate::ghash::GhashState;
 use crate::intrinsics::m128i::M128i;
 use crate::ops::ArrayOps;
 use crate::partial::PartialBlock;
-use crate::polyval::PolyvalKey;
 
 const KEY_LEN: usize = 24;
 pub const NONCE_LEN: usize = 12;
@@ -27,33 +23,25 @@ const MAX_AAD_BYTES: usize = (1 << 61) - 1; // 2^64 - 1 bits >= 2^61 - 1 bytes
 const MAX_CRYPT_BYTES: usize = (1 << 36) - 16; // 2^39 - 256 bits = 2^36 - 16 bytes
 
 #[repr(C)]
+#[derive(Default)]
 pub struct Aes192GcmKey<const N: usize> {
     aes: Aes192,
-    ghash: PolyvalKey<N>,
-}
-impl<const N: usize> Default for Aes192GcmKey<N> {
-    #[inline]
-    fn default() -> Self {
-        Self {
-            aes: Aes192::default(),
-            ghash: PolyvalKey::<N>::default(),
-        }
-    }
+    polyval: ClMul128FoilPowerTable<N>,
 }
 impl<const N: usize> From<[M128i; 2]> for Aes192GcmKey<N> {
     #[inline]
     fn from(key: [M128i; 2]) -> Self {
         let aes = Aes192::from(key);
-        let ghash = ghash_key(aes.encrypt(M128i::zero()));
-        Self { aes, ghash }
+        let polyval = ClMul128FoilPowerTable::new_ghash(aes.encrypt(M128i::ZERO));
+        Self { aes, polyval }
     }
 }
 impl<const N: usize> From<[u8; KEY_LEN]> for Aes192GcmKey<N> {
     #[inline]
     fn from(key: [u8; KEY_LEN]) -> Self {
         let aes = Aes192::from(key);
-        let ghash = ghash_key(aes.encrypt(M128i::zero()));
-        Self { aes, ghash }
+        let polyval = ClMul128FoilPowerTable::new_ghash(aes.encrypt(M128i::ZERO));
+        Self { aes, polyval }
     }
 }
 
@@ -150,7 +138,7 @@ impl<const N: usize> Aes192GcmState<N> {
         };
         true
     }
-    #[cfg_attr(feature = "asm_gen", inline(always))]
+    #[inline]
     pub fn aad_update(&mut self, key: &Aes192GcmKey<N>, mut aad: Reader) -> usize {
         if aad.is_empty() {
             return 0;
@@ -165,43 +153,51 @@ impl<const N: usize> Aes192GcmState<N> {
             return 0;
         }
         let len = aad.len();
-        let mut ghash = GhashState::new(key.ghash, self.ghash);
         if let Some(block) = self.partial.fill_aad(&mut aad) {
-            ghash.hash(block);
+            self.ghash = key.polyval[0]
+                .clmul128foil(self.ghash ^ block.byte_reverse())
+                .reduce();
         }
         if cfg!(feature = "avx512f") {
             for block in aad.iter::<[M128i; N]>() {
-                ghash.hash(block);
+                let mut block = block.map(M128i::byte_reverse);
+                block[0] ^= self.ghash;
+                self.ghash = key.polyval.clmul128foil(block).reduce();
             }
         } else if let Some(block) = aad.read::<[M128i; N]>() {
-            let mut block = block.byte_reverse();
-            block[0] ^= ghash.raw();
-            let mut hash = key.ghash.clmul_foil(block);
+            let mut product = {
+                let mut block = block.map(M128i::byte_reverse);
+                block[0] ^= self.ghash;
+                key.polyval.clmul128foil(block)
+            };
             for block in aad.iter::<[M128i; N]>() {
-                ghash.set_raw_hash(hash.reduce());
-                let mut block = block.byte_reverse();
-                block[0] ^= ghash.raw();
-                hash = key.ghash.clmul_foil(block);
+                product = {
+                    self.ghash = product.reduce();
+                    let mut block = block.map(M128i::byte_reverse);
+                    block[0] ^= self.ghash;
+                    key.polyval.clmul128foil(block)
+                };
             }
-            ghash.set_raw_hash(hash.reduce());
+            self.ghash = product.reduce();
         }
         for block in aad.iter::<M128i>() {
-            ghash.hash(block);
+            self.ghash = key.polyval[0]
+                .clmul128foil(self.ghash ^ block.byte_reverse())
+                .reduce();
         }
         let remainder_len = aad.len();
         if let Some(block) = aad.remainder::<M128i>() {
             self.partial = PartialBlock::new_aad(block, remainder_len);
         }
-        self.ghash = ghash.raw();
         self.aad_len += len;
         len
     }
     #[inline]
     fn finalize_aad(&mut self, key: &Aes192GcmKey<N>) {
         if let Some(block) = self.partial.remainder() {
-            let mut ghash = GhashState::new(key.ghash, self.ghash);
-            ghash.hash(block);
-            self.ghash = ghash.raw();
+            self.ghash = key.polyval[0]
+                .clmul128foil(self.ghash ^ block.byte_reverse())
+                .reduce();
             self.partial = PartialBlock::default();
         }
     }
@@ -209,15 +205,14 @@ impl<const N: usize> Aes192GcmState<N> {
     pub fn iteration_asm(
         &mut self,
         key: &Aes192GcmKey<N>,
-        hash: &mut GhashState<N>,
         auth: [M128i; N],
         counters: [M128i; N],
         plaintext: [M128i; N],
     ) -> [M128i; N] {
-        let auth = auth.byte_reverse();
+        let auth = auth.map(M128i::byte_reverse);
         // Constructor performs first round of AES and auth
         let mut state =
-            crate::aesgcm::RoundState::new(key.aes, counters, auth, hash.keys(), hash.raw());
+            crate::aesgcm::RoundState::new(key.aes, counters, auth, key.polyval.keys(), self.ghash);
         // 11 rounds of aes + 6 rounds of auth
         state.crypt();
         state.crypt_cmul();
@@ -231,8 +226,8 @@ impl<const N: usize> Aes192GcmState<N> {
         state.crypt_cmul();
         state.crypt();
         // Performs last round of AES
-        let (pads, new_hash) = state.finish();
-        hash.set_raw_hash(new_hash);
+        let (pads, ghash) = state.finish();
+        self.ghash = ghash;
         plaintext.ops() ^ pads
     }
     #[inline]
@@ -250,9 +245,10 @@ impl<const N: usize> Aes192GcmState<N> {
             self.finalize_aad(key);
         }
         let len = data.len();
-        let mut ghash = GhashState::new(key.ghash, self.ghash);
         if let Some((_, block)) = self.partial.fill_crypt(&mut data) {
-            ghash.hash(block);
+            self.ghash = key.polyval[0]
+                .clmul128foil(self.ghash ^ block.byte_reverse())
+                .reduce();
         }
         if let Some((block, writer)) = data.read::<[M128i; N]>() {
             let ctr = self.ctr.increment_traunch::<N>();
@@ -261,21 +257,29 @@ impl<const N: usize> Aes192GcmState<N> {
             for (block, writer) in data.iter::<[M128i; N]>() {
                 let ctr = self.ctr.increment_traunch::<N>();
                 last_block = match N {
-                    6 => self.iteration_asm(key, &mut ghash, last_block, ctr, block),
+                    6 => self.iteration_asm(key, last_block, ctr, block),
                     _ => {
-                        ghash.hash(last_block);
+                        {
+                            let mut block = last_block.map(M128i::byte_reverse);
+                            block[0] ^= self.ghash;
+                            self.ghash = key.polyval.clmul128foil(block).reduce();
+                        }
                         block.ops() ^ key.aes.encrypt(ctr)
                     }
                 };
                 writer.write(last_block);
             }
-            ghash.hash(last_block);
+            let mut block = last_block.map(M128i::byte_reverse);
+            block[0] ^= self.ghash;
+            self.ghash = key.polyval.clmul128foil(block).reduce();
         }
         for (block, writer) in data.iter::<M128i>() {
             let ctr = self.ctr.increment();
             let block = key.aes.encrypt(ctr) ^ block;
             writer.write(block);
-            ghash.hash(block);
+            self.ghash = key.polyval[0]
+                .clmul128foil(self.ghash ^ block.byte_reverse())
+                .reduce();
         }
         if let Some((block, writer)) = data.remainder::<M128i>() {
             let ctr = self.ctr.increment();
@@ -285,7 +289,6 @@ impl<const N: usize> Aes192GcmState<N> {
             writer.write(block);
             self.partial = PartialBlock::new(pad, block, len);
         }
-        self.ghash = ghash.raw();
         self.crypt_len += len;
         len
     }
@@ -304,23 +307,29 @@ impl<const N: usize> Aes192GcmState<N> {
             self.finalize_aad(key);
         }
         let len = data.len();
-        let mut ghash = GhashState::new(key.ghash, self.ghash);
         if let Some((pad, block)) = self.partial.fill_crypt(&mut data) {
-            ghash.hash(block ^ pad);
+            let block = (block ^ pad).byte_reverse();
+            self.ghash = key.polyval[0].clmul128foil(self.ghash ^ block).reduce();
         }
         for (block, writer) in data.iter::<[M128i; N]>() {
             let ctr = self.ctr.increment_traunch::<N>();
             let block = match N {
-                6 => self.iteration_asm(key, &mut ghash, block, ctr, block),
+                6 => self.iteration_asm(key, block, ctr, block),
                 _ => {
-                    ghash.hash(block);
+                    {
+                        let mut block = block.map(M128i::byte_reverse);
+                        block[0] ^= self.ghash;
+                        self.ghash = key.polyval.clmul128foil(block).reduce();
+                    }
                     block.ops() ^ key.aes.encrypt(ctr)
                 }
             };
             writer.write(block);
         }
         for (block, writer) in data.iter::<M128i>() {
-            ghash.hash(block);
+            self.ghash = key.polyval[0]
+                .clmul128foil(self.ghash ^ block.byte_reverse())
+                .reduce();
             let ctr = self.ctr.increment();
             let block = key.aes.encrypt(ctr) ^ block;
             writer.write(block);
@@ -333,7 +342,6 @@ impl<const N: usize> Aes192GcmState<N> {
             writer.write(block);
             self.partial = PartialBlock::new(pad, block, len);
         }
-        self.ghash = ghash.raw();
         self.crypt_len += len;
         len
     }
@@ -352,19 +360,22 @@ impl<const N: usize> Aes192GcmState<N> {
     }
     #[inline]
     pub fn finalize(&mut self, key: &Aes192GcmKey<N>, is_encrypt: bool) -> M128i {
-        let mut ghash = GhashState::new(key.ghash, self.ghash);
         if self.crypt_len == 0 {
             self.finalize_aad(key);
         }
         if self.crypt_len > 0 {
             if let Some(block) = self.partial.remainder_zero_pad(is_encrypt) {
-                ghash.hash(block);
+                let mut block = block.byte_reverse();
+                block ^= self.ghash;
+                self.ghash = key.polyval[0].clmul128foil(block).reduce();
             }
             self.partial = PartialBlock::default();
         }
-        ghash.hash_lengths(self.aad_len, self.crypt_len);
+        self.ghash = key.polyval[0]
+            .clmul128foil(self.ghash ^ [self.crypt_len as u64 * 8, self.aad_len as u64 * 8])
+            .reduce();
         let tag_mask = key.aes.encrypt(self.tag_ctr);
-        tag_mask ^ ghash.result()
+        tag_mask ^ self.ghash.byte_reverse()
     }
 }
 

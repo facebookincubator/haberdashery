@@ -22,22 +22,18 @@ main() {
   case "${LIB_NAME}" in
     "haberdashery")
       LIB_DIR="${PROJECT_DIR}/bindings/rust_bench"
-      EXTRA_FLAGS=(--detect-profile --group-by-path)
       ;;
-    "alt-haberdashery")
-      LIB_DIR="${PROJECT_DIR}/bindings/rust_bench"
-      if [ $# -eq 0 ]; then
-          echo "usage: ${0} alt-haberdashery aes256gcm_skylakex"
-          exit 1
-      fi
-      local -r FEATURES="${1}"; shift
-      RUST_FLAGS=(--no-default-features --features="${FEATURES}")
+    "x25519")
+      LIB_DIR="${PROJECT_DIR}/bindings/x25519"
       ;;
     "openssl")
       LIB_DIR="${PROJECT_DIR}/rust/openssl"
       ;;
     "libsodium")
       LIB_DIR="${PROJECT_DIR}/rust/libsodium"
+      ;;
+    "aws-lc")
+      LIB_DIR="${PROJECT_DIR}/rust/aws-lc"
       ;;
     *)
       echo "usage: ${0} haberdashery"
@@ -48,20 +44,13 @@ main() {
   cargo bench \
     "${RUST_FLAGS[@]}" \
     -- \
-    --length=0,16,32,48,64,80,96,112,128 \
-    --length=144,160,176,192,208,224,240 \
-    --length=256,384,512,640,768,896,1024 \
-    --length=1152,1280,1408,1536,1664,1792,1920,2048 \
-    --length=2176,2304,2432,2560,2688,2816,2944,3072 \
-    --length=3200,3328,3456,3584,3712,3840,3968,4096 \
-    --length=16kb,32kb,48kb,64kb,80kb,96kb,112kb,128kb \
-    --length=256kb,384kb,512kb,640kb,768kb,896kb,1024kb \
-    --csv-out-path="${PROJECT_DIR}"/benchmark_data/csv \
-    --benchmark-time=60s --runs=60 \
+    --length=0,16,32,48,64,80,96,112,128,144,160,176,192,208,224,240,256,384,512,640,768,896,1024,1152,1280,1408,1536,1664,1792,1920,2048,2176,2304,2432,2560,2688,2816,2944,3072,3200,3328,3456,3584,3712,3840,3968,4096,16kb,32kb,48kb,64kb,80kb,96kb,112kb,128kb,256kb,384kb,512kb,640kb,768kb,896kb,1024kb \
+    --csv-out="${PROJECT_DIR}"/benchmark_data/csv \
+    --md-out="${PROJECT_DIR}"/benchmark_data/md \
+    --runtime=100ms --runs=10 \
+    --by-alg \
     "${@}" \
     "${EXTRA_FLAGS[@]}"
-  cd "${PROJECT_DIR}/rust/nano-bench"
-  cargo run
 }
 
 main "${@}"

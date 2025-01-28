@@ -42,13 +42,13 @@ impl Aead for Aes192Gcm {
 }
 #[cfg(feature = "bench")]
 mod benchmarks {
-    #[nano_bench::benchmark(
+    #[perf_caliper::benchmark(
         library:haberdashery,
         algorithm:aes192gcm,
         primitive:aead,
         profile:skylakex,
     )]
-    fn init(iters: u64, measure: &mut dyn nano_bench::Measure) {
+    fn init(iters: u64, measure: &mut dyn perf_caliper::Measure) {
         let Some(mut context) = crate::benchmark::aead::Context::<super::Aes192Gcm>::aad(0) else {
             measure.skip();
             return;
@@ -59,13 +59,13 @@ mod benchmarks {
         }
         measure.stop();
     }
-    #[nano_bench::benchmark(
+    #[perf_caliper::benchmark(
         library:haberdashery,
         algorithm:aes192gcm,
         primitive:aead,
         profile:skylakex,
     )]
-    fn aad(length: usize, iters: u64, measure: &mut dyn nano_bench::Measure) {
+    fn aad(length: usize, iters: u64, measure: &mut dyn perf_caliper::Measure) {
         let Some(mut context) = crate::benchmark::aead::Context::<super::Aes192Gcm>::aad(length) else {
             measure.skip();
             return;
@@ -76,13 +76,13 @@ mod benchmarks {
         }
         measure.stop();
     }
-    #[nano_bench::benchmark(
+    #[perf_caliper::benchmark(
         library:haberdashery,
         algorithm:aes192gcm,
         primitive:aead,
         profile:skylakex,
     )]
-    fn encrypt(length: usize, iters: u64, measure: &mut dyn nano_bench::Measure) {
+    fn encrypt(length: usize, iters: u64, measure: &mut dyn perf_caliper::Measure) {
         let Some(mut context) = crate::benchmark::aead::Context::<super::Aes192Gcm>::crypt(length) else {
             measure.skip();
             return;
@@ -93,13 +93,13 @@ mod benchmarks {
         }
         measure.stop();
     }
-    #[nano_bench::benchmark(
+    #[perf_caliper::benchmark(
         library:haberdashery,
         algorithm:aes192gcm,
         primitive:aead,
         profile:skylakex,
     )]
-    fn decrypt(length: usize, iters: u64, measure: &mut dyn nano_bench::Measure) {
+    fn decrypt(length: usize, iters: u64, measure: &mut dyn perf_caliper::Measure) {
         let Some(mut context) = crate::benchmark::aead::Context::<super::Aes192Gcm>::crypt(length) else {
             measure.skip();
             return;

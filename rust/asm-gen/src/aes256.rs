@@ -357,7 +357,7 @@ mod tests {
             for _ in 0..128 {
                 let key: [M128i; 2] = random::random();
                 let plaintext: [M128i; N] = random::random();
-                let (aes, ciphertext) = Aes256::new_and_encrypt(key, plaintext.into());
+                let (aes, ciphertext) = Aes256::new_and_encrypt(key, plaintext);
                 assert_eq!(aes.encrypt(plaintext), ciphertext);
                 assert_eq!(Aes256::new(key).encrypt(plaintext), ciphertext);
             }

@@ -28,13 +28,13 @@ impl Mac for SivMac {
 }
 #[cfg(feature = "bench")]
 mod benchmarks {
-    #[nano_bench::benchmark(
+    #[perf_caliper::benchmark(
         library:haberdashery,
         algorithm:sivmac,
         primitive:mac,
         profile:tigerlake,
     )]
-    fn init(iters: u64, measure: &mut dyn nano_bench::Measure) {
+    fn init(iters: u64, measure: &mut dyn perf_caliper::Measure) {
         let Some(mut context) = crate::benchmark::mac::Context::<super::SivMac>::new(0) else {
             measure.skip();
             return;
@@ -45,13 +45,13 @@ mod benchmarks {
         }
         measure.stop();
     }
-    #[nano_bench::benchmark(
+    #[perf_caliper::benchmark(
         library:haberdashery,
         algorithm:sivmac,
         primitive:mac,
         profile:tigerlake,
     )]
-    fn sign(length: usize, iters: u64, measure: &mut dyn nano_bench::Measure) {
+    fn sign(length: usize, iters: u64, measure: &mut dyn perf_caliper::Measure) {
         let Some(mut context) = crate::benchmark::mac::Context::<super::SivMac>::new(length) else {
             measure.skip();
             return;

@@ -7,6 +7,7 @@
 
 mod aead;
 mod aead_streaming;
+mod hash;
 mod mac;
 
 use std::path::Path;
@@ -25,9 +26,11 @@ pub fn bindings() {
         aead_streaming::SYS_SRC,
         aead_streaming::UNIT_SRC,
     );
+    let hash_descriptors = unit_bindings(&crate_path, "hash", hash::SYS_SRC, hash::UNIT_SRC);
     let mac_descriptors = unit_bindings(&crate_path, "mac", mac::SYS_SRC, mac::UNIT_SRC);
     let descriptors = aead_descriptors
         .concat(aead_streaming_descriptors)
+        .concat(hash_descriptors)
         .concat(mac_descriptors);
     write_cargo_toml(&crate_path, &descriptors);
     write_lib_rs(&crate_path.join("src/lib.rs"), &descriptors);
@@ -121,6 +124,9 @@ doctest = false
 pub(crate) const UNIT_CARGO_TOML: &str = r#"[package]
 name = "{name}"
 edition = "2021"
+
+[features]
+asm-path = []
 
 [lib]
 doctest = false

@@ -22,11 +22,11 @@ int haberdashery_sivmac_skylakex_init(
     haberdashery_sivmac_skylakex_t *mac,
     const unsigned char *key,         size_t key_len);
 int haberdashery_sivmac_skylakex_sign(
-    haberdashery_sivmac_skylakex_t *const mac,
+    const haberdashery_sivmac_skylakex_t *mac,
     const unsigned char *message,     size_t message_len,
     unsigned char *tag,               size_t tag_len);
 int haberdashery_sivmac_skylakex_verify(
-    haberdashery_sivmac_skylakex_t *const mac,
+    const haberdashery_sivmac_skylakex_t *mac,
     const unsigned char *message,     size_t message_len,
     const unsigned char *tag,         size_t tag_len);
 int haberdashery_sivmac_skylakex_is_supported(void);

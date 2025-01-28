@@ -14,7 +14,7 @@ readonly PROJECT_DIR
 do_podman() {
   local -r NAME="${1}"; shift
   podman build -t "${NAME}" -f podman/"${NAME}".Dockerfile .
-  podman run "${@}" -t "${NAME}"
+  podman run "${@}" -it "${NAME}"
 }
 
 main() {

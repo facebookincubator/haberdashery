@@ -27,11 +27,11 @@ int {prefix}_{algorithm:Flat}_{profile}_init(
     {prefix:Snake}_{algorithm:Flat}_{profile:Snake}_t *mac,
     const unsigned char *key,         size_t key_len);
 int {prefix}_{algorithm:Flat}_{profile}_sign(
-    {prefix:Snake}_{algorithm:Flat}_{profile:Snake}_t *const mac,
+    const {prefix:Snake}_{algorithm:Flat}_{profile:Snake}_t *mac,
     const unsigned char *message,     size_t message_len,
     unsigned char *tag,               size_t tag_len);
 int {prefix}_{algorithm:Flat}_{profile}_verify(
-    {prefix:Snake}_{algorithm:Flat}_{profile:Snake}_t *const mac,
+    const {prefix:Snake}_{algorithm:Flat}_{profile:Snake}_t *mac,
     const unsigned char *message,     size_t message_len,
     const unsigned char *tag,         size_t tag_len);
 int {prefix}_{algorithm:Flat}_{profile}_is_supported(void);

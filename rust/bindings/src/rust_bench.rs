@@ -14,8 +14,11 @@ use crate::Descriptors;
 pub fn bindings() {
     let crate_path = crate::BINDINGS_PATH.join("rust_bench");
     let aead_descriptors = get_descriptors_from_flag("aead");
+    let hash_descriptors = get_descriptors_from_flag("hash");
     let mac_descriptors = get_descriptors_from_flag("mac");
-    let descriptors = mac_descriptors.concat(aead_descriptors);
+    let descriptors = aead_descriptors
+        .concat(hash_descriptors)
+        .concat(mac_descriptors);
     write_cargo_toml(&crate_path, &descriptors);
 }
 
@@ -44,7 +47,7 @@ harness = false
 
 [dependencies]
 haberdashery-lib = { path = "../rust_lib", default-features = false, features = ["bench"] }
-nano-bench = { path = "../../rust/nano-bench" }
+perf-caliper = { path = "../../rust/perf-caliper" }
 
 [features]
 "#;

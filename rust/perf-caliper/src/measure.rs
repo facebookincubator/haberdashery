@@ -9,12 +9,12 @@ use perf_counters::counters::Counters;
 use perf_counters::counters::CountersElapsed;
 use perf_counters::counters::CountersStart;
 
-pub struct Measure<'a> {
+pub struct MeasureImpl<'a> {
     counters: &'a Counters,
     start_counters: Option<CountersStart<'a>>,
     pub elapsed: Option<CountersElapsed>,
 }
-impl<'a> Measure<'a> {
+impl<'a> MeasureImpl<'a> {
     pub fn new(counters: &'a Counters) -> Self {
         Self {
             counters,
@@ -27,7 +27,7 @@ impl<'a> Measure<'a> {
         self.elapsed = None;
     }
 }
-impl<'a> nano_bench::Measure for Measure<'a> {
+impl<'a> crate::Measure for MeasureImpl<'a> {
     fn start(&mut self) {
         self.start_counters = Some(self.counters.start());
     }

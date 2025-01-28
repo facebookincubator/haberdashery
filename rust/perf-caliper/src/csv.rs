@@ -5,10 +5,14 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 
 use crate::benchmark::BenchmarkResult;
 
+const OP: &str = "operation";
+const LENGTH: &str = "length";
+const CYCLES: &str = "cycles";
 const RUNS: &str = "runs";
 const ITERATIONS: &str = "iterations";
 const TSC: &str = "tsc";
@@ -16,14 +20,19 @@ const TSCP: &str = "tscp";
 const USECS: &str = "usecs";
 
 pub struct Csv {
-    header: Vec<String>,
-    rows: Vec<Vec<String>>,
+    pub header: Vec<String>,
+    pub rows: Vec<Vec<String>>,
+}
+impl From<&String> for Csv {
+    fn from(data: &String) -> Self {
+        Self::from(data.as_str())
+    }
 }
 impl From<&str> for Csv {
     fn from(data: &str) -> Self {
         let mut iter = data
             .lines()
-            .filter(|s| s.starts_with('#'))
+            .filter(|s| !s.starts_with('#'))
             .map(|s| s.split(',').map(String::from).collect::<Vec<String>>());
         let header = iter.next().unwrap_or_default();
         let rows = iter.collect();
@@ -93,11 +102,65 @@ impl Csv {
             .collect();
         Self { header, rows }
     }
+    pub fn get_unique_cells_by_column<'a>(&'a self, column: &str) -> Vec<&'a str> {
+        let Some(index) = self
+            .header
+            .iter()
+            .enumerate()
+            .find_map(|(i, c)| (c == column).then_some(i))
+        else {
+            return vec![];
+        };
+        let unique: BTreeSet<&'a str> = self
+            .rows
+            .iter()
+            .filter_map(|row| row.get(index))
+            .map(String::as_str)
+            .collect();
+        unique.into_iter().collect()
+    }
     pub fn build(&self) -> String {
-        let mut result = vec![self.header.join(",")];
+        let mut result = vec![
+            format!("# @{generated}", generated = "generated"),
+            self.header.join(","),
+        ];
         for row in &self.rows {
             result.push(row.join(","));
         }
+        result.push(String::default());
         result.join("\n")
+    }
+    pub fn path_cycle_map(&self) -> BTreeMap<String, f64> {
+        let mut op_index = None;
+        let mut length_index = None;
+        let mut cycles_index = None;
+        for (i, name) in self.header.iter().enumerate() {
+            match name.as_str() {
+                OP => op_index = Some(i),
+                LENGTH => length_index = Some(i),
+                CYCLES => cycles_index = Some(i),
+                _ => {}
+            }
+        }
+        let mut map = BTreeMap::default();
+        let Some(op_index) = op_index else {
+            return map;
+        };
+        let Some(length_index) = length_index else {
+            return map;
+        };
+        let Some(cycles_index) = cycles_index else {
+            return map;
+        };
+        for row in &self.rows {
+            let op = &row[op_index];
+            let length = &row[length_index];
+            let cycles = &row[cycles_index];
+            let Ok(cycles) = cycles.parse::<f64>() else {
+                continue;
+            };
+            map.insert(format!("{op}_{length}"), cycles);
+        }
+        map
     }
 }

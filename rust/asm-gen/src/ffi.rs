@@ -7,6 +7,7 @@
 
 pub mod aead;
 pub mod aead_streaming;
+pub mod hash;
 pub mod mac;
 pub mod pod;
 pub mod reader;

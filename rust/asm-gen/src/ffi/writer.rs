@@ -21,6 +21,10 @@ impl<'a> From<&'a mut [u8]> for Writer<'a> {
     }
 }
 impl<'a> Writer<'a> {
+    #[cfg(test)]
+    pub unsafe fn writer_ptr(&self) -> (*mut u8, usize) {
+        (self.ptr, self.len)
+    }
     #[inline(always)]
     pub fn new(ptr: *mut u8, len: usize) -> Self {
         Self {
@@ -33,7 +37,7 @@ impl<'a> Writer<'a> {
     pub fn write<T: Pod>(&mut self, data: T) -> usize {
         let len = self.len;
         if len == 0 {
-            return 0;
+            0
         } else if len < T::SIZE {
             let ptr = unsafe { self.advance(len) };
             unsafe { data.store_partial(ptr, len) };

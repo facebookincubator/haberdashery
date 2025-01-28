@@ -1,7 +1,6 @@
 // @generated
 #![cfg_attr(not(test), no_std)]
-#![cfg_attr(feature = "stdsimd", feature(stdsimd))]
-#![cfg_attr(not(feature = "stdsimd"), feature(stdarch_x86_avx512))]
+#![feature(stdarch_x86_avx512)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]

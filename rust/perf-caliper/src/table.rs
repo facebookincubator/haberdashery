@@ -12,6 +12,7 @@ use units::Bytes;
 use crate::benchmark::BenchmarkEnum;
 use crate::benchmark::BenchmarkResult;
 
+const OP: &str = "operation";
 const RUNS: &str = "runs";
 const ITERS: &str = "iters";
 const START_CORE: &str = "start core";
@@ -26,8 +27,15 @@ pub struct Table {
     show_percent: Vec<String>,
     print_on_add: bool,
     metadata_lengths: BTreeMap<String, usize>,
+    reference: BTreeMap<String, f64>,
 }
 impl Table {
+    pub fn new(reference: BTreeMap<String, f64>) -> Self {
+        Self {
+            reference,
+            ..Default::default()
+        }
+    }
     pub fn print_on_add(&mut self, benchmarks: &[BenchmarkEnum]) {
         self.print_on_add = true;
         self.metadata_lengths = BTreeMap::default();
@@ -142,7 +150,22 @@ impl Table {
             };
         }
         if self.print_on_add {
-            println!("{}", cells.join(" "));
+            print!("{}", cells.join(" "));
+            let op = result.metadata().get(OP).unwrap();
+            let length = match result.length() {
+                Some(length) => length.to_string(),
+                None => String::default(),
+            };
+            if let Some(reference_cycles) = self.reference.get(&format!("{op}_{length}")) {
+                let percent = 100.0 - (reference_cycles * 100.0 / cycles);
+                if percent.abs() > 1.0 {
+                    match percent < 0.0 {
+                        true => print!(" {percent:.2}%"),
+                        false => print!(" +{percent:.2}%"),
+                    }
+                }
+            }
+            println!();
         }
 
         self.results.push(result);

@@ -1,0 +1,8 @@
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C", "no-vectorize-slp",
+    "-C", "link-args=-znostart-stop-gc",
+    "-C", "llvm-args=--inline-threshold=999999",
+    "-C", "target-cpu=skylake-avx512",
+    "-C", "target-feature=-xsavec,-xsaves",
+]

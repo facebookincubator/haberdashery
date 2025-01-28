@@ -33,13 +33,13 @@ impl Mac for {algorithm:UpperCamel} {
 }
 #[cfg(feature = "bench")]
 mod benchmarks {
-    #[nano_bench::benchmark(
+    #[perf_caliper::benchmark(
         library:haberdashery,
         algorithm:{algorithm:Flat},
         primitive:mac,
         profile:{profile},
     )]
-    fn init(iters: u64, measure: &mut dyn nano_bench::Measure) {
+    fn init(iters: u64, measure: &mut dyn perf_caliper::Measure) {
         let Some(mut context) = crate::benchmark::mac::Context::<super::{algorithm:UpperCamel}>::new(0) else {
             measure.skip();
             return;
@@ -50,13 +50,13 @@ mod benchmarks {
         }
         measure.stop();
     }
-    #[nano_bench::benchmark(
+    #[perf_caliper::benchmark(
         library:haberdashery,
         algorithm:{algorithm:Flat},
         primitive:mac,
         profile:{profile},
     )]
-    fn sign(length: usize, iters: u64, measure: &mut dyn nano_bench::Measure) {
+    fn sign(length: usize, iters: u64, measure: &mut dyn perf_caliper::Measure) {
         let Some(mut context) = crate::benchmark::mac::Context::<super::{algorithm:UpperCamel}>::new(length) else {
             measure.skip();
             return;

@@ -1,0 +1,3 @@
+[target.x86_64-unknown-linux-gnu]
+# https://github.com/dtolnay/linkme/issues/94
+rustflags = ["-C", "link-args=-znostart-stop-gc"]

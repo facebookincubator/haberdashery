@@ -11,10 +11,15 @@ harness = false
 
 [dependencies]
 haberdashery-lib = { path = "../rust_lib", default-features = false, features = ["bench"] }
-nano-bench = { path = "../../rust/nano-bench" }
+perf-caliper = { path = "../../rust/perf-caliper" }
 
 [features]
-default = ["aes192gcm_broadwell", "aes192gcm_haswell", "aes192gcm_skylake", "aes192gcm_skylakex", "aes192gcm_tigerlake", "aes256gcm_broadwell", "aes256gcm_haswell", "aes256gcm_skylake", "aes256gcm_skylakex", "aes256gcm_tigerlake", "aes256gcmdndk_broadwell", "aes256gcmdndk_haswell", "aes256gcmdndk_skylake", "aes256gcmdndk_skylakex", "aes256gcmdndk_tigerlake", "aes256gcmsiv_broadwell", "aes256gcmsiv_haswell", "aes256gcmsiv_skylake", "aes256gcmsiv_skylakex", "aes256gcmsiv_tigerlake", "sivmac_broadwell", "sivmac_haswell", "sivmac_skylake", "sivmac_skylakex", "sivmac_tigerlake"]
+default = ["aes128gcm_broadwell", "aes128gcm_haswell", "aes128gcm_skylake", "aes128gcm_skylakex", "aes128gcm_tigerlake", "aes192gcm_broadwell", "aes192gcm_haswell", "aes192gcm_skylake", "aes192gcm_skylakex", "aes192gcm_tigerlake", "aes256gcm_broadwell", "aes256gcm_haswell", "aes256gcm_skylake", "aes256gcm_skylakex", "aes256gcm_tigerlake", "aes256gcmdndk_broadwell", "aes256gcmdndk_haswell", "aes256gcmdndk_skylake", "aes256gcmdndk_skylakex", "aes256gcmdndk_tigerlake", "aes256gcmsiv_broadwell", "aes256gcmsiv_haswell", "aes256gcmsiv_skylake", "aes256gcmsiv_skylakex", "aes256gcmsiv_tigerlake", "sivmac_broadwell", "sivmac_haswell", "sivmac_skylake", "sivmac_skylakex", "sivmac_tigerlake"]
+aes128gcm_broadwell = ["haberdashery-lib/aes128gcm_broadwell"]
+aes128gcm_haswell = ["haberdashery-lib/aes128gcm_haswell"]
+aes128gcm_skylake = ["haberdashery-lib/aes128gcm_skylake"]
+aes128gcm_skylakex = ["haberdashery-lib/aes128gcm_skylakex"]
+aes128gcm_tigerlake = ["haberdashery-lib/aes128gcm_tigerlake"]
 aes192gcm_broadwell = ["haberdashery-lib/aes192gcm_broadwell"]
 aes192gcm_haswell = ["haberdashery-lib/aes192gcm_haswell"]
 aes192gcm_skylake = ["haberdashery-lib/aes192gcm_skylake"]

@@ -3,41 +3,59 @@ name = "haberdashery-asm-gen"
 version = "0.1.0"
 edition = "2021"
 
-[profile.release]
-codegen-units = 1
-
 [features]
 asm_gen =[]
+
+# microarchs
 haswell = ["asm_gen", "aes"]
 broadwell = ["asm_gen", "aes"]
 skylake = ["asm_gen", "aes"]
 skylakex = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw"]
 tigerlake = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw", "vpclmulqdq"]
+zen3 =[]
 
-# features
+# cpu features
 aes = []
 avx512f = []
 avx512vl = []
 avx512bw = []
 vpclmulqdq = []
 
+# algorithms
+aegis128l = []
+aes128gcm = []
+aes128gcm_streaming = []
+aes192gcm = []
+aes256gcm = []
+aes256gcm_streaming = []
+aes256gcmdndk = []
+aes256gcmdndkkc = [] # haberdashery_opensource_strip_line
+aes256gcmsiv = []
+crc32c = [] # haberdashery_opensource_strip_line
+dpmac = [] # haberdashery_opensource_strip_line
+hmacsha256 = [] # haberdashery_opensource_strip_line
+rr11aespcm = [] # haberdashery_opensource_strip_line
+sha256 = [] # haberdashery_opensource_strip_line
+sivmac = []
+
 # x25519 rfc test vectors take a particularly long time
 very_long_tests = []
 
 [dependencies]
+bindings-proc = { path = "../bindings/bindings-proc" }
 cpuid = { path = "../cpuid" }
+hex = "0.4.3"
+hmac = "0.12.1"
 intrinsics = { path = "../intrinsics" }
-
-[build-dependencies]
-version_check = "0.9.4"
+transliteral = { path = "../transliteral" }
 
 [dev-dependencies]
 aes-gcm = "0.10.2"
 aes-gcm-siv = "0.11.1"
 generic-array = "0.14.7"
-hex = "0.4.3"
-hex-literal = "0.4.1"
 hex2 = { package = "hex", path = "../hex" }
+hex-literal = "0.4.1"
 random = { path = "../random" }
+sha2 = "0.10.8"
 static-env = { path = "../static-env" }
 test-vectors = { path = "../test-vectors" }

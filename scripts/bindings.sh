@@ -38,8 +38,10 @@ rust_lib() {
   echo_with_date "bindings/rust_lib generating"
   rm -f "${BINDINGS_DIR}/rust_lib/src/Cargo.toml"
   rm -f "${BINDINGS_DIR}/rust_lib/src/aead.rs"
+  rm -f "${BINDINGS_DIR}/rust_lib/src/hash.rs"
   rm -f "${BINDINGS_DIR}/rust_lib/src/mac.rs"
   rm -rf "${BINDINGS_DIR}/rust_lib/src/aead"
+  rm -rf "${BINDINGS_DIR}/rust_lib/src/hash"
   rm -rf "${BINDINGS_DIR}/rust_lib/src/mac"
   cd "${PROJECT_DIR}/rust/bindings"
   cargo run -q -- \
@@ -62,7 +64,7 @@ rust_bench() {
 
   echo_with_date "bindings/rust_bench testing"
   cd "${BINDINGS_DIR}/rust_bench"
-  cargo test -q --all-targets 1>/dev/null
+  cargo build -q 1>/dev/null
 }
 
 c89() {

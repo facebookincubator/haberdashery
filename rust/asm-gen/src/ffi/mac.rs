@@ -5,6 +5,9 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+#[cfg(any(not(feature = "asm_gen"), feature = "sivmac"))]
+pub mod sivmac;
+
 use crate::ffi::reader::Reader;
 use crate::ffi::writer::Writer;
 
