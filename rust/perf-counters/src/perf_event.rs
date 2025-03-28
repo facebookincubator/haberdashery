@@ -8,4 +8,5 @@
 pub mod counter;
 mod handle;
 mod page;
+#[cfg(feature = "rdpmc")]
 pub(crate) mod rdpmc;

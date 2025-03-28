@@ -48,7 +48,8 @@ gen_single() {
   local -r ASM_DIR="${PROJECT_DIR}/asm/"
   local -r FILENAME="${ALG}_${PROFILE}"
   local -r ASM_PATH="${ASM_DIR}/${FILENAME}.s"
-  local -r TARGET="haberdashery-asm-gen"
+  local -r CRATE="haberdashery-asm-gen"
+  local -r TARGET="x86_64-unknown-linux-gnu"
   DEBUG_INFO=()
   if [ $# -ne 0 ]; then
     if [ "${1}" == "--debug" ]; then
@@ -63,10 +64,12 @@ gen_single() {
   export DESCRIPTOR_DIR="${PROJECT_DIR}/descriptors"
 
   cd "${PROJECT_DIR}"/rust/asm-gen
-  cargo clean -q -r -p "${TARGET}" || true
+  cargo clean -q -r -p "${CRATE}" \
+    --target "${TARGET}" \
+    --target-dir "${CARGO_TARGET_DIR}"/"${CRATE}"/"${PROFILE}"
   cargo rustc -q \
-    --target x86_64-unknown-linux-gnu \
-    --target-dir "${CARGO_TARGET_DIR}"/haberdashery-asm-gen/"${PROFILE}" \
+    --target "${TARGET}" \
+    --target-dir "${CARGO_TARGET_DIR}"/"${CRATE}"/"${PROFILE}" \
     --features asm_gen,"${PROFILE}","${ALG}" \
     --config "${PROJECT_DIR}"/rust/config/"${PROFILE}".toml \
     --release \

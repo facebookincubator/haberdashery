@@ -3,6 +3,17 @@ name = "haberdashery-asm-gen"
 version = "0.1.0"
 edition = "2021"
 
+[profile.bench]
+inherits = "release"
+debug=true
+
+[lib]
+bench = false
+
+[[bench]]
+name = "bench"
+harness = false
+
 [features]
 asm_gen =[]
 
@@ -29,12 +40,16 @@ aes192gcm = []
 aes256gcm = []
 aes256gcm_streaming = []
 aes256gcmdndk = []
-aes256gcmdndkkc = [] # haberdashery_opensource_strip_line
+aes256gcmdndkv2 = [] # haberdashery_opensource_strip_line
+aes256gcmdndkv2kc = [] # haberdashery_opensource_strip_line
 aes256gcmsiv = []
 crc32c = [] # haberdashery_opensource_strip_line
 dpmac = [] # haberdashery_opensource_strip_line
 hmacsha256 = [] # haberdashery_opensource_strip_line
+ratchet_rng = [] # haberdashery_opensource_strip_line
+rijndael256 = [] # haberdashery_opensource_strip_line
 rr11aespcm = [] # haberdashery_opensource_strip_line
+semiatomic_rng = [] # haberdashery_opensource_strip_line
 sha256 = [] # haberdashery_opensource_strip_line
 sivmac = []
 
@@ -47,6 +62,7 @@ cpuid = { path = "../cpuid" }
 hex = "0.4.3"
 hmac = "0.12.1"
 intrinsics = { path = "../intrinsics" }
+perf-caliper = { path = "../perf-caliper" }
 transliteral = { path = "../transliteral" }
 
 [dev-dependencies]

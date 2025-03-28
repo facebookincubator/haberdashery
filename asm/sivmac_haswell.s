@@ -830,7 +830,7 @@ haberdashery_sivmac_haswell_sign:
 	shlq	$3, %rdx
 	movq	%rbx, %rax
 	andq	$15, %rax
-	je	.LBB1_27
+	je	.LBB1_28
 .LBB1_8:
 	vmovdqa	%xmm2, (%rsp)
 	movq	%rdx, %r15
@@ -924,8 +924,8 @@ haberdashery_sivmac_haswell_sign:
 	jne	.LBB1_16
 .LBB1_17:
 	testq	%rdx, %rdx
-	je	.LBB1_18
-.LBB1_31:
+	je	.LBB1_19
+.LBB1_18:
 	vmovdqa	16(%rdi), %xmm4
 	vpclmulqdq	$0, %xmm0, %xmm4, %xmm5
 	vpclmulqdq	$1, %xmm0, %xmm4, %xmm6
@@ -960,9 +960,9 @@ haberdashery_sivmac_haswell_sign:
 	movq	%rbx, %rax
 	andq	$15, %rax
 	jne	.LBB1_8
-.LBB1_27:
+.LBB1_28:
 	cmpq	$15, %rbx
-	jbe	.LBB1_28
+	jbe	.LBB1_29
 	vpxor	(%rsi), %xmm2, %xmm0
 	vmovdqa	(%rdi,%rbx), %xmm2
 	vpclmulqdq	$0, %xmm0, %xmm2, %xmm1
@@ -972,11 +972,11 @@ haberdashery_sivmac_haswell_sign:
 	vpxor	%xmm3, %xmm4, %xmm2
 	leaq	-16(%rbx), %rax
 	cmpq	$16, %rax
-	jb	.LBB1_26
+	jb	.LBB1_27
 	movq	%rbx, %r8
 	shrq	$4, %r8
 	testb	$16, %bl
-	jne	.LBB1_23
+	jne	.LBB1_24
 	vmovdqu	16(%rsi), %xmm3
 	decq	%r8
 	movq	%r8, %rax
@@ -992,15 +992,15 @@ haberdashery_sivmac_haswell_sign:
 	vpxor	%xmm2, %xmm6, %xmm2
 	vpxor	%xmm0, %xmm3, %xmm0
 	leaq	-32(%rbx), %rax
-.LBB1_23:
+.LBB1_24:
 	cmpq	$32, %rbx
-	je	.LBB1_26
+	je	.LBB1_27
 	shlq	$4, %r8
 	addq	%rdi, %r8
 	addq	$-16, %r8
 	addq	$32, %rsi
 	.p2align	4, 0x90
-.LBB1_25:
+.LBB1_26:
 	vmovdqa	(%r8), %xmm3
 	vmovdqu	-16(%rsi), %xmm4
 	vpclmulqdq	$0, %xmm4, %xmm3, %xmm5
@@ -1025,8 +1025,8 @@ haberdashery_sivmac_haswell_sign:
 	addq	$-32, %r8
 	addq	$32, %rsi
 	cmpq	$15, %rax
-	ja	.LBB1_25
-.LBB1_26:
+	ja	.LBB1_26
+.LBB1_27:
 	vmovdqa	(%rdi), %xmm3
 	vmovq	%rdx, %xmm4
 	vpclmulqdq	$0, %xmm4, %xmm3, %xmm5
@@ -1036,14 +1036,14 @@ haberdashery_sivmac_haswell_sign:
 	vpslldq	$8, %xmm2, %xmm3
 	vpxor	%xmm3, %xmm1, %xmm1
 	vpsrldq	$8, %xmm2, %xmm2
-	jmp	.LBB1_29
+	jmp	.LBB1_30
 .LBB1_9:
 	movq	%r12, %rcx
 	movq	%r13, %rdi
 	movq	%r15, %rax
 	vmovdqa	(%rsp), %xmm2
-	jmp	.LBB1_19
-.LBB1_28:
+	jmp	.LBB1_20
+.LBB1_29:
 	vmovdqa	(%rdi), %xmm0
 	vmovq	%rdx, %xmm1
 	vpxor	%xmm1, %xmm2, %xmm1
@@ -1055,7 +1055,7 @@ haberdashery_sivmac_haswell_sign:
 	vpslldq	$8, %xmm3, %xmm1
 	vpxor	%xmm1, %xmm2, %xmm1
 	vpsrldq	$8, %xmm3, %xmm2
-.LBB1_29:
+.LBB1_30:
 	vpbroadcastq	.LCPI1_2(%rip), %xmm3
 	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
 	vpshufd	$78, %xmm1, %xmm1
@@ -1063,12 +1063,12 @@ haberdashery_sivmac_haswell_sign:
 	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
 	vpxor	%xmm2, %xmm0, %xmm0
 	vpshufd	$78, %xmm1, %xmm1
-	jmp	.LBB1_30
+	jmp	.LBB1_31
 .LBB1_11:
 	movq	%r15, %rax
 	testq	%rdx, %rdx
-	jne	.LBB1_31
-.LBB1_18:
+	jne	.LBB1_18
+.LBB1_19:
 	vpslldq	$8, %xmm3, %xmm4
 	vpxor	%xmm4, %xmm2, %xmm2
 	vpsrldq	$8, %xmm3, %xmm3
@@ -1081,7 +1081,7 @@ haberdashery_sivmac_haswell_sign:
 	vpxor	%xmm2, %xmm3, %xmm2
 	vpxor	%xmm1, %xmm2, %xmm1
 	vpxor	%xmm1, %xmm4, %xmm2
-.LBB1_19:
+.LBB1_20:
 	vmovdqa	16(%rdi), %xmm1
 	vpxor	%xmm0, %xmm2, %xmm0
 	vpclmulqdq	$0, %xmm0, %xmm1, %xmm2
@@ -1105,7 +1105,7 @@ haberdashery_sivmac_haswell_sign:
 	vpclmulqdq	$16, %xmm3, %xmm2, %xmm3
 	vpxor	%xmm1, %xmm0, %xmm0
 	vpshufd	$78, %xmm2, %xmm1
-.LBB1_30:
+.LBB1_31:
 	vpxor	%xmm1, %xmm0, %xmm0
 	vpxor	%xmm0, %xmm3, %xmm0
 .LBB1_32:
@@ -1403,7 +1403,7 @@ haberdashery_sivmac_haswell_verify:
 	shlq	$3, %rdx
 	movq	%rbx, %rax
 	andq	$15, %rax
-	je	.LBB2_27
+	je	.LBB2_28
 	vmovdqa	%xmm2, 16(%rsp)
 	vmovdqa	%xmm9, (%rsp)
 	movq	%rdx, %r15
@@ -1496,8 +1496,8 @@ haberdashery_sivmac_haswell_verify:
 	jne	.LBB2_16
 .LBB2_17:
 	testq	%rcx, %rcx
-	je	.LBB2_18
-.LBB2_31:
+	je	.LBB2_19
+.LBB2_18:
 	vmovdqa	16(%rdi), %xmm4
 	vpclmulqdq	$0, %xmm0, %xmm4, %xmm5
 	vpclmulqdq	$1, %xmm0, %xmm4, %xmm6
@@ -1526,9 +1526,9 @@ haberdashery_sivmac_haswell_verify:
 	vpxor	%xmm1, %xmm0, %xmm0
 	vpxor	%xmm3, %xmm0, %xmm0
 	jmp	.LBB2_32
-.LBB2_27:
+.LBB2_28:
 	cmpq	$15, %rbx
-	jbe	.LBB2_28
+	jbe	.LBB2_29
 	vpxor	(%rsi), %xmm2, %xmm0
 	vmovdqa	(%rdi,%rbx), %xmm2
 	vpclmulqdq	$0, %xmm0, %xmm2, %xmm1
@@ -1538,11 +1538,11 @@ haberdashery_sivmac_haswell_verify:
 	vpxor	%xmm3, %xmm4, %xmm2
 	leaq	-16(%rbx), %rax
 	cmpq	$16, %rax
-	jb	.LBB2_26
+	jb	.LBB2_27
 	movq	%rbx, %rcx
 	shrq	$4, %rcx
 	testb	$16, %bl
-	jne	.LBB2_23
+	jne	.LBB2_24
 	vmovdqu	16(%rsi), %xmm3
 	decq	%rcx
 	movq	%rcx, %rax
@@ -1558,15 +1558,15 @@ haberdashery_sivmac_haswell_verify:
 	vpxor	%xmm2, %xmm6, %xmm2
 	vpxor	%xmm0, %xmm3, %xmm0
 	leaq	-32(%rbx), %rax
-.LBB2_23:
+.LBB2_24:
 	cmpq	$32, %rbx
-	je	.LBB2_26
+	je	.LBB2_27
 	shlq	$4, %rcx
 	addq	%rdi, %rcx
 	addq	$-16, %rcx
 	addq	$32, %rsi
 	.p2align	4, 0x90
-.LBB2_25:
+.LBB2_26:
 	vmovdqa	(%rcx), %xmm3
 	vmovdqu	-16(%rsi), %xmm4
 	vpclmulqdq	$0, %xmm4, %xmm3, %xmm5
@@ -1591,8 +1591,8 @@ haberdashery_sivmac_haswell_verify:
 	addq	$-32, %rcx
 	addq	$32, %rsi
 	cmpq	$15, %rax
-	ja	.LBB2_25
-.LBB2_26:
+	ja	.LBB2_26
+.LBB2_27:
 	vmovdqa	(%rdi), %xmm3
 	vmovq	%rdx, %xmm4
 	vpclmulqdq	$0, %xmm4, %xmm3, %xmm5
@@ -1602,14 +1602,14 @@ haberdashery_sivmac_haswell_verify:
 	vpslldq	$8, %xmm2, %xmm3
 	vpxor	%xmm3, %xmm1, %xmm1
 	vpsrldq	$8, %xmm2, %xmm2
-	jmp	.LBB2_29
+	jmp	.LBB2_30
 .LBB2_9:
 	movq	%r12, %rdi
 	movq	%r15, %rax
 	vmovdqa	(%rsp), %xmm9
 	vmovdqa	16(%rsp), %xmm2
-	jmp	.LBB2_19
-.LBB2_28:
+	jmp	.LBB2_20
+.LBB2_29:
 	vmovdqa	(%rdi), %xmm0
 	vmovq	%rdx, %xmm1
 	vpxor	%xmm1, %xmm2, %xmm1
@@ -1621,7 +1621,7 @@ haberdashery_sivmac_haswell_verify:
 	vpslldq	$8, %xmm3, %xmm1
 	vpxor	%xmm1, %xmm2, %xmm1
 	vpsrldq	$8, %xmm3, %xmm2
-.LBB2_29:
+.LBB2_30:
 	vpbroadcastq	.LCPI2_2(%rip), %xmm3
 	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
 	vpshufd	$78, %xmm1, %xmm1
@@ -1629,13 +1629,13 @@ haberdashery_sivmac_haswell_verify:
 	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
 	vpxor	%xmm2, %xmm0, %xmm0
 	vpshufd	$78, %xmm1, %xmm1
-	jmp	.LBB2_30
+	jmp	.LBB2_31
 .LBB2_11:
 	movq	%r15, %rax
 	vmovdqa	(%rsp), %xmm9
 	testq	%rcx, %rcx
-	jne	.LBB2_31
-.LBB2_18:
+	jne	.LBB2_18
+.LBB2_19:
 	vpslldq	$8, %xmm3, %xmm4
 	vpxor	%xmm4, %xmm2, %xmm2
 	vpsrldq	$8, %xmm3, %xmm3
@@ -1648,7 +1648,7 @@ haberdashery_sivmac_haswell_verify:
 	vpxor	%xmm2, %xmm3, %xmm2
 	vpxor	%xmm1, %xmm2, %xmm1
 	vpxor	%xmm1, %xmm4, %xmm2
-.LBB2_19:
+.LBB2_20:
 	vmovdqa	16(%rdi), %xmm1
 	vpxor	%xmm0, %xmm2, %xmm0
 	vpclmulqdq	$0, %xmm0, %xmm1, %xmm2
@@ -1672,7 +1672,7 @@ haberdashery_sivmac_haswell_verify:
 	vpclmulqdq	$16, %xmm3, %xmm2, %xmm3
 	vpxor	%xmm1, %xmm0, %xmm0
 	vpshufd	$78, %xmm2, %xmm1
-.LBB2_30:
+.LBB2_31:
 	vpxor	%xmm1, %xmm0, %xmm0
 	vpxor	%xmm0, %xmm3, %xmm0
 .LBB2_32:
@@ -1760,5 +1760,5 @@ haberdashery_sivmac_haswell_is_supported:
 	.size	haberdashery_sivmac_haswell_is_supported, .Lfunc_end3-haberdashery_sivmac_haswell_is_supported
 	.cfi_endproc
 
-	.ident	"rustc version 1.83.0-nightly (4ac7bcbaa 2024-09-04)"
+	.ident	"rustc version 1.85.0-nightly (4363f9b6f 2025-01-02)"
 	.section	".note.GNU-stack","",@progbits

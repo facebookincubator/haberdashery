@@ -1,52 +1,53 @@
 // @generated
 
-#[cfg(feature = "aes128gcm_broadwell")]
+#[cfg(all(feature = "aes128gcm_broadwell", target_arch = "x86_64"))]
 pub mod aes128gcm_broadwell;
-#[cfg(feature = "aes128gcm_haswell")]
+#[cfg(all(feature = "aes128gcm_haswell", target_arch = "x86_64"))]
 pub mod aes128gcm_haswell;
-#[cfg(feature = "aes128gcm_skylake")]
+#[cfg(all(feature = "aes128gcm_skylake", target_arch = "x86_64"))]
 pub mod aes128gcm_skylake;
-#[cfg(feature = "aes128gcm_skylakex")]
+#[cfg(all(feature = "aes128gcm_skylakex", target_arch = "x86_64"))]
 pub mod aes128gcm_skylakex;
-#[cfg(feature = "aes128gcm_tigerlake")]
+#[cfg(all(feature = "aes128gcm_tigerlake", target_arch = "x86_64"))]
 pub mod aes128gcm_tigerlake;
-#[cfg(feature = "aes192gcm_broadwell")]
+#[cfg(all(feature = "aes192gcm_broadwell", target_arch = "x86_64"))]
 pub mod aes192gcm_broadwell;
-#[cfg(feature = "aes192gcm_haswell")]
+#[cfg(all(feature = "aes192gcm_haswell", target_arch = "x86_64"))]
 pub mod aes192gcm_haswell;
-#[cfg(feature = "aes192gcm_skylake")]
+#[cfg(all(feature = "aes192gcm_skylake", target_arch = "x86_64"))]
 pub mod aes192gcm_skylake;
-#[cfg(feature = "aes192gcm_skylakex")]
+#[cfg(all(feature = "aes192gcm_skylakex", target_arch = "x86_64"))]
 pub mod aes192gcm_skylakex;
-#[cfg(feature = "aes192gcm_tigerlake")]
+#[cfg(all(feature = "aes192gcm_tigerlake", target_arch = "x86_64"))]
 pub mod aes192gcm_tigerlake;
-#[cfg(feature = "aes256gcm_broadwell")]
+#[cfg(all(feature = "aes256gcm_broadwell", target_arch = "x86_64"))]
 pub mod aes256gcm_broadwell;
-#[cfg(feature = "aes256gcm_haswell")]
+#[cfg(all(feature = "aes256gcm_haswell", target_arch = "x86_64"))]
 pub mod aes256gcm_haswell;
-#[cfg(feature = "aes256gcm_skylake")]
+#[cfg(all(feature = "aes256gcm_skylake", target_arch = "x86_64"))]
 pub mod aes256gcm_skylake;
-#[cfg(feature = "aes256gcm_skylakex")]
+#[cfg(all(feature = "aes256gcm_skylakex", target_arch = "x86_64"))]
 pub mod aes256gcm_skylakex;
-#[cfg(feature = "aes256gcm_tigerlake")]
+#[cfg(all(feature = "aes256gcm_tigerlake", target_arch = "x86_64"))]
 pub mod aes256gcm_tigerlake;
-#[cfg(feature = "aes256gcmdndk_broadwell")]
+#[cfg(all(feature = "aes256gcmdndk_broadwell", target_arch = "x86_64"))]
 pub mod aes256gcmdndk_broadwell;
-#[cfg(feature = "aes256gcmdndk_haswell")]
+#[cfg(all(feature = "aes256gcmdndk_haswell", target_arch = "x86_64"))]
 pub mod aes256gcmdndk_haswell;
-#[cfg(feature = "aes256gcmdndk_skylake")]
+#[cfg(all(feature = "aes256gcmdndk_skylake", target_arch = "x86_64"))]
 pub mod aes256gcmdndk_skylake;
-#[cfg(feature = "aes256gcmdndk_skylakex")]
+#[cfg(all(feature = "aes256gcmdndk_skylakex", target_arch = "x86_64"))]
 pub mod aes256gcmdndk_skylakex;
-#[cfg(feature = "aes256gcmdndk_tigerlake")]
+#[cfg(all(feature = "aes256gcmdndk_tigerlake", target_arch = "x86_64"))]
 pub mod aes256gcmdndk_tigerlake;
-#[cfg(feature = "aes256gcmsiv_broadwell")]
+#[cfg(all(feature = "aes256gcmsiv_broadwell", target_arch = "x86_64"))]
 pub mod aes256gcmsiv_broadwell;
-#[cfg(feature = "aes256gcmsiv_haswell")]
+#[cfg(all(feature = "aes256gcmsiv_haswell", target_arch = "x86_64"))]
 pub mod aes256gcmsiv_haswell;
-#[cfg(feature = "aes256gcmsiv_skylake")]
+#[cfg(all(feature = "aes256gcmsiv_skylake", target_arch = "x86_64"))]
 pub mod aes256gcmsiv_skylake;
-#[cfg(feature = "aes256gcmsiv_skylakex")]
+#[cfg(all(feature = "aes256gcmsiv_skylakex", target_arch = "x86_64"))]
 pub mod aes256gcmsiv_skylakex;
-#[cfg(feature = "aes256gcmsiv_tigerlake")]
+#[cfg(all(feature = "aes256gcmsiv_tigerlake", target_arch = "x86_64"))]
 pub mod aes256gcmsiv_tigerlake;
+

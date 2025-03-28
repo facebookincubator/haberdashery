@@ -26,7 +26,7 @@ pub fn pin_current_cpu() -> nix::Result<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rdtscp::Rdtscp;
+    use crate::hardware_clock::Rdtscp;
 
     #[test]
     fn same_core() {

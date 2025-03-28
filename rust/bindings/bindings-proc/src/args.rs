@@ -12,6 +12,7 @@ pub struct Args(BTreeMap<&'static str, Vec<String>>);
 impl Args {
     const PREFIX: &'static str = "prefix";
     const ALGORITHM: &'static str = "algorithm";
+    const ARCH: &'static str = "arch";
     const API: &'static str = "api";
     const PROFILE: &'static str = "profile";
     pub fn new(attributes: impl ToString) -> Result<Self, String> {
@@ -31,6 +32,7 @@ impl Args {
             let key = match key {
                 Self::PREFIX => Self::PREFIX,
                 Self::ALGORITHM => Self::ALGORITHM,
+                Self::ARCH => Self::ARCH,
                 Self::API => Self::API,
                 Self::PROFILE => Self::PROFILE,
                 _ => Err(format!("invalid key: {key}"))?,
@@ -62,6 +64,12 @@ impl Args {
     }
     pub fn algorithm(&self) -> &str {
         self.get_single(Self::ALGORITHM)
+    }
+    pub fn arch(&self) -> &str {
+        self.0
+            .get(Self::ARCH)
+            .and_then(|x| x.first())
+            .map_or("x86", String::as_ref)
     }
     pub fn api(&self) -> &str {
         self.get_single(Self::API)

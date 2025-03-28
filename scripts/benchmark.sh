@@ -35,6 +35,9 @@ main() {
     "aws-lc")
       LIB_DIR="${PROJECT_DIR}/rust/aws-lc"
       ;;
+    "aegis")
+      LIB_DIR="${PROJECT_DIR}/rust/aegis-benchmarks"
+      ;;
     *)
       echo "usage: ${0} haberdashery"
       exit 1

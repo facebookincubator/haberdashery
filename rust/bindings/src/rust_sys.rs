@@ -12,7 +12,7 @@ mod mac;
 
 use std::path::Path;
 
-use crate::get_descriptors_from_flag;
+use crate::get_all_descriptors_from_flag;
 use crate::write_generated;
 use crate::Descriptor;
 use crate::Descriptors;
@@ -41,7 +41,7 @@ pub fn unit_bindings(
     sys_source_template: &str,
     unit_source_template: &str,
 ) -> Descriptors {
-    let descriptors = get_descriptors_from_flag(primitive);
+    let descriptors = get_all_descriptors_from_flag(primitive);
     for descriptor in descriptors.iter() {
         let name = &descriptor["name"];
         let source = descriptor.apply(sys_source_template);
@@ -50,9 +50,18 @@ pub fn unit_bindings(
             source,
         )
         .unwrap();
+        let asm_options = match descriptor.get("arch") {
+            Some("aarch64") => "raw",
+            _ => "att_syntax, raw",
+        };
+        let mut descriptor = descriptor.clone();
+        descriptor.insert("asm_options", asm_options);
+        if descriptor["arch"] == "x86" {
+            descriptor.insert("arch", "");
+        }
         write_compilation_unit(
             &crate_path.join(format!("units/{name}")),
-            descriptor,
+            &descriptor,
             unit_source_template,
         );
     }
@@ -64,16 +73,29 @@ pub fn unit_bindings(
 }
 pub fn write_cargo_toml(crate_path: &Path, descriptors: &Descriptors) {
     let feature_lines = descriptors.apply(|d| d.apply("{name} = [\"dep:{name}\"]\n"));
-    let dep_lines =
-        descriptors.apply(|d| d.apply("{name} = { path = \"units/{name}\", optional = true }\n"));
+    let mut x86_dep_lines: Vec<String> = descriptors
+        .iter()
+        .filter(|d| d["arch"] == "x86")
+        .map(|d| d.apply("{name} = { path = \"units/{name}\", optional = true }\n"))
+        .collect();
+    x86_dep_lines.sort();
+
+    let mut aarch64_dep_lines: Vec<String> = descriptors
+        .iter()
+        .filter(|d| d["arch"] == "aarch64")
+        .map(|d| d.apply("{name} = { path = \"units/{name}\", optional = true }\n"))
+        .collect();
+    aarch64_dep_lines.sort();
 
     let cargo_toml = [
         SYS_CARGO_TOML_HEADER,
         "\n[features]\n",
         "default = []\n",
         &feature_lines.concat(),
-        "\n[dependencies]\n",
-        &dep_lines.concat(),
+        "\n[target.'cfg(target_arch = \"x86_64\")'.dependencies]\n",
+        &x86_dep_lines.concat(),
+        "\n[target.'cfg(target_arch = \"aarch64\")'.dependencies]\n",
+        &aarch64_dep_lines.concat(),
     ]
     .concat();
     write_generated::toml(crate_path.join("Cargo.toml"), cargo_toml).unwrap();
@@ -95,14 +117,40 @@ pub fn write_compilation_unit(
     .unwrap();
 }
 pub fn write_module(module_path: &Path, descriptors: &Descriptors) {
-    let modules = descriptors.apply(|d| {
-        d.apply(
-            r#"#[cfg(feature = "{name}")]
+    let mut x86_modules: Vec<String> = descriptors
+        .iter()
+        .filter(|d| d["arch"] == "x86")
+        .map(|d| {
+            d.apply(
+                r#"#[cfg(all(feature = "{name}", target_arch = "x86_64"))]
 pub mod {name};
 "#,
-        )
-    });
-    write_generated::rust(module_path, modules.concat()).unwrap();
+            )
+        })
+        .collect();
+    x86_modules.sort();
+    let mut aarch64_modules: Vec<String> = descriptors
+        .iter()
+        .filter(|d| d["arch"] == "aarch64")
+        .map(|d| {
+            d.apply(
+                r#"#[cfg(all(feature = "{name}", target_arch = "aarch64"))]
+pub mod {name};
+"#,
+            )
+        })
+        .collect();
+    aarch64_modules.sort();
+    write_generated::rust(
+        module_path,
+        [
+            x86_modules.concat(),
+            "\n".to_string(),
+            aarch64_modules.concat(),
+        ]
+        .concat(),
+    )
+    .unwrap();
 }
 pub fn write_lib_rs(lib_path: &Path, descriptors: &Descriptors) {
     let mut modules = descriptors.apply(|d| d.apply("pub mod {primitive};\n"));

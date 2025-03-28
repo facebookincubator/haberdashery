@@ -6,13 +6,9 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 pub mod counters;
+pub mod event;
+mod fence;
+mod hardware_clock;
 mod mmap;
 pub(crate) mod perf_event;
-mod rdtsc;
-pub mod rdtscp;
 pub mod sched;
-
-#[inline(always)]
-fn fence() {
-    unsafe { core::arch::x86_64::_mm_lfence() };
-}

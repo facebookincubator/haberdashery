@@ -85,6 +85,9 @@ impl Descriptor {
             None => format!("{algorithm}_{profile}"),
         };
         this.insert("name", name);
+        if !this.contains_key("arch") {
+            this.insert("arch", "x86");
+        }
         this
     }
     pub fn insert(&mut self, key: impl Into<String>, value: impl Into<String>) {

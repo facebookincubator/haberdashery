@@ -40,7 +40,7 @@ impl M512i {
     }
     #[inline]
     pub unsafe fn store<T>(self, ptr: *mut T) {
-        unsafe { _mm512_storeu_si512(ptr as *mut i32, *self) };
+        unsafe { _mm512_storeu_si512(ptr as *mut __m512i, *self) };
     }
     #[inline]
     pub unsafe fn cast<T>(self) -> T {

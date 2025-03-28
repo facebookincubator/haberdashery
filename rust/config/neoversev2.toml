@@ -1,0 +1,11 @@
+[target.aarch64-unknown-linux-gnu]
+rustflags = [
+    "-C", "no-vectorize-slp",
+    "-C", "link-args=-znostart-stop-gc",
+    "-C", "llvm-args=--inline-threshold=999999",
+    "-C", "target-cpu=grace",
+    "-C", "target-feature=+sve2,+fp16,+bf16,+sm4,+i8mm,+sve2-bitperm,+sve2-sha3,+sve2-aes,+sve2-sm4,+sha3,+aes",
+    # +crypto is not currently supported
+    #"-C", "target-feature=+crypto",
+    "-C", "embed-bitcode=no",
+]

@@ -7,6 +7,7 @@
 
 #![cfg_attr(not(test), no_std)]
 #![feature(array_chunks)]
+#![feature(linkage)]
 #![feature(stdarch_x86_avx512)]
 #![allow(unexpected_cfgs)]
 #[cfg(not(target_arch = "x86_64"))]
@@ -20,6 +21,8 @@ pub mod aes192gcm;
 mod aes256;
 pub mod aes256gcm;
 pub mod aes256gcmdndk;
+pub mod aes256gcmdndkv2;
+pub mod aes256gcmdndkv2kc;
 pub mod aes256gcmsiv;
 mod aesgcm;
 pub mod asm;
@@ -27,12 +30,10 @@ mod clamped_index;
 pub mod clmul;
 mod counter128;
 pub mod ffi;
-pub mod hmacsha256;
 mod intrinsics;
 pub mod is_supported;
 pub mod ops;
 mod partial;
-pub mod sha256;
 pub mod sivmac;
 
 #[cfg(test)]

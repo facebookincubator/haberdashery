@@ -51,7 +51,7 @@ sivmac_skylake = ["dep:sivmac_skylake"]
 sivmac_skylakex = ["dep:sivmac_skylakex"]
 sivmac_tigerlake = ["dep:sivmac_tigerlake"]
 
-[dependencies]
+[target.'cfg(target_arch = "x86_64")'.dependencies]
 aes128gcm_broadwell = { path = "units/aes128gcm_broadwell", optional = true }
 aes128gcm_haswell = { path = "units/aes128gcm_haswell", optional = true }
 aes128gcm_skylake = { path = "units/aes128gcm_skylake", optional = true }
@@ -92,3 +92,5 @@ sivmac_haswell = { path = "units/sivmac_haswell", optional = true }
 sivmac_skylake = { path = "units/sivmac_skylake", optional = true }
 sivmac_skylakex = { path = "units/sivmac_skylakex", optional = true }
 sivmac_tigerlake = { path = "units/sivmac_tigerlake", optional = true }
+
+[target.'cfg(target_arch = "aarch64")'.dependencies]

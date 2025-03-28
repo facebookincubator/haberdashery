@@ -8,7 +8,7 @@
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 
-use perf_events::Event;
+use perf_counters::event::Event;
 
 use crate::benchmark::benchmarks;
 use crate::benchmark::Benchmark;
@@ -172,7 +172,9 @@ fn benchmark(
         }
     }
     for event in counters.events() {
-        if event != Event::Cycles {
+        if event == Event::INSTRUCTIONS {
+            table.show_metric(event.name());
+        } else if event != Event::CYCLES {
             table.show_percent(event.name());
         }
     }

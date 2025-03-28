@@ -168,6 +168,12 @@ impl From<[u64; 2]> for M128i {
         unsafe { __m128i::_mm_set_epi64x(v.map(|v| v as i64)) }
     }
 }
+impl From<M128i> for [u64; 2] {
+    #[inline]
+    fn from(reg: M128i) -> Self {
+        unsafe { reg.cast() }
+    }
+}
 impl From<[u32; 4]> for M128i {
     #[inline]
     fn from(v: [u32; 4]) -> Self {
@@ -300,6 +306,10 @@ impl M128i {
         unsafe { _mm_shuffle_pd::<IMM8>(self.into(), rhs.into()) }.into()
     }
     #[inline]
+    pub fn shuffle8(self, shuffle: impl Into<M128i>) -> Self {
+        unsafe { self._mm_shuffle_epi8(shuffle.into()) }
+    }
+    #[inline]
     pub fn shuffle32<const IMM8: i32>(self) -> Self {
         unsafe { self._mm_shuffle_epi32::<IMM8>() }.into()
     }
@@ -350,10 +360,6 @@ impl M128i {
     #[inline]
     pub fn cmpgt32(self, other: M128i) -> Self {
         unsafe { self._mm_cmpgt_epi32(other) }
-    }
-    #[inline]
-    pub fn shuffle8(self, shuffle: impl Into<M128i>) -> Self {
-        unsafe { self._mm_shuffle_epi8(shuffle.into()) }
     }
     #[inline]
     pub fn byte_reverse(self) -> M128i {

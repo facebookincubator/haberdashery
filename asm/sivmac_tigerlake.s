@@ -1121,5 +1121,5 @@ haberdashery_sivmac_tigerlake_is_supported:
 	.size	haberdashery_sivmac_tigerlake_is_supported, .Lfunc_end3-haberdashery_sivmac_tigerlake_is_supported
 	.cfi_endproc
 
-	.ident	"rustc version 1.83.0-nightly (4ac7bcbaa 2024-09-04)"
+	.ident	"rustc version 1.85.0-nightly (4363f9b6f 2025-01-02)"
 	.section	".note.GNU-stack","",@progbits

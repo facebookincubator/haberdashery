@@ -7,7 +7,7 @@ core::arch::global_asm!(
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm/aes256gcmsiv_skylake.s"),
+    include_str!("../../../../../asm//aes256gcmsiv_skylake.s"),
     options(att_syntax, raw)
 );
 

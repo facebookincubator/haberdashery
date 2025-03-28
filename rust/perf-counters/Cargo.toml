@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["benchbench"]
+default = ["benchbench", "rdpmc"]
 # additional fencing to benchmark the benchmark overhead
 benchbench = []
+rdpmc = []
 
 [lib]
 bench = false

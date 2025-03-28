@@ -30,6 +30,7 @@ rust_sys() {
     --name=rust_sys
 
   echo_with_date "bindings/rust_sys testing"
+  cd "${BINDINGS_DIR}/rust_sys"
   cargo test -q --all-features
   cargo test -q --all-features --release
 }

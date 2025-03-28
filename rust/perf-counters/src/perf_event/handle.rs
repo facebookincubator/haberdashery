@@ -9,7 +9,8 @@ use std::fs::File;
 
 use perf_event_open_sys::bindings::perf_event_attr;
 use perf_event_open_sys::perf_event_open;
-use perf_events::Event;
+
+use crate::event::Event;
 
 pub struct PerfEventOpenHandle(File);
 impl PerfEventOpenHandle {
@@ -54,8 +55,8 @@ impl PerfEventOpenHandle {
 fn to_attr(event: Event) -> perf_event_attr {
     use perf_event_open_sys::bindings::*;
     let (type_, config) = match event {
-        Event::Cycles => (PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES),
-        Event::Instructions => (PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS),
+        Event::CYCLES => (PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES),
+        Event::INSTRUCTIONS => (PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS),
         _ => (PERF_TYPE_RAW, event.value()),
     };
     let mut attr = perf_event_attr {

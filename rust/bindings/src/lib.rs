@@ -24,9 +24,18 @@ sflags::define! {
     --bindings_path: <String as AsRef<Path>> = "";
 }
 
-fn get_descriptors_from_flag(primitive: &str) -> Descriptors {
+fn get_all_descriptors_from_flag(primitive: &str) -> Descriptors {
     let path = DESCRIPTOR_PATH.join(primitive);
     Descriptors::try_from(path.as_ref()).unwrap_or(Descriptors::from(vec![]))
+}
+
+fn get_descriptors_from_flag(primitive: &str) -> Descriptors {
+    get_all_descriptors_from_flag(primitive)
+        .iter()
+        .filter(|d| d["arch"] == "x86")
+        .cloned()
+        .collect::<Vec<Descriptor>>()
+        .into()
 }
 
 pub fn openssl_evp() {

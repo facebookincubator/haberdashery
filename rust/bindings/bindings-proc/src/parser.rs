@@ -84,6 +84,7 @@ fn parse_descriptor(
     descriptor.insert("prefix", args.prefix());
     descriptor.insert("algorithm", args.algorithm());
     descriptor.insert("primitive", primitive);
+    descriptor.insert("arch", args.arch());
     if !args.api().is_empty() {
         descriptor.insert("api", args.api());
     }
