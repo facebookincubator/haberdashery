@@ -6,75 +6,76 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use perf_counters::counters::Counters;
+use perf_counters::event::Event;
 use perf_counters::sched::pin_current_cpu;
-use perf_events::Event;
 
 sflags::define! {
     --event_group: Option<String>;
     --events: Option<String>;
 }
 
-const PORTS: &[Event] = &[
-    Event::Cycles,
-    Event::UopsExecutedPortPort0,
-    Event::UopsExecutedPortPort1,
-    Event::UopsExecutedPortPort5,
+const INSTRUCTIONS: &[&str] = &["cycles", "instructions"];
+
+const PORTS: &[&str] = &[
+    "cycles",
+    "UOPS_EXECUTED_PORT_PORT_0",
+    "UOPS_EXECUTED_PORT_PORT_1",
+    "UOPS_EXECUTED_PORT_PORT_5",
 ];
-const PORTS234: &[Event] = &[
-    Event::Cycles,
-    Event::UopsExecutedPortPort2,
-    Event::UopsExecutedPortPort3,
-    Event::UopsExecutedPortPort4,
+const PORTS234: &[&str] = &[
+    "cycles",
+    "UOPS_EXECUTED_PORT_PORT_2",
+    "UOPS_EXECUTED_PORT_PORT_3",
+    "UOPS_EXECUTED_PORT_PORT_4",
 ];
-const PORTS567: &[Event] = &[
-    Event::Cycles,
-    Event::UopsExecutedPortPort5,
-    Event::UopsExecutedPortPort6,
-    Event::UopsExecutedPortPort7,
+const PORTS567: &[&str] = &[
+    "cycles",
+    "UOPS_EXECUTED_PORT_PORT_5",
+    "UOPS_EXECUTED_PORT_PORT_6",
+    "UOPS_EXECUTED_PORT_PORT_7",
 ];
-const PORTS8: &[Event] = &[
-    Event::Cycles,
-    Event::UopsExecutedPortPort0,
-    Event::UopsExecutedPortPort1,
-    Event::UopsExecutedPortPort2,
-    Event::UopsExecutedPortPort3,
-    Event::UopsExecutedPortPort4,
-    Event::UopsExecutedPortPort5,
-    Event::UopsExecutedPortPort6,
+const PORTS8: &[&str] = &[
+    "cycles",
+    "UOPS_EXECUTED_PORT_PORT_0",
+    "UOPS_EXECUTED_PORT_PORT_1",
+    "UOPS_EXECUTED_PORT_PORT_2",
+    "UOPS_EXECUTED_PORT_PORT_3",
+    "UOPS_EXECUTED_PORT_PORT_4",
+    "UOPS_EXECUTED_PORT_PORT_5",
+    "UOPS_EXECUTED_PORT_PORT_6",
 ];
-const POWER: &[Event] = &[
-    Event::Cycles,
-    Event::CorePowerLvl0TurboLicense,
-    Event::CorePowerLvl1TurboLicense,
-    Event::CorePowerLvl2TurboLicense,
+const POWER: &[&str] = &[
+    "cycles",
+    "CORE_POWER_LVL0_TURBO_LICENSE",
+    "CORE_POWER_LVL1_TURBO_LICENSE",
+    "CORE_POWER_LVL2_TURBO_LICENSE",
 ];
-const UOPS8: &[Event] = &[
-    Event::Cycles,
-    Event::Instructions,
-    Event::UopsExecutedPortPort0,
-    Event::UopsExecutedPortPort1,
-    Event::UopsExecutedPortPort5,
-    Event::UopsExecutedCoreCyclesGe1,
-    Event::UopsExecutedCoreCyclesGe2,
-    Event::UopsExecutedCoreCyclesGe3,
-    Event::UopsExecutedCoreCyclesGe4,
+const UOPS8: &[&str] = &[
+    "cycles",
+    "instructions",
+    "UOPS_EXECUTED_PORT_PORT_0",
+    "UOPS_EXECUTED_PORT_PORT_1",
+    "UOPS_EXECUTED_PORT_PORT_5",
+    "UOPS_EXECUTED_CORE_CYCLES_GE_1",
+    "UOPS_EXECUTED_CORE_CYCLES_GE_2",
+    "UOPS_EXECUTED_CORE_CYCLES_GE_3",
+    "UOPS_EXECUTED_CORE_CYCLES_GE_4",
 ];
-pub const ALL: &[Event] = &[
-    Event::Cycles,
-    Event::UopsExecutedPortPort0,
-    Event::UopsExecutedPortPort1,
-    Event::UopsExecutedPortPort5,
-    Event::CorePowerLvl0TurboLicense,
-    Event::CorePowerLvl1TurboLicense,
-    Event::CorePowerLvl2TurboLicense,
+const ALL: &[&str] = &[
+    "cycles",
+    "UOPS_EXECUTED_PORT_PORT_0",
+    "UOPS_EXECUTED_PORT_PORT_1",
+    "UOPS_EXECUTED_PORT_PORT_5",
+    "CORE_POWER_LVL0_TURBO_LICENSE",
+    "CORE_POWER_LVL1_TURBO_LICENSE",
+    "CORE_POWER_LVL2_TURBO_LICENSE",
 ];
 
-pub fn counters() -> Counters {
-    pin_current_cpu().unwrap();
-
-    let events: Vec<Event> = if let Some(group) = EVENT_GROUP.as_ref() {
-        match group.as_str() {
-            "" | "ports" | "ports015" => PORTS,
+fn parse_flags() -> Vec<&'static str> {
+    if let Some(group) = EVENT_GROUP.as_ref() {
+        let events = match group.as_str() {
+            "instructions" => INSTRUCTIONS,
+            "ports" | "ports015" => PORTS,
             "ports234" => PORTS234,
             "ports567" => PORTS567,
             "ports8" => PORTS8,
@@ -82,13 +83,21 @@ pub fn counters() -> Counters {
             "power" => POWER,
             "all" => ALL,
             "none" => &[],
-            name => panic!("unknown events: {name}"),
-        }
-        .into()
+            group => panic!("unknown event group: {group}"),
+        };
+        events.into()
     } else if let Some(events) = EVENTS.as_ref() {
-        events.split(',').filter_map(Event::new).collect()
+        events.split(',').collect()
     } else {
         PORTS.into()
-    };
+    }
+}
+pub fn counters() -> Counters {
+    pin_current_cpu().unwrap();
+
+    let events: Vec<Event> = parse_flags()
+        .iter()
+        .map(|name| Event::new(name).unwrap_or_else(|| panic!("Unknown event: {name}")))
+        .collect();
     events.as_slice().try_into().unwrap()
 }

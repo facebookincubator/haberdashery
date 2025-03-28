@@ -20,6 +20,12 @@ pub mod aes256gcmdndk;
 #[cfg(any(not(feature = "asm_gen"), feature = "aes256gcmsiv"))]
 pub mod aes256gcmsiv;
 
+#[cfg(any(not(feature = "asm_gen"), feature = "aes256gcmdndkv2"))]
+pub mod aes256gcmdndkv2;
+
+#[cfg(any(not(feature = "asm_gen"), feature = "aes256gcmdndkv2kc"))]
+pub mod aes256gcmdndkv2kc;
+
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;

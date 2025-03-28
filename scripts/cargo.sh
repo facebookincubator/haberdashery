@@ -8,43 +8,48 @@
 
 set -eu -o pipefail
 
-PROJECT_DIR="$( cd -P "$(dirname "${BASH_SOURCE[0]}")/.."; pwd )"
+PROJECT_DIR="$( cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd )"
 readonly PROJECT_DIR
 
-cargo_test() {
-  local -r CRATE="${1}"; shift
-  echo "*** Started  testing ${CRATE} ${*}"
-  cd "${PROJECT_DIR}/${CRATE}"
-  cargo test -q "${@}"
-  echo "*** Finished testing ${CRATE} ${*}"
+filter_exclusions() {
+  local -r FILE="${1}"; shift
+  local -r EXCLUSIONS=(
+    bindings/rust_sys/units # tested indirectly by rust_sys
+    rust/asm-gen-arm # doesn't work on x86
+    rust/aws-lc # slow to compile, only for benchmarking
+    rust/libsodium # slow to compile, only for benchmarking
+    rust/openssl # slow to compile, only for benchmarking
+  )
+  for ex in "${EXCLUSIONS[@]}"; do
+    if [[ ${FILE} =~ ${ex} ]]; then
+      true
+      return
+    fi
+  done
+  false
 }
 
 main() {
-  if [ $# -eq 0 ]; then
-    cargo_test rust/asm-gen
-    cargo_test rust/bindings
-    cargo_test rust/cozybuf
-    cargo_test rust/cozybuf/cozybuf-example
-    cargo_test rust/cozybuf/cozybuf-proc
-    cargo_test rust/cpuid
-    cargo_test rust/hex
-    cargo_test rust/intrinsics
-    cargo_test rust/perf-caliper
-    cargo_test rust/perf-counters
-    cargo_test rust/perf-events
-    cargo_test rust/random
-    cargo_test rust/sflags
-    cargo_test rust/sflags/test-helper
-    cargo_test rust/static-env
-    cargo_test rust/test-vectors
-    cargo_test rust/transliteral
-    cargo_test rust/units
-    cargo_test bindings/rust_sys --all-features
-    cargo_test bindings/rust_lib
-    cargo_test bindings/rust_bench
+  cd "${PROJECT_DIR}"
+  if [ $# -ne 0 ]; then
+    local -r SUBDIR="${1}"; shift
   else
-    cargo_test "$@"
+    local -r SUBDIR="."
   fi
+  cd "${SUBDIR}"
+  shopt -s globstar
+  for file in **/Cargo.toml; do
+    local CRATE
+    CRATE="$(dirname "${file}")"
+    if filter_exclusions "${SUBDIR}/${CRATE}"; then
+      continue
+    fi
+    pushd "${CRATE}" > /dev/null
+    echo "*** Started  testing ${CRATE} ${*}"
+    cargo test -q "${@}"
+    echo "*** Finished testing ${CRATE} ${*}"
+    popd > /dev/null
+  done
 }
 
 main "$@"

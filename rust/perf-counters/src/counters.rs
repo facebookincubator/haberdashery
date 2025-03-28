@@ -11,13 +11,11 @@ use std::collections::BTreeMap;
 use std::time::Duration;
 use std::time::Instant;
 
-use perf_events::Event;
-
-use crate::fence;
+use crate::event::Event;
+use crate::fence::fence;
+use crate::hardware_clock::HardwareClock;
+use crate::hardware_clock::Rdtscp;
 use crate::perf_event::counter::Counter;
-use crate::perf_event::rdpmc::rdpmc;
-use crate::rdtsc::Rdtsc;
-use crate::rdtscp::Rdtscp;
 
 #[derive(Default)]
 pub struct Counters(Vec<Counter>);
@@ -55,17 +53,14 @@ impl TryFrom<&[Event]> for Counters {
 
 #[derive(Clone)]
 pub struct RdpmcStart<'a> {
-    event_index: u32,
     offset: i64,
     start: u64,
     counter: &'a Counter,
 }
 impl<'a> RdpmcStart<'a> {
     fn new(counter: &'a Counter) -> Self {
-        let offset = counter.rdpmc_offset();
-        let event_index = counter.event_index();
+        let offset = counter.offset();
         Self {
-            event_index,
             offset,
             start: 0,
             counter,
@@ -73,12 +68,11 @@ impl<'a> RdpmcStart<'a> {
     }
     #[inline(always)]
     fn start(&mut self) {
-        self.start = rdpmc(self.event_index);
+        self.start = self.counter.read();
     }
 }
 
 pub struct RdpmcEnd<'a> {
-    event_index: u32,
     offset: i64,
     start: u64,
     end: u64,
@@ -89,28 +83,26 @@ impl<'a> RdpmcEnd<'a> {
     fn new(rdpmc_start: RdpmcStart<'a>) -> Self {
         let counter = rdpmc_start.counter;
         Self {
-            event_index: rdpmc_start.event_index,
             offset: rdpmc_start.offset,
             start: rdpmc_start.start,
-            end: rdpmc(rdpmc_start.event_index),
+            end: counter.read(),
             counter,
         }
     }
     fn result(self) -> (Event, u64) {
-        assert_eq!(self.counter.event_index(), self.event_index);
-        let offset = self.counter.rdpmc_offset();
-        (
-            self.counter.event,
-            self.end
-                .wrapping_add_signed(offset)
-                .wrapping_sub(self.start.wrapping_add_signed(self.offset))
-                & crate::perf_event::rdpmc::mask(),
-        )
+        let offset = self.counter.offset();
+        let counter = self
+            .end
+            .wrapping_add_signed(offset)
+            .wrapping_sub(self.start.wrapping_add_signed(self.offset));
+        #[cfg(feature = "rdpmc")]
+        let counter = counter & crate::perf_event::rdpmc::mask();
+        (self.counter.event, counter)
     }
 }
 
 pub struct CountersStart<'a> {
-    rdtsc: Rdtsc,
+    rdtsc: HardwareClock,
     rdtscp: Rdtscp,
     rdpmc: Vec<RdpmcStart<'a>>,
     instant: Instant,
@@ -127,7 +119,7 @@ impl<'a> CountersStart<'a> {
         rdpmc.iter_mut().for_each(RdpmcStart::start);
         #[cfg(feature = "benchbench")]
         fence();
-        let rdtsc = Rdtsc::default();
+        let rdtsc = HardwareClock::default();
         fence();
         Self {
             rdtsc,
@@ -174,7 +166,7 @@ impl CountersElapsed<f64> {
         let cycles = self.rdpmc_cycles().unwrap();
         let mut result = self / (cycles / 100.0);
         result.rdpmc.iter_mut().for_each(|(event, c)| {
-            if *event == Event::Cycles {
+            if *event == Event::CYCLES {
                 *c = cycles
             }
         });
@@ -191,7 +183,7 @@ impl<T: Copy> CountersElapsed<T> {
         None
     }
     pub fn rdpmc_cycles(&self) -> Option<T> {
-        self.find(Event::Cycles)
+        self.find(Event::CYCLES)
     }
 }
 impl Div<f64> for &CountersElapsed<f64> {

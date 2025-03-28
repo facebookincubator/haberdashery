@@ -7,7 +7,7 @@ core::arch::global_asm!(
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm/aes192gcm_tigerlake.s"),
+    include_str!("../../../../../asm//aes192gcm_tigerlake.s"),
     options(att_syntax, raw)
 );
 

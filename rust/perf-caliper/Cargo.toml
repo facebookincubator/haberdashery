@@ -8,7 +8,6 @@ cpuid = { path = "../cpuid" }
 linkme = "0.3.17"
 perf-caliper-proc = { path = "perf-caliper-proc" }
 perf-counters = { path = "../perf-counters" }
-perf-events = { path = "../perf-events" }
 sflags = { path = "../sflags" }
 tabled = "0.14.0"
 units = { path = "../units" }

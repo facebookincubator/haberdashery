@@ -6,8 +6,8 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use perf_counters::counters::Counters;
+use perf_counters::event::Event;
 use perf_counters::sched::pin_current_cpu;
-use perf_events::Event;
 
 sflags::define! {
     --bench: bool = false;
@@ -27,7 +27,7 @@ fn main() {
     sflags::parse_exact();
     pin_current_cpu().unwrap();
 
-    let mut counters = Counters::new(Event::Cycles).unwrap();
+    let mut counters = Counters::new(Event::CYCLES).unwrap();
     for event in EVENTS.split(',').filter_map(Event::new) {
         counters.add(event).unwrap();
     }
@@ -44,7 +44,7 @@ fn main() {
         overhead_total += overhead;
         overhead_count += 1;
         let per_iter = elapsed / (iterations as f64);
-        let cycles = per_iter.find(Event::Cycles).unwrap();
+        let cycles = per_iter.find(Event::CYCLES).unwrap();
         let tsc = per_iter.rdtsc;
         let tscp = per_iter.rdtscp;
         println!("\t{cycles:.2}\tcycles");
@@ -57,7 +57,7 @@ fn main() {
             percent = tscp * 100.0 / cycles,
         );
         for (event, counter) in per_iter.rdpmc {
-            if event != Event::Cycles {
+            if event != Event::CYCLES {
                 println!(
                     "{percent:.2}%\t{counter:.2}\t{event}",
                     percent = counter * 100.0 / cycles,

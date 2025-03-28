@@ -1,5 +1,6 @@
 # @generated
 algorithm=siv_mac
+arch=x86
 key_len=32
 prefix=haberdashery
 primitive=mac

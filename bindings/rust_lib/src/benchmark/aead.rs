@@ -24,9 +24,10 @@ impl<T: Aead> Context<T> {
         let nonce = vec![0u8; T::NONCE_LEN];
         let aad = vec![0u8; aad_len];
         let plaintext = vec![0u8; crypt_len];
-        let ciphertext = vec![0u8; crypt_len];
-        let tag = vec![0u8; T::TAG_LEN];
+        let mut ciphertext = vec![0u8; crypt_len];
+        let mut tag = vec![0u8; T::TAG_LEN];
         let aead = T::new(&key).unwrap();
+        aead.encrypt(&nonce, &aad, &plaintext, &mut ciphertext, &mut tag);
         Some(Self {
             aead,
             key,

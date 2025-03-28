@@ -1,5 +1,6 @@
 # @generated
 algorithm=aes256gcmdndk
+arch=x86
 key_len=32
 nonce_len=24
 prefix=haberdashery
