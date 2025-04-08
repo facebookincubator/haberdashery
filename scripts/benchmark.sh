@@ -27,16 +27,19 @@ main() {
       LIB_DIR="${PROJECT_DIR}/bindings/x25519"
       ;;
     "openssl")
-      LIB_DIR="${PROJECT_DIR}/rust/openssl"
+      LIB_DIR="${PROJECT_DIR}/third_party_benchmarks/openssl"
       ;;
     "libsodium")
-      LIB_DIR="${PROJECT_DIR}/rust/libsodium"
+      LIB_DIR="${PROJECT_DIR}/third_party_benchmarks/libsodium"
       ;;
     "aws-lc")
-      LIB_DIR="${PROJECT_DIR}/rust/aws-lc"
+      LIB_DIR="${PROJECT_DIR}/third_party_benchmarks/aws-lc"
       ;;
     "aegis")
-      LIB_DIR="${PROJECT_DIR}/rust/aegis-benchmarks"
+      LIB_DIR="${PROJECT_DIR}/third_party_benchmarks/aegis"
+      ;;
+    "rust-crypto")
+      LIB_DIR="${PROJECT_DIR}/third_party_benchmarks/rust-crypto"
       ;;
     *)
       echo "usage: ${0} haberdashery"

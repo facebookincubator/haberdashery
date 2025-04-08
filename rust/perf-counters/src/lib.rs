@@ -5,6 +5,8 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+#![cfg_attr(target_arch = "aarch64", feature(stdarch_arm_barrier))]
+
 pub mod counters;
 pub mod event;
 mod fence;

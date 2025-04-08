@@ -421,9 +421,10 @@ haberdashery_aes192gcm_skylake_encrypt:
 	seta	%r11b
 	orb	%r10b, %r11b
 	jne	.LBB1_42
-	movabsq	$68719476719, %r10
-	cmpq	%r10, %r15
-	seta	%r10b
+	movq	%r15, %r10
+	shrq	$5, %r10
+	cmpq	$2147483647, %r10
+	setae	%r10b
 	cmpq	$12, %rdx
 	setne	%dl
 	orb	%r10b, %dl
@@ -630,7 +631,7 @@ haberdashery_aes192gcm_skylake_encrypt:
 	vmovdqa	16(%rsp), %xmm0
 	testq	%r15, %r15
 	je	.LBB1_15
-	movabsq	$-68719476720, %rax
+	movabsq	$-68719476704, %rax
 	leaq	(%r15,%rax), %rcx
 	incq	%rax
 	cmpq	%rax, %rcx
@@ -740,7 +741,7 @@ haberdashery_aes192gcm_skylake_encrypt:
 .LBB1_20:
 	testq	%r15, %r15
 	je	.LBB1_41
-	movabsq	$-68719476720, %rcx
+	movabsq	$-68719476704, %rcx
 	leaq	(%r15,%rcx), %rdx
 	incq	%rcx
 	cmpq	%rcx, %rdx
@@ -1629,9 +1630,10 @@ haberdashery_aes192gcm_skylake_decrypt:
 	movabsq	$2305843009213693950, %r11
 	cmpq	%r11, %r8
 	seta	%r11b
-	movabsq	$68719476719, %rbx
-	cmpq	%rbx, %r15
-	seta	%bl
+	movq	%r15, %rbx
+	shrq	$5, %rbx
+	cmpq	$2147483647, %rbx
+	setae	%bl
 	orb	%r10b, %r11b
 	orb	%bl, %r11b
 	cmpq	$12, %rdx
@@ -1837,7 +1839,7 @@ haberdashery_aes192gcm_skylake_decrypt:
 	vmovdqa	32(%rsp), %xmm0
 	testq	%r15, %r15
 	je	.LBB2_11
-	movabsq	$-68719476720, %rax
+	movabsq	$-68719476704, %rax
 	leaq	(%r15,%rax), %rcx
 	incq	%rax
 	cmpq	%rax, %rcx
@@ -1947,7 +1949,7 @@ haberdashery_aes192gcm_skylake_decrypt:
 .LBB2_3:
 	testq	%r15, %r15
 	je	.LBB2_12
-	movabsq	$-68719476720, %rcx
+	movabsq	$-68719476704, %rcx
 	leaq	(%r15,%rcx), %rdx
 	incq	%rcx
 	cmpq	%rcx, %rdx

@@ -1,0 +1,15 @@
+[package]
+name = "aegis-benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "bench"
+harness = false
+
+[dependencies]
+aegis = "0.9.0"
+perf-caliper = { path = "../../rust/perf-caliper" }

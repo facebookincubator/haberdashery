@@ -1,0 +1,18 @@
+[package]
+name = "aws-lc-benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "bench"
+harness = false
+
+[dev-dependencies]
+hex = "0.4.3"
+
+[dependencies]
+aws-lc-sys = "0.27.1"
+perf-caliper = { path = "../../rust/perf-caliper" }

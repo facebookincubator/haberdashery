@@ -360,9 +360,10 @@ haberdashery_aes192gcm_tigerlake_encrypt:
 	seta	%bl
 	orb	%r11b, %bl
 	jne	.LBB1_22
-	movabsq	$68719476719, %r11
-	cmpq	%r11, %r10
-	seta	%r11b
+	movq	%r10, %r11
+	shrq	$5, %r11
+	cmpq	$2147483647, %r11
+	setae	%r11b
 	cmpq	$12, %rdx
 	setne	%dl
 	orb	%r11b, %dl
@@ -477,7 +478,7 @@ haberdashery_aes192gcm_tigerlake_encrypt:
 	vmovdqu8	(%rcx), %xmm0 {%k1} {z}
 	testq	%r10, %r10
 	je	.LBB1_10
-	movabsq	$-68719476720, %rcx
+	movabsq	$-68719476704, %rcx
 	leaq	(%r10,%rcx), %rdx
 	incq	%rcx
 	cmpq	%rcx, %rdx
@@ -577,7 +578,7 @@ haberdashery_aes192gcm_tigerlake_encrypt:
 .LBB1_20:
 	testq	%r10, %r10
 	je	.LBB1_19
-	movabsq	$-68719476720, %rcx
+	movabsq	$-68719476704, %rcx
 	leaq	(%r10,%rcx), %rdx
 	incq	%rcx
 	cmpq	%rcx, %rdx
@@ -1351,9 +1352,10 @@ haberdashery_aes192gcm_tigerlake_decrypt:
 	movabsq	$2305843009213693950, %rbx
 	cmpq	%rbx, %r8
 	seta	%bl
-	movabsq	$68719476719, %r14
-	cmpq	%r14, %r10
-	seta	%bpl
+	movq	%r10, %r14
+	shrq	$5, %r14
+	cmpq	$2147483647, %r14
+	setae	%bpl
 	orb	%r11b, %bl
 	orb	%bpl, %bl
 	cmpq	$12, %rdx
@@ -1466,7 +1468,7 @@ haberdashery_aes192gcm_tigerlake_decrypt:
 	vmovdqu8	(%rcx), %xmm0 {%k1} {z}
 	testq	%r10, %r10
 	je	.LBB2_12
-	movabsq	$-68719476720, %rcx
+	movabsq	$-68719476704, %rcx
 	leaq	(%r10,%rcx), %rdx
 	incq	%rcx
 	cmpq	%rcx, %rdx
@@ -1566,7 +1568,7 @@ haberdashery_aes192gcm_tigerlake_decrypt:
 .LBB2_3:
 	testq	%r10, %r10
 	je	.LBB2_29
-	movabsq	$-68719476720, %rcx
+	movabsq	$-68719476704, %rcx
 	leaq	(%r10,%rcx), %rdx
 	incq	%rcx
 	cmpq	%rcx, %rdx

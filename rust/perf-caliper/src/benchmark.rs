@@ -95,6 +95,8 @@ impl ItersPerDuration {
         let duration = measure.elapsed.take().unwrap().duration;
         let ns_per_iter = duration.as_nanos() as f64 / self.iters as f64;
         let iters = self.duration.as_nanos() as f64 / ns_per_iter;
+        let iters = iters as u64;
+        let iters = iters.min(self.iters * 100);
         self.iters = (iters as u64).max(flags::MIN_ITERS.value());
     }
 }

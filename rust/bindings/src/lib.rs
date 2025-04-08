@@ -11,6 +11,7 @@ mod openssl_evp;
 mod rust_bench;
 mod rust_lib;
 mod rust_sys;
+mod template_files;
 pub(crate) mod write_generated;
 
 use std::path::Path;
@@ -18,6 +19,8 @@ use std::path::Path;
 pub use descriptor::Case;
 pub use descriptor::Descriptor;
 pub use descriptor::Descriptors;
+#[allow(unused_imports)]
+pub(crate) use template_files::template_files;
 
 sflags::define! {
     --descriptor_path: <String as AsRef<Path>> = "";

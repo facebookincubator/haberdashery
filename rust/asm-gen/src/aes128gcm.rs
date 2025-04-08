@@ -20,7 +20,7 @@ pub const NONCE_LEN: usize = 12;
 const TAG_LEN: usize = 16;
 
 const MAX_AAD_BYTES: usize = (1 << 61) - 1; // 2^64 - 1 bits >= 2^61 - 1 bytes
-const MAX_CRYPT_BYTES: usize = (1 << 36) - 16; // 2^39 - 256 bits = 2^36 - 16 bytes
+const MAX_CRYPT_BYTES: usize = (1 << 36) - 32; // 2^39 - 256 bits = 2^36 - 32 bytes
 
 #[repr(C)]
 #[derive(Default)]

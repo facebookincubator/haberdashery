@@ -11,16 +11,28 @@ use perf_counters::sched::pin_current_cpu;
 
 sflags::define! {
     --bench: bool = false;
-    --events: &str = "UOPS_DISPATCHED_PORT_0,UOPS_DISPATCHED_PORT_1,UOPS_DISPATCHED_PORT_5";
     --runs: i32 = 1;
+}
+
+#[cfg(target_arch = "x86_64")]
+sflags::define! {
+    --events: &str = "UOPS_EXECUTED_PORT_PORT_0,UOPS_EXECUTED_PORT_PORT_1,UOPS_EXECUTED_PORT_PORT_5";
+}
+#[cfg(target_arch = "aarch64")]
+sflags::define! {
+    --events: &str = "0x0077,0x0074,0x4004"; // crypto, simd, hwctr
 }
 #[cfg(debug_assertions)]
 sflags::define! {
     --iters: usize = 1 << 10;
 }
-#[cfg(not(debug_assertions))]
+#[cfg(all(not(debug_assertions), target_arch = "x86_64"))]
 sflags::define! {
-    --iters: usize = 1 << 20;
+    --iters: usize = 1 << 24;
+}
+#[cfg(all(not(debug_assertions), target_arch = "aarch64"))]
+sflags::define! {
+    --iters: usize = 1 << 26;
 }
 
 fn main() {
@@ -28,6 +40,8 @@ fn main() {
     pin_current_cpu().unwrap();
 
     let mut counters = Counters::new(Event::CYCLES).unwrap();
+    #[cfg(target_arch = "aarch64")]
+    counters.add(Event::INSTRUCTIONS).unwrap();
     for event in EVENTS.split(',').filter_map(Event::new) {
         counters.add(event).unwrap();
     }
@@ -45,9 +59,24 @@ fn main() {
         overhead_count += 1;
         let per_iter = elapsed / (iterations as f64);
         let cycles = per_iter.find(Event::CYCLES).unwrap();
+
+        let ratio = if cfg!(target_arch = "x86_64") {
+            cycles
+        } else {
+            per_iter.find(Event::INSTRUCTIONS).unwrap()
+        };
         let tsc = per_iter.rdtsc;
         let tscp = per_iter.rdtscp;
-        println!("\t{cycles:.2}\tcycles");
+        for (event, counter) in per_iter.rdpmc {
+            match event {
+                Event::CYCLES => println!("\t{cycles:.2}\tcycles"),
+                Event::INSTRUCTIONS => println!("\t{counter:.2}\t{event}"),
+                _ => println!(
+                    "{percent:.2}%\t{counter:.2}\t{event}",
+                    percent = counter * 100.0 / ratio,
+                ),
+            }
+        }
         println!(
             "{percent:.2}%\t{tsc:.2}\ttsc",
             percent = tsc * 100.0 / cycles,
@@ -56,35 +85,39 @@ fn main() {
             "{percent:.2}%\t{tscp:.2}\ttscp",
             percent = tscp * 100.0 / cycles,
         );
-        for (event, counter) in per_iter.rdpmc {
-            if event != Event::CYCLES {
-                println!(
-                    "{percent:.2}%\t{counter:.2}\t{event}",
-                    percent = counter * 100.0 / cycles,
-                );
-            }
-        }
         println!("overhead: {:.6}% {overhead}", 100.0 * (tscp - tsc) / tscp);
         println!("overhead avg: {}", overhead_total / overhead_count);
         println!();
 
-        let start_core = per_iter.start_core;
-        let end_core = per_iter.end_core;
-        assert_eq!(
-            start_core, end_core,
-            "workload rescheduled: {start_core} != {end_core}"
-        );
+        #[cfg(target_arch = "x86_64")]
+        {
+            let start_core = per_iter.start_core;
+            let end_core = per_iter.end_core;
+            assert_eq!(
+                start_core, end_core,
+                "workload rescheduled: {start_core} != {end_core}"
+            );
+        }
         runs -= 1;
     }
 }
 
+#[cfg(target_arch = "x86_64")]
 fn aes256(mut iterations: usize) {
     use core::arch::x86_64::*;
     // aes256 uses 15 rounds
     const ROUNDS: usize = 15;
-    // the aesenc instruction as latency 4 and throughput 1 on skylake.
+    // The instruction aesenc has latency 4 and throughput 1 on skylake.
+    //
     // To get maximal parallelism, LANES needs to be at least 5.
     // We use 8, a nice round number.
+    //
+    // This suggests we'll measure:
+    //  - 112 cycles per iteration (8 128-bit blocks)
+    //  - 14 cycles per 128-bit block
+    //  - 0.875 cycles per byte
+    //
+    //  We measure 112 cycles per iteration, with more than 99% usage of port0
     const LANES: usize = 8;
     unsafe {
         let key = core::hint::black_box([_mm_setzero_si128(); ROUNDS]);
@@ -100,6 +133,48 @@ fn aes256(mut iterations: usize) {
             }
             for block in &mut data {
                 *block = _mm_aesenclast_si128(*block, key[ROUNDS - 1]);
+            }
+            iterations -= 1;
+        }
+        core::hint::black_box(data);
+    }
+}
+#[cfg(target_arch = "aarch64")]
+fn aes256(mut iterations: usize) {
+    use core::arch::aarch64::*;
+    // aes256 uses 15 rounds
+    const ROUNDS: usize = 15;
+    // The instructions aese and aesmc share the same pipline and have latency 2 and throughput 4.
+    //
+    // Each round requires an aese instruction followed by a aesmc instruction, which can be done
+    // with latency 4 and throughput 2. Thus, LANES needs to be at least 8. Indeed, 8 LANES seems
+    // to be suitable in practise.
+    //
+    // This suggests we'll measure:
+    //  - 56 cycles per iteration (8 128-bit blocks)
+    //  - 7 cycles per 128-bit block
+    //  - 0.4375 cycles per byte
+    //
+    //  We measure 60 cycles per iteration, with 95% usage of the crypto pipeline.
+    //  60 * 95% gives 57 cycles per iteration.
+    const LANES: usize = 8;
+    unsafe {
+        let key: [uint8x16_t; ROUNDS] = [core::mem::transmute([0u8; 16]); ROUNDS];
+        let data: [uint8x16_t; LANES] = [core::mem::transmute([0u8; 16]); LANES];
+        let key = core::hint::black_box(key);
+        let mut data = core::hint::black_box(data);
+        while iterations > 0 {
+            for &key in &key[0..ROUNDS - 2] {
+                for block in &mut data {
+                    *block = vaeseq_u8(*block, key);
+                    *block = vaesmcq_u8(*block);
+                }
+            }
+            for block in &mut data {
+                *block = vaeseq_u8(*block, key[ROUNDS - 2]);
+            }
+            for block in &mut data {
+                *block = veorq_u8(*block, key[ROUNDS - 1]);
             }
             iterations -= 1;
         }

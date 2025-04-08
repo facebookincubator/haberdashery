@@ -1,0 +1,10 @@
+[package]
+name = "str-proc"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0.28" }

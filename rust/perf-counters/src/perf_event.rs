@@ -8,5 +8,5 @@
 pub mod counter;
 mod handle;
 mod page;
-#[cfg(feature = "rdpmc")]
+#[cfg(all(target_arch = "x86_64", feature = "rdpmc"))]
 pub(crate) mod rdpmc;

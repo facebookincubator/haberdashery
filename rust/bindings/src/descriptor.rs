@@ -30,6 +30,14 @@ impl From<Vec<Descriptor>> for Descriptors {
         Self(descriptors)
     }
 }
+impl std::iter::IntoIterator for Descriptors {
+    type Item = Descriptor;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
 impl Descriptors {
     pub fn iter(&self) -> core::slice::Iter<Descriptor> {
         self.0.iter()
@@ -38,6 +46,28 @@ impl Descriptors {
         let mut result: Vec<String> = self.iter().map(f).collect();
         result.sort();
         result
+    }
+    pub fn apply_repeated(&self, template: &str) -> String {
+        let Some(first) = self.0.first() else {
+            return String::from(template);
+        };
+
+        let mut result: Vec<String> = vec![];
+        for line in template.lines() {
+            if line.contains("{generated}") {
+                result.push(first.apply(line));
+                result.push(String::from("\n"));
+            } else if line == first.apply(line) {
+                result.push(line.into());
+                result.push(String::from("\n"));
+            } else {
+                for descriptor in self.iter() {
+                    result.push(descriptor.apply(line));
+                    result.push(String::from("\n"));
+                }
+            }
+        }
+        result.concat()
     }
     pub fn write_files(&self, path: &Path) {
         self.iter().for_each(|descriptor| {

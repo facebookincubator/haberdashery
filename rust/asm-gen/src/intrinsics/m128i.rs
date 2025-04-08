@@ -350,6 +350,14 @@ impl M128i {
         unsafe { self._mm_unpackhi_epi64(other) }
     }
     #[inline]
+    pub fn unpacklo32(self, other: M128i) -> Self {
+        unsafe { self._mm_unpacklo_epi32(other) }
+    }
+    #[inline]
+    pub fn unpackhi32(self, other: M128i) -> Self {
+        unsafe { self._mm_unpackhi_epi32(other) }
+    }
+    #[inline]
     pub fn blend8(self, other: Self, mask: impl Into<Self>) -> Self {
         unsafe { self._mm_blendv_epi8(other, mask.into()) }
     }
@@ -401,15 +409,12 @@ impl M128i {
     pub fn align<const IMM8: i32>(self, other: Self) -> Self {
         unsafe { self._mm_alignr_epi8::<IMM8>(other) }.into()
     }
-    #[inline]
-    pub fn sha256roundx2(self, state: [Self; 2]) -> Self {
-        unsafe { state[0]._mm_sha256rnds2_epu32(state[1], self) }
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     impl<T: Into<Self> + Clone> core::cmp::PartialEq<T> for M128i {
         fn eq(&self, rhs: &T) -> bool {
             self.crypto_equals(rhs.clone().into())
@@ -513,7 +518,6 @@ mod tests {
             "33333333222222221111111100000000"
         );
     }
-
     #[test]
     fn aeskeygenassist_alt() {
         for _i in 0..128 {

@@ -1,0 +1,20 @@
+[package]
+name = "openssl-benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "bench"
+harness = false
+
+[dev-dependencies]
+hex = "0.4.3"
+
+[dependencies]
+cpuid = { path = "../../rust/cpuid" }
+openssl-sys = { version = "0.9.93", features = ["vendored"] }
+perf-caliper = { path = "../../rust/perf-caliper" }
+random = { path = "../../rust/random" }

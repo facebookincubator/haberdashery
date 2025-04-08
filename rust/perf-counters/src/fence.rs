@@ -12,4 +12,6 @@ pub fn fence() {
 }
 #[inline(always)]
 #[cfg(not(target_arch = "x86_64"))]
-pub fn fence() {}
+pub fn fence() {
+    unsafe { core::arch::aarch64::__isb(core::arch::aarch64::SY) };
+}
