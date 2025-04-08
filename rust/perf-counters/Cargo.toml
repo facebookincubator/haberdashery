@@ -19,6 +19,8 @@ harness = false
 [dependencies]
 nix = { version = "0.27.1", features = ["sched"] }
 perf-event-open-sys = "4.0.0"
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
 perf-events = { path = "../perf-events" }
 
 [dev-dependencies]

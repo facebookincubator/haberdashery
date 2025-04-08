@@ -14,6 +14,9 @@ use std::time::Instant;
 use crate::event::Event;
 use crate::fence::fence;
 use crate::hardware_clock::HardwareClock;
+#[cfg(not(target_arch = "x86_64"))]
+use crate::hardware_clock::HardwareClock as Rdtscp;
+#[cfg(target_arch = "x86_64")]
 use crate::hardware_clock::Rdtscp;
 use crate::perf_event::counter::Counter;
 
@@ -95,7 +98,7 @@ impl<'a> RdpmcEnd<'a> {
             .end
             .wrapping_add_signed(offset)
             .wrapping_sub(self.start.wrapping_add_signed(self.offset));
-        #[cfg(feature = "rdpmc")]
+        #[cfg(all(target_arch = "x86_64", feature = "rdpmc"))]
         let counter = counter & crate::perf_event::rdpmc::mask();
         (self.counter.event, counter)
     }
@@ -143,9 +146,14 @@ impl<'a> CountersStart<'a> {
         let duration = self.instant.elapsed();
         CountersElapsed {
             rdtsc,
+            #[cfg(target_arch = "x86_64")]
             rdtscp: rdtscp.elapsed,
+            #[cfg(not(target_arch = "x86_64"))]
+            rdtscp,
             rdpmc,
+            #[cfg(target_arch = "x86_64")]
             start_core: rdtscp.start_core,
+            #[cfg(target_arch = "x86_64")]
             end_core: rdtscp.end_core,
             duration,
         }
@@ -157,7 +165,9 @@ pub struct CountersElapsed<T = u64> {
     pub rdtsc: T,
     pub rdtscp: T,
     pub rdpmc: Vec<(Event, T)>,
+    #[cfg(target_arch = "x86_64")]
     pub start_core: u32,
+    #[cfg(target_arch = "x86_64")]
     pub end_core: u32,
     pub duration: Duration,
 }
@@ -198,7 +208,9 @@ impl Div<f64> for &CountersElapsed<f64> {
             rdtsc: self.rdtsc / rhs,
             rdtscp: self.rdtscp / rhs,
             rdpmc,
+            #[cfg(target_arch = "x86_64")]
             start_core: self.start_core,
+            #[cfg(target_arch = "x86_64")]
             end_core: self.end_core,
             duration: self.duration,
         }
@@ -216,7 +228,9 @@ impl Div<f64> for &CountersElapsed<u64> {
             rdtsc: self.rdtsc as f64 / rhs,
             rdtscp: self.rdtscp as f64 / rhs,
             rdpmc,
+            #[cfg(target_arch = "x86_64")]
             start_core: self.start_core,
+            #[cfg(target_arch = "x86_64")]
             end_core: self.end_core,
             duration: self.duration,
         }
@@ -244,7 +258,9 @@ impl<T: Add<Output = T> + Copy> Add<&Self> for CountersElapsed<T> {
             rdtsc: self.rdtsc + rhs.rdtsc,
             rdtscp: self.rdtscp + rhs.rdtscp,
             rdpmc,
+            #[cfg(target_arch = "x86_64")]
             start_core: self.start_core,
+            #[cfg(target_arch = "x86_64")]
             end_core: self.end_core,
             duration: self.duration + rhs.duration,
         }

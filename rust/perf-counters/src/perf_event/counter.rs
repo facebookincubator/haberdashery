@@ -14,51 +14,39 @@ pub struct Counter {
     pub event: Event,
     file: PerfEventOpenHandle,
     page: PerfEventMmapPage,
-    index: u32,
 }
 impl Counter {
     pub fn new(event: Event) -> std::io::Result<Self> {
         let file = PerfEventOpenHandle::new(event)?;
         let page = PerfEventMmapPage::new(file.raw_fd());
-        let Some(index) = page.event_index() else {
-            return Err(std::io::ErrorKind::ConnectionRefused.into());
-        };
-        assert!(page.is_rdpmc_supported());
         file.read()?;
-        Ok(Self {
-            event,
-            file,
-            page,
-            index,
-        })
+        Ok(Self { event, file, page })
     }
     pub unsafe fn join(&self, event: Event) -> std::io::Result<Self> {
         let file = unsafe { self.file.join(event) }?;
         let page = PerfEventMmapPage::new(file.raw_fd());
-        let Some(index) = page.event_index() else {
-            return Err(std::io::ErrorKind::ConnectionRefused.into());
-        };
-        assert!(page.is_rdpmc_supported());
         file.read()?;
-        Ok(Self {
-            event,
-            file,
-            page,
-            index,
-        })
+        Ok(Self { event, file, page })
     }
     #[inline(always)]
     pub fn offset(&self) -> i64 {
         self.page.offset
     }
     #[inline(always)]
-    #[cfg(feature = "rdpmc")]
+    #[cfg(all(target_arch = "x86_64", feature = "rdpmc"))]
     pub fn read(&self) -> u64 {
-        crate::perf_event::rdpmc::rdpmc(self.index)
+        match self.page.event_index() {
+            Some(index) => crate::perf_event::rdpmc::rdpmc(index),
+            None => self.read_file(),
+        }
     }
-    #[cfg(not(feature = "rdpmc"))]
     #[inline(always)]
+    #[cfg(not(all(target_arch = "x86_64", feature = "rdpmc")))]
     pub fn read(&self) -> u64 {
+        self.read_file()
+    }
+    #[inline(always)]
+    fn read_file(&self) -> u64 {
         let mut result = 0u64;
         let ptr: *mut u64 = &mut result;
         let len = core::mem::size_of::<u64>();

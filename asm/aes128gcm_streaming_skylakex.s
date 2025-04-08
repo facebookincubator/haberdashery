@@ -727,15 +727,16 @@ haberdashery_aes128gcm_streaming_skylakex_encrypt_update:
 	cmpq	%r9, %rcx
 	jne	.LBB4_3
 	movq	%rcx, %rax
-	movabsq	$-68719476720, %rcx
+	movabsq	$-68719476704, %rcx
 	leaq	(%rax,%rcx), %r9
 	incq	%rcx
 	cmpq	%rcx, %r9
 	jb	.LBB4_3
 	movq	104(%rdi), %rcx
 	leaq	(%rcx,%rax), %r11
-	movabsq	$68719476719, %r9
-	cmpq	%r9, %r11
+	movq	%r11, %r9
+	shrq	$5, %r9
+	cmpq	$2147483646, %r9
 	jbe	.LBB4_6
 .LBB4_3:
 	xorl	%eax, %eax
@@ -1647,22 +1648,17 @@ haberdashery_aes128gcm_streaming_skylakex_encrypt_finalize:
 haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	.cfi_startproc
 	cmpq	%r9, %rcx
-	jne	.LBB6_3
+	jne	.LBB6_2
 	movq	%rcx, %rax
-	movabsq	$-68719476720, %rcx
+	movabsq	$-68719476704, %rcx
 	leaq	(%rax,%rcx), %r9
 	incq	%rcx
 	cmpq	%rcx, %r9
-	jb	.LBB6_3
-	movq	104(%rdi), %rcx
-	leaq	(%rcx,%rax), %r11
-	movabsq	$68719476719, %r9
-	cmpq	%r9, %r11
-	jbe	.LBB6_6
-.LBB6_3:
+	jae	.LBB6_3
+.LBB6_2:
 	xorl	%eax, %eax
 	retq
-.LBB6_6:
+.LBB6_3:
 	pushq	%rbp
 	.cfi_def_cfa_offset 16
 	pushq	%r15
@@ -1683,30 +1679,37 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	.cfi_offset %r14, -32
 	.cfi_offset %r15, -24
 	.cfi_offset %rbp, -16
+	movq	104(%rdi), %rcx
+	leaq	(%rcx,%rax), %r12
+	movq	%r12, %r9
+	shrq	$5, %r9
+	cmpq	$2147483646, %r9
+	jbe	.LBB6_5
+	xorl	%eax, %eax
+	jmp	.LBB6_24
+.LBB6_5:
 	testq	%rcx, %rcx
 	setne	%r9b
 	movq	80(%rdi), %rcx
 	testq	%rcx, %rcx
 	sete	%r10b
 	orb	%r9b, %r10b
-	je	.LBB6_10
+	je	.LBB6_9
 	testq	%rcx, %rcx
-	je	.LBB6_11
-	movq	%r11, 16(%rsp)
+	je	.LBB6_10
 	movq	%rdi, %rbp
 	leaq	(%rcx,%rax), %r13
 	cmpq	$15, %r13
-	ja	.LBB6_12
+	ja	.LBB6_11
 	vxorps	%xmm0, %xmm0, %xmm0
 	vmovaps	%xmm0, (%rsp)
 	leaq	(%rsp,%rcx), %r14
-	movq	memcpy@GOTPCREL(%rip), %r12
 	movq	%r14, %rdi
 	movq	%rdx, %rsi
 	movq	%rax, %rdx
 	movq	%rax, %rbx
 	movq	%r8, %r15
-	callq	*%r12
+	callq	*memcpy@GOTPCREL(%rip)
 	vmovdqa	(%rsp), %xmm0
 	vpxor	64(%rbp), %xmm0, %xmm0
 	vmovdqa	%xmm0, 64(%rbp)
@@ -1714,12 +1717,11 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	movq	%r15, %rdi
 	movq	%r14, %rsi
 	movq	%rbx, %rdx
-	callq	*%r12
+	callq	*memcpy@GOTPCREL(%rip)
 	movq	%rbp, %rdi
 	movq	%rbx, %rax
-	movq	16(%rsp), %r11
-	jmp	.LBB6_23
-.LBB6_10:
+	jmp	.LBB6_22
+.LBB6_9:
 	vmovdqa	176(%rsi), %xmm0
 	vmovdqa	64(%rdi), %xmm1
 	vpshufb	.LCPI6_0(%rip), %xmm1, %xmm1
@@ -1744,23 +1746,23 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vpxor	%xmm0, %xmm0, %xmm0
 	vmovdqu	%ymm0, 48(%rdi)
 	movq	$0, 80(%rdi)
-.LBB6_11:
+.LBB6_10:
 	movq	%rax, %r13
 	cmpq	$96, %r13
-	jb	.LBB6_14
-.LBB6_16:
+	jb	.LBB6_13
+.LBB6_15:
 	vmovdqa64	(%rdi), %xmm24
 	vmovdqa	(%rsi), %xmm0
 	vmovaps	16(%rsi), %xmm1
-	vmovaps	%xmm1, 16(%rsp)
-	vmovaps	32(%rsi), %xmm1
 	vmovaps	%xmm1, 80(%rsp)
-	vmovaps	48(%rsi), %xmm1
+	vmovaps	32(%rsi), %xmm1
 	vmovaps	%xmm1, 64(%rsp)
-	vmovaps	64(%rsi), %xmm1
+	vmovaps	48(%rsi), %xmm1
 	vmovaps	%xmm1, 48(%rsp)
-	vmovaps	80(%rsi), %xmm1
+	vmovaps	64(%rsi), %xmm1
 	vmovaps	%xmm1, 32(%rsp)
+	vmovaps	80(%rsi), %xmm1
+	vmovaps	%xmm1, 16(%rsp)
 	vmovaps	96(%rsi), %xmm1
 	vmovaps	%xmm1, 144(%rsp)
 	vmovaps	112(%rsi), %xmm1
@@ -1780,7 +1782,7 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vpxord	%xmm23, %xmm23, %xmm23
 	vpbroadcastq	.LCPI6_1(%rip), %xmm2
 	.p2align	4, 0x90
-.LBB6_17:
+.LBB6_16:
 	vmovdqu64	(%rdx), %xmm25
 	vmovdqu64	16(%rdx), %xmm26
 	vmovdqu64	32(%rdx), %xmm27
@@ -1806,7 +1808,7 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vpxor	%xmm6, %xmm0, %xmm6
 	vpxor	%xmm7, %xmm0, %xmm7
 	vpxor	%xmm0, %xmm8, %xmm8
-	vmovaps	16(%rsp), %xmm9
+	vmovaps	80(%rsp), %xmm9
 	#APP
 	vaesenc	%xmm9, %xmm3, %xmm3
 	vaesenc	%xmm9, %xmm4, %xmm4
@@ -1818,7 +1820,7 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vxorps	%xmm9, %xmm9, %xmm9
 	vxorps	%xmm11, %xmm11, %xmm11
 	vxorps	%xmm10, %xmm10, %xmm10
-	vmovaps	80(%rsp), %xmm14
+	vmovaps	64(%rsp), %xmm14
 	vmovdqa64	%xmm21, %xmm15
 	#APP
 	vaesenc	%xmm14, %xmm3, %xmm3
@@ -1837,7 +1839,7 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vpxor	%xmm13, %xmm11, %xmm11
 	#NO_APP
 	vpshufb	%xmm16, %xmm29, %xmm12
-	vmovaps	64(%rsp), %xmm14
+	vmovaps	48(%rsp), %xmm14
 	vmovaps	%xmm22, %xmm15
 	#APP
 	vaesenc	%xmm14, %xmm3, %xmm3
@@ -1856,7 +1858,7 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vpxor	%xmm13, %xmm11, %xmm11
 	#NO_APP
 	vpshufb	%xmm16, %xmm28, %xmm12
-	vmovaps	48(%rsp), %xmm14
+	vmovaps	32(%rsp), %xmm14
 	vmovdqa64	%xmm17, %xmm15
 	#APP
 	vaesenc	%xmm14, %xmm3, %xmm3
@@ -1875,7 +1877,7 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vpxor	%xmm13, %xmm11, %xmm11
 	#NO_APP
 	vpshufb	%xmm16, %xmm27, %xmm12
-	vmovaps	32(%rsp), %xmm14
+	vmovaps	16(%rsp), %xmm14
 	vmovdqa64	%xmm18, %xmm15
 	#APP
 	vaesenc	%xmm14, %xmm3, %xmm3
@@ -1986,21 +1988,21 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	addq	$96, %r8
 	addq	$-96, %r13
 	cmpq	$95, %r13
-	ja	.LBB6_17
+	ja	.LBB6_16
 	vmovdqa64	%xmm24, (%rdi)
 	cmpq	$16, %r13
-	jae	.LBB6_19
-.LBB6_15:
+	jae	.LBB6_18
+.LBB6_14:
 	testq	%r13, %r13
-	jne	.LBB6_22
-	jmp	.LBB6_24
-.LBB6_12:
+	jne	.LBB6_21
+	jmp	.LBB6_23
+.LBB6_11:
 	movl	$16, %ebx
 	subq	%rcx, %rbx
 	leaq	(%rdx,%rbx), %rdi
-	movq	%rdi, 64(%rsp)
-	leaq	(%r8,%rbx), %rdi
 	movq	%rdi, 48(%rsp)
+	leaq	(%r8,%rbx), %rdi
+	movq	%rdi, 32(%rsp)
 	movq	%rax, %r13
 	subq	%rbx, %r13
 	vxorps	%xmm0, %xmm0, %xmm0
@@ -2010,12 +2012,12 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	movq	%rsi, 80(%rsp)
 	movq	%rdx, %rsi
 	movq	%rbx, %rdx
-	movq	%rax, %r12
+	movq	%rax, 64(%rsp)
 	movq	%r8, %r15
 	callq	*memcpy@GOTPCREL(%rip)
 	vmovaps	(%rsp), %xmm0
 	vxorps	64(%rbp), %xmm0, %xmm0
-	vmovaps	%xmm0, 32(%rsp)
+	vmovaps	%xmm0, 16(%rsp)
 	vmovaps	%xmm0, 64(%rbp)
 	vmovaps	%xmm0, (%rsp)
 	movq	%r15, %rdi
@@ -2024,9 +2026,9 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	callq	*memcpy@GOTPCREL(%rip)
 	movq	80(%rsp), %rsi
 	movq	%rbp, %rdi
-	movq	%r12, %rax
+	movq	64(%rsp), %rax
 	movq	$0, 80(%rbp)
-	vmovdqa	32(%rsp), %xmm0
+	vmovdqa	16(%rsp), %xmm0
 	vpxor	48(%rbp), %xmm0, %xmm0
 	vpshufb	.LCPI6_0(%rip), %xmm0, %xmm0
 	vmovdqa	176(%rsi), %xmm1
@@ -2048,15 +2050,14 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vpxor	%xmm0, %xmm3, %xmm0
 	vpternlogq	$150, %xmm2, %xmm1, %xmm0
 	vmovdqa	%xmm0, (%rbp)
-	movq	48(%rsp), %r8
-	movq	64(%rsp), %rdx
-	movq	16(%rsp), %r11
+	movq	32(%rsp), %r8
+	movq	48(%rsp), %rdx
 	cmpq	$96, %r13
-	jae	.LBB6_16
-.LBB6_14:
+	jae	.LBB6_15
+.LBB6_13:
 	cmpq	$16, %r13
-	jb	.LBB6_15
-.LBB6_19:
+	jb	.LBB6_14
+.LBB6_18:
 	vmovdqa	(%rdi), %xmm10
 	vmovdqa	32(%rdi), %xmm0
 	vmovdqa	176(%rsi), %xmm1
@@ -2075,7 +2076,7 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vpbroadcastq	.LCPI6_1(%rip), %xmm15
 	vpmovsxbq	.LCPI6_8(%rip), %xmm16
 	.p2align	4, 0x90
-.LBB6_20:
+.LBB6_19:
 	vmovdqu64	(%rdx), %xmm17
 	vpshufb	%xmm14, %xmm0, %xmm18
 	vpxorq	%xmm18, %xmm19, %xmm2
@@ -2115,12 +2116,12 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vpternlogq	$150, %xmm3, %xmm4, %xmm10
 	vpaddd	%xmm16, %xmm0, %xmm0
 	cmpq	$15, %r13
-	ja	.LBB6_20
+	ja	.LBB6_19
 	vmovdqa	%xmm0, 32(%rdi)
 	vmovdqa	%xmm10, (%rdi)
 	testq	%r13, %r13
-	je	.LBB6_24
-.LBB6_22:
+	je	.LBB6_23
+.LBB6_21:
 	movl	$-1, %ecx
 	bzhil	%r13d, %ecx, %ecx
 	kmovd	%ecx, %k1
@@ -2144,10 +2145,11 @@ haberdashery_aes128gcm_streaming_skylakex_decrypt_update:
 	vmovdqu8	%xmm0, (%r8) {%k1}
 	vmovdqa	%xmm1, 48(%rdi)
 	vmovdqa	%xmm0, 64(%rdi)
-.LBB6_23:
+.LBB6_22:
 	movq	%r13, 80(%rdi)
+.LBB6_23:
+	movq	%r12, 104(%rdi)
 .LBB6_24:
-	movq	%r11, 104(%rdi)
 	addq	$168, %rsp
 	.cfi_def_cfa_offset 56
 	popq	%rbx

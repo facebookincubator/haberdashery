@@ -15,10 +15,11 @@ filter_exclusions() {
   local -r FILE="${1}"; shift
   local -r EXCLUSIONS=(
     bindings/rust_sys/units # tested indirectly by rust_sys
-    rust/asm-gen-arm # doesn't work on x86
-    rust/aws-lc # slow to compile, only for benchmarking
-    rust/libsodium # slow to compile, only for benchmarking
-    rust/openssl # slow to compile, only for benchmarking
+    # benchmarks that are slow to compile
+    third_party_benchmarks/aegis
+    third_party_benchmarks/aws-lc
+    third_party_benchmarks/libsodium
+    third_party_benchmarks/openssl
   )
   for ex in "${EXCLUSIONS[@]}"; do
     if [[ ${FILE} =~ ${ex} ]]; then

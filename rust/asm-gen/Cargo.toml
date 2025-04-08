@@ -22,7 +22,7 @@ haswell = ["asm_gen", "aes"]
 broadwell = ["asm_gen", "aes"]
 skylake = ["asm_gen", "aes"]
 skylakex = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw"]
-tigerlake = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw", "vpclmulqdq"]
+tigerlake = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw", "vpclmulqdq", "shani"]
 zen3 =[]
 
 # cpu features
@@ -31,6 +31,7 @@ avx512f = []
 avx512vl = []
 avx512bw = []
 vpclmulqdq = []
+shani = []
 
 # algorithms
 aegis128l = []
@@ -40,17 +41,9 @@ aes192gcm = []
 aes256gcm = []
 aes256gcm_streaming = []
 aes256gcmdndk = []
-aes256gcmdndkv2 = [] # haberdashery_opensource_strip_line
-aes256gcmdndkv2kc = [] # haberdashery_opensource_strip_line
+aes256gcmdndkv2 = []
+aes256gcmdndkv2kc = []
 aes256gcmsiv = []
-crc32c = [] # haberdashery_opensource_strip_line
-dpmac = [] # haberdashery_opensource_strip_line
-hmacsha256 = [] # haberdashery_opensource_strip_line
-ratchet_rng = [] # haberdashery_opensource_strip_line
-rijndael256 = [] # haberdashery_opensource_strip_line
-rr11aespcm = [] # haberdashery_opensource_strip_line
-semiatomic_rng = [] # haberdashery_opensource_strip_line
-sha256 = [] # haberdashery_opensource_strip_line
 sivmac = []
 
 # x25519 rfc test vectors take a particularly long time

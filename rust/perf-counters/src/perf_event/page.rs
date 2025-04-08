@@ -14,12 +14,8 @@ impl PerfEventMmapPage {
     pub fn new(fd: i32) -> Self {
         Self(Mmap::new(fd))
     }
-    pub fn is_rdpmc_supported(&self) -> bool {
-        unsafe { self.0.__bindgen_anon_1.__bindgen_anon_1 }
-            ._bitfield_1
-            .get_bit(2)
-    }
     #[track_caller]
+    #[cfg(all(target_arch = "x86_64", feature = "rdpmc"))]
     pub fn event_index(&self) -> Option<u32> {
         self.0.index.checked_sub(1)
     }

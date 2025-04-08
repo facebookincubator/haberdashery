@@ -1,0 +1,20 @@
+[package]
+name = "libsodium-benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "benches"
+harness = false
+
+[dev-dependencies]
+hex = "0.4.3"
+
+[dependencies]
+cpuid = { path = "../../rust/cpuid" }
+libsodium-sys-stable = { version = "1.20.3", features = ["optimized"] }
+perf-caliper = { path = "../../rust/perf-caliper" }
+random = { path = "../../rust/random" }

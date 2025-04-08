@@ -982,15 +982,16 @@ haberdashery_aes256gcm_streaming_haswell_encrypt_update:
 	cmpq	%r9, %rcx
 	jne	.LBB4_3
 	movq	%rcx, %rax
-	movabsq	$-68719476720, %rcx
+	movabsq	$-68719476704, %rcx
 	leaq	(%rax,%rcx), %r9
 	incq	%rcx
 	cmpq	%rcx, %r9
 	jb	.LBB4_3
 	movq	104(%rdi), %rcx
 	leaq	(%rcx,%rax), %r11
-	movabsq	$68719476719, %r9
-	cmpq	%r9, %r11
+	movq	%r11, %r9
+	shrq	$5, %r9
+	cmpq	$2147483646, %r9
 	jbe	.LBB4_6
 .LBB4_3:
 	xorl	%eax, %eax
@@ -2113,15 +2114,16 @@ haberdashery_aes256gcm_streaming_haswell_decrypt_update:
 	cmpq	%r9, %rcx
 	jne	.LBB6_3
 	movq	%rcx, %rax
-	movabsq	$-68719476720, %rcx
+	movabsq	$-68719476704, %rcx
 	leaq	(%rax,%rcx), %r9
 	incq	%rcx
 	cmpq	%rcx, %r9
 	jb	.LBB6_3
 	movq	104(%rdi), %rcx
 	leaq	(%rcx,%rax), %r11
-	movabsq	$68719476719, %r9
-	cmpq	%r9, %r11
+	movq	%r11, %r9
+	shrq	$5, %r9
+	cmpq	$2147483646, %r9
 	jbe	.LBB6_6
 .LBB6_3:
 	xorl	%eax, %eax

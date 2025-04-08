@@ -24,6 +24,7 @@ pub fn pin_current_cpu() -> nix::Result<usize> {
 }
 
 #[cfg(test)]
+#[cfg(target_arch = "x86_64")]
 mod tests {
     use super::*;
     use crate::hardware_clock::Rdtscp;

@@ -1,0 +1,15 @@
+[package]
+name = "rust-crypto-benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "bench"
+harness = false
+
+[dependencies]
+aes-gcm = "0.10.3"
+perf-caliper = { path = "../../rust/perf-caliper" }
