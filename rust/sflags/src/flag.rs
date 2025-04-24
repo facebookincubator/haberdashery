@@ -14,8 +14,8 @@ use core::fmt::Result;
 use core::ops::Deref;
 use std::sync::OnceLock;
 
-use crate::registry::SetFlag;
 use crate::Parse;
+use crate::registry::SetFlag;
 
 pub struct Flag<T> {
     value: OnceLock<T>,

@@ -9,10 +9,10 @@ use core::ops::BitXor;
 use core::ops::BitXorAssign;
 use core::ops::Index;
 
+use crate::block::Block128;
+use crate::block::Block256;
 use crate::clmul::clmul128foil::*;
 use crate::ffi::reader::Reader;
-use crate::intrinsics::m128i::M128i;
-use crate::intrinsics::m256i::M256i;
 
 const BLOCK_LEN: usize = 16;
 
@@ -20,8 +20,8 @@ pub trait ClMul256Foil: Copy {
     type Input;
     fn clmul256foil(self, rhs: Self::Input) -> ClMul256FoilProduct;
 }
-impl ClMul256Foil for M256i {
-    type Input = M256i;
+impl ClMul256Foil for Block256 {
+    type Input = Block256;
     #[inline]
     fn clmul256foil(self, rhs: Self::Input) -> ClMul256FoilProduct {
         ClMul256FoilProduct {
@@ -31,15 +31,15 @@ impl ClMul256Foil for M256i {
         }
     }
 }
-impl ClMul256Foil for M128i {
-    type Input = M256i;
+impl ClMul256Foil for Block128 {
+    type Input = Block256;
     #[inline]
     fn clmul256foil(self, rhs: Self::Input) -> ClMul256FoilProduct {
         self.broadcast256().clmul256foil(rhs)
     }
 }
-impl<const N: usize> ClMul256Foil for [M128i; N] {
-    type Input = [M256i; N];
+impl<const N: usize> ClMul256Foil for [Block128; N] {
+    type Input = [Block256; N];
     #[inline]
     fn clmul256foil(self, rhs: Self::Input) -> ClMul256FoilProduct {
         let mut result = self[0].clmul256foil(rhs[N - 1]);
@@ -52,9 +52,9 @@ impl<const N: usize> ClMul256Foil for [M128i; N] {
 
 #[derive(Copy, Clone, Default)]
 pub struct ClMul256FoilProduct {
-    pub lo: M256i,
-    pub mid: M256i,
-    pub hi: M256i,
+    pub lo: Block256,
+    pub mid: Block256,
+    pub hi: Block256,
 }
 impl BitXor for ClMul256FoilProduct {
     type Output = Self;
@@ -77,7 +77,7 @@ impl BitXorAssign for ClMul256FoilProduct {
 }
 impl ClMul256FoilProduct {
     #[inline]
-    pub fn reduce(&self) -> M256i {
+    pub fn reduce(&self) -> Block256 {
         let this = self.combine();
         this.reduce_mul()
     }
@@ -85,29 +85,29 @@ impl ClMul256FoilProduct {
     pub fn combine(mut self) -> Self {
         self.lo ^= self.mid.left_byteshift128::<8>();
         self.hi ^= self.mid.right_byteshift128::<8>();
-        self.mid = M256i::ZERO;
+        self.mid = Block256::ZERO;
         self
     }
     #[inline]
-    fn reduce_mul(self) -> M256i {
+    fn reduce_mul(self) -> Block256 {
         let reduced = Self::reduce_mul_step(self.lo);
         let reduced = Self::reduce_mul_step(reduced);
         self.hi ^ reduced
     }
     #[inline]
-    fn reduce_mul_step(target: M256i) -> M256i {
-        let poly: M256i = [1, 0, 0, 0xc2_00_00_00, 1, 0, 0, 0xc2_00_00_00].into();
+    fn reduce_mul_step(target: Block256) -> Block256 {
+        let poly: Block256 = [1, 0, 0, 0xc2_00_00_00, 1, 0, 0, 0xc2_00_00_00].into();
         target.clmul::<0x10>(poly) ^ target.shuffle32::<0b_01_00_11_10>()
     }
 }
 #[derive(Copy, Clone)]
 pub struct ClMul256FoilPowerTable<const N: usize> {
-    key: M128i,
-    powers: [M128i; N],
+    key: Block128,
+    powers: [Block128; N],
 }
 impl<const N: usize> ClMul256FoilPowerTable<N> {
     #[inline]
-    pub fn new(key: M128i) -> Self {
+    pub fn new(key: Block128) -> Self {
         let sq = key.clmul128foil_sq().reduce();
         let mut powers = [sq; N];
         if N > 1 {
@@ -127,20 +127,20 @@ impl<const N: usize> ClMul256FoilPowerTable<N> {
         Self { key, powers }
     }
     #[inline]
-    pub fn clmul256foil(self, array: [M256i; N]) -> ClMul256FoilProduct {
+    pub fn clmul256foil(self, array: [Block256; N]) -> ClMul256FoilProduct {
         self.powers.clmul256foil(array)
     }
     #[inline]
-    pub fn clmul256foil_reader(self, mut state: M256i, mut reader: Reader) -> M256i {
-        for mut array in reader.iter::<[M256i; N]>() {
+    pub fn clmul256foil_reader(self, mut state: Block256, mut reader: Reader) -> Block256 {
+        for mut array in reader.iter::<[Block256; N]>() {
             array[0] ^= state;
             state = self.clmul256foil(array).reduce();
         }
-        for block in reader.iter::<M256i>() {
+        for block in reader.iter::<Block256>() {
             state = self[0].clmul256foil(block ^ state).reduce();
         }
         let bytes_remaining = reader.len();
-        if let Some(block) = reader.remainder::<M256i>() {
+        if let Some(block) = reader.remainder::<Block256>() {
             if bytes_remaining > BLOCK_LEN {
                 state = self[0].clmul256foil(block ^ state).reduce();
             } else {
@@ -150,13 +150,13 @@ impl<const N: usize> ClMul256FoilPowerTable<N> {
         state
     }
     #[inline]
-    pub fn reduce(self, hash: M256i, m: M128i) -> M128i {
-        let hash: [M128i; 2] = hash.into();
+    pub fn reduce(self, hash: Block256, m: Block128) -> Block128 {
+        let hash: [Block128; 2] = hash.into();
         hash[1] ^ self.key.clmul128foil(hash[0] ^ m).reduce()
     }
 }
 impl<const N: usize> Index<usize> for ClMul256FoilPowerTable<N> {
-    type Output = M128i;
+    type Output = Block128;
     #[inline]
     fn index(&self, i: usize) -> &Self::Output {
         &self.powers[i]
@@ -175,18 +175,18 @@ mod tests {
         const N: usize = 8;
 
         for _i in 0..128 {
-            let key = M128i::random();
-            let data = random::vec(N * M256i::SIZE + 15);
+            let key = Block128::random();
+            let data = random::vec(N * Block256::SIZE + 15);
             assert_eq!(
                 {
                     let table = ClMul256FoilPowerTable::<1>::new(key);
                     let reader = Reader::from(data.as_slice());
-                    table.clmul256foil_reader(M256i::ZERO, reader)
+                    table.clmul256foil_reader(Block256::ZERO, reader)
                 },
                 {
                     let table = ClMul256FoilPowerTable::<N>::new(key);
                     let reader = Reader::from(data.as_slice());
-                    table.clmul256foil_reader(M256i::ZERO, reader)
+                    table.clmul256foil_reader(Block256::ZERO, reader)
                 }
             );
         }
@@ -198,13 +198,13 @@ mod tests {
             return;
         }
         for _i in 0..128 {
-            let key = M128i::random();
-            let msg = M128i::random();
+            let key = Block128::random();
+            let msg = Block128::random();
             let result128 = key.clmul128foil(msg).reduce();
             let result256 = key.clmul256foil(msg.broadcast256()).reduce();
             assert_eq!(result128.broadcast256(), result256);
 
-            let msg = [M128i::random(), M128i::random()];
+            let msg = [Block128::random(), Block128::random()];
             let result128 = [
                 key.clmul128foil(msg[0]).reduce(),
                 key.clmul128foil(msg[1]).reduce(),
@@ -220,9 +220,9 @@ mod tests {
             return;
         }
         for _i in 0..128 {
-            let key = M128i::random();
-            let msg = M256i::random();
-            let end = M128i::random();
+            let key = Block128::random();
+            let msg = Block256::random();
+            let end = Block128::random();
 
             let table256 = ClMul256FoilPowerTable::<1>::new(key);
             let result256 = table256[0].clmul256foil(msg).reduce();
@@ -244,15 +244,15 @@ mod tests {
         const N: usize = 8;
 
         for _i in 0..128 {
-            let key = M128i::random();
-            let extra = random::usize() % M128i::SIZE;
-            let data = random::vec(N * M256i::SIZE + extra);
-            let last128 = M128i::random();
+            let key = Block128::random();
+            let extra = random::usize() % Block128::SIZE;
+            let data = random::vec(N * Block256::SIZE + extra);
+            let last128 = Block128::random();
             assert_eq!(
                 {
                     let table = ClMul256FoilPowerTable::<1>::new(key);
                     let reader = Reader::from(data.as_slice());
-                    let state = table.clmul256foil_reader(M256i::ZERO, reader);
+                    let state = table.clmul256foil_reader(Block256::ZERO, reader);
                     table.reduce(state, last128)
                 },
                 {

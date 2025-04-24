@@ -8,14 +8,14 @@
 use core::marker::PhantomData;
 
 use crate::aes256::Aes256;
+use crate::block::Block128;
+use crate::block::Block256;
 use crate::clmul::clmul128foil::*;
 use crate::clmul::clmul256karatsuba::*;
 use crate::counter128::Counter128;
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;
-use crate::intrinsics::m128i::M128i;
-use crate::intrinsics::m256i::M256i;
 use crate::ops::ArrayOps;
 
 pub const KEY_LEN: usize = 32;
@@ -163,15 +163,15 @@ impl Aes256GcmSivKey<SIMD256> {
 }
 
 #[inline]
-fn derive_sivmac_key(aes: &Aes256, nonce: [u8; NONCE_LEN]) -> (M128i, Aes256, M128i) {
+fn derive_sivmac_key(aes: &Aes256, nonce: [u8; NONCE_LEN]) -> (Block128, Aes256, Block128) {
     let nonce: [[u8; 4]; 3] = unsafe { core::mem::transmute(nonce) };
     let nonce = [
         u32::from_le_bytes(nonce[0]),
         u32::from_le_bytes(nonce[1]),
         u32::from_le_bytes(nonce[2]),
     ];
-    let ctr = M128i::from([nonce[0], nonce[1], nonce[2], 0]);
-    let nonce = M128i::from([0, nonce[0], nonce[1], nonce[2]]);
+    let ctr = Block128::from([nonce[0], nonce[1], nonce[2], 0]);
+    let nonce = Block128::from([0, nonce[0], nonce[1], nonce[2]]);
     let subkeys = aes.encrypt([
         nonce ^ [0, 0, 0, 0],
         nonce ^ [1, 0, 0, 0],
@@ -190,8 +190,8 @@ fn derive_sivmac_key(aes: &Aes256, nonce: [u8; NONCE_LEN]) -> (M128i, Aes256, M1
 struct Context128<const N: usize> {
     polyval: ClMul128FoilPowerTable<N>,
     aes: Aes256,
-    ctr: M128i,
-    hash: M128i,
+    ctr: Block128,
+    hash: Block128,
 }
 impl<const N: usize> Context128<N> {
     #[inline]
@@ -201,39 +201,39 @@ impl<const N: usize> Context128<N> {
             polyval: ClMul128FoilPowerTable::new(polyval_key),
             aes,
             ctr,
-            hash: M128i::zero(),
+            hash: Block128::zero(),
         }
     }
     #[inline]
-    pub fn tag(&mut self, hash: M128i) -> M128i {
+    pub fn tag(&mut self, hash: Block128) -> Block128 {
         let tag = (hash ^ self.ctr) & TAG_MASK;
         self.aes.encrypt(tag)
     }
     #[inline]
-    pub fn hash_m128i(&mut self, block: M128i) {
+    pub fn hash_m128i(&mut self, block: Block128) {
         self.hash = self.polyval[0].clmul128foil(self.hash ^ block).reduce();
     }
     #[inline]
-    pub fn hash_array(&mut self, mut array: [M128i; N]) {
+    pub fn hash_array(&mut self, mut array: [Block128; N]) {
         array[0] ^= self.hash;
         self.hash = self.polyval.clmul128foil(array).reduce();
     }
     #[inline]
     pub fn hash(&mut self, mut message: Reader) {
-        for array in message.iter::<[M128i; N]>() {
+        for array in message.iter::<[Block128; N]>() {
             self.hash_array(array);
         }
-        for block in message.iter::<M128i>() {
+        for block in message.iter::<Block128>() {
             self.hash_m128i(block);
         }
-        if let Some(block) = message.remainder::<M128i>() {
+        if let Some(block) = message.remainder::<Block128>() {
             self.hash_m128i(block);
         }
     }
     #[inline]
     fn encrypt(&mut self, aad: Reader, mut data: ReaderWriter, mut tag: Writer) {
         debug_assert_eq!(tag.len(), TAG_LEN);
-        let lengths = M128i::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
+        let lengths = Block128::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
         let (ptr, len) = unsafe { data.reader_ptr() };
         let plaintext = unsafe { Reader::new(ptr, len) };
         self.hash(aad);
@@ -242,18 +242,18 @@ impl<const N: usize> Context128<N> {
         let computed_tag = self.tag(self.hash);
         tag.write(computed_tag);
         let mut ctr: Counter128 = (computed_tag | COUNTER_MASK).into();
-        for (block, writer) in data.iter::<[M128i; N]>() {
+        for (block, writer) in data.iter::<[Block128; N]>() {
             let counters = ctr.increment_traunch::<N>();
             let block = block.ops() ^ self.aes.encrypt(counters);
             writer.write(block);
         }
-        for (block, writer) in data.iter::<M128i>() {
+        for (block, writer) in data.iter::<Block128>() {
             let ctr = ctr.increment();
             let block = block ^ self.aes.encrypt(ctr);
             writer.write(block);
         }
-        if let Some((block, writer)) = data.remainder::<M128i>() {
-            let ctr = M128i::from(ctr);
+        if let Some((block, writer)) = data.remainder::<Block128>() {
+            let ctr = Block128::from(ctr);
             let block = block ^ self.aes.encrypt(ctr);
             writer.write(block);
         }
@@ -262,10 +262,10 @@ impl<const N: usize> Context128<N> {
     #[inline]
     pub fn iteration_asm(
         &mut self,
-        auth: [M128i; N],
-        counters: [M128i; N],
-        plaintext: [M128i; N],
-    ) -> [M128i; N] {
+        auth: [Block128; N],
+        counters: [Block128; N],
+        plaintext: [Block128; N],
+    ) -> [Block128; N] {
         // Constructor performs first round of AES and auth
         let mut state = crate::aesgcm::RoundState::new(
             self.aes,
@@ -295,18 +295,18 @@ impl<const N: usize> Context128<N> {
     }
     #[inline]
     fn decrypt(&mut self, aad: Reader, mut data: ReaderWriter, mut tag: Reader) -> bool {
-        let lengths = M128i::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
-        let Some(tag) = tag.read::<M128i>() else {
+        let lengths = Block128::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
+        let Some(tag) = tag.read::<Block128>() else {
             return false;
         };
         self.hash(aad);
 
         let mut ctr: Counter128 = (tag | COUNTER_MASK).into();
-        if let Some((block, writer)) = data.read::<[M128i; N]>() {
+        if let Some((block, writer)) = data.read::<[Block128; N]>() {
             let counters = ctr.increment_traunch::<N>();
             let mut last_block = block.ops() ^ self.aes.encrypt(counters);
             writer.write(last_block);
-            for (block, writer) in data.iter::<[M128i; N]>() {
+            for (block, writer) in data.iter::<[Block128; N]>() {
                 let counters = ctr.increment_traunch::<N>();
                 last_block = match N {
                     6 => self.iteration_asm(last_block, counters, block),
@@ -319,14 +319,14 @@ impl<const N: usize> Context128<N> {
             }
             self.hash_array(last_block);
         }
-        for (block, writer) in data.iter::<M128i>() {
+        for (block, writer) in data.iter::<Block128>() {
             let ctr = ctr.increment();
             let block = block ^ self.aes.encrypt(ctr);
             writer.write(block);
             self.hash_m128i(block);
         }
-        if let Some((block, writer)) = data.remainder::<M128i>() {
-            let ctr = M128i::from(ctr);
+        if let Some((block, writer)) = data.remainder::<Block128>() {
+            let ctr = Block128::from(ctr);
             let block = block ^ self.aes.encrypt(ctr);
             let block = writer.write(block);
             self.hash_m128i(block);
@@ -339,8 +339,8 @@ impl<const N: usize> Context128<N> {
 struct Context256<const N: usize> {
     polyval: ClMul256KaratsubaPowerTable<N>,
     aes: Aes256,
-    ctr: M128i,
-    state: M256i,
+    ctr: Block128,
+    state: Block256,
 }
 impl<const N: usize> Context256<N> {
     const BLOCK_LEN: usize = 16;
@@ -351,22 +351,22 @@ impl<const N: usize> Context256<N> {
             polyval: ClMul256KaratsubaPowerTable::new(polyval_key),
             aes,
             ctr,
-            state: M256i::zero(),
+            state: Block256::zero(),
         }
     }
     #[inline]
-    pub fn tag(&mut self, hash: M128i) -> M128i {
+    pub fn tag(&mut self, hash: Block128) -> Block128 {
         let tag = (hash ^ self.ctr) & TAG_MASK;
         self.aes.encrypt(tag)
     }
     #[inline]
-    pub fn hash_m256i(&mut self, block: M256i) {
+    pub fn hash_m256i(&mut self, block: Block256) {
         self.state = self.polyval[0]
             .clmul256karatsuba(block ^ self.state)
             .reduce();
     }
     #[inline]
-    pub fn hash_array(&mut self, mut array: [M256i; N]) {
+    pub fn hash_array(&mut self, mut array: [Block256; N]) {
         array[0] ^= self.state;
         self.state = self.polyval.clmul256karatsuba(array).reduce();
     }
@@ -377,7 +377,7 @@ impl<const N: usize> Context256<N> {
     #[inline]
     fn encrypt(&mut self, aad: Reader, mut data: ReaderWriter, mut tag: Writer) {
         debug_assert_eq!(tag.len(), TAG_LEN);
-        let lengths = M128i::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
+        let lengths = Block128::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
         let (ptr, len) = unsafe { data.reader_ptr() };
         let plaintext = unsafe { Reader::new(ptr, len) };
         self.hash(aad);
@@ -386,37 +386,37 @@ impl<const N: usize> Context256<N> {
         let computed_tag = self.tag(hash);
         tag.write(computed_tag);
         let mut ctr: Counter128 = (computed_tag | COUNTER_MASK).into();
-        for (block, writer) in data.iter::<[M256i; N]>() {
+        for (block, writer) in data.iter::<[Block256; N]>() {
             let counters = ctr.increment_traunch_256::<N>();
             let block = block.ops() ^ self.aes.encrypt(counters);
             writer.write(block);
         }
-        for (block, writer) in data.iter::<M256i>() {
+        for (block, writer) in data.iter::<Block256>() {
             let counter = ctr.increment_traunch_256::<1>()[0];
             let block = block ^ self.aes.encrypt(counter);
             writer.write(block);
         }
-        if let Some((block, writer)) = data.remainder::<M256i>() {
+        if let Some((block, writer)) = data.remainder::<Block256>() {
             let counter = ctr.increment();
-            let counter = M256i::from([counter, M128i::from(ctr)]);
+            let counter = Block256::from([counter, Block128::from(ctr)]);
             let block = block ^ self.aes.encrypt(counter);
             writer.write(block);
         }
     }
     #[inline]
     fn decrypt(&mut self, aad: Reader, mut data: ReaderWriter, mut tag: Reader) -> bool {
-        let lengths = M128i::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
-        let Some(tag) = tag.read::<M128i>() else {
+        let lengths = Block128::from([aad.len() as u64 * 8, data.len() as u64 * 8]);
+        let Some(tag) = tag.read::<Block128>() else {
             return false;
         };
         self.hash(aad);
 
         let mut ctr: Counter128 = (tag | COUNTER_MASK).into();
-        if let Some((block, writer)) = data.read::<[M256i; N]>() {
+        if let Some((block, writer)) = data.read::<[Block256; N]>() {
             let counters = ctr.increment_traunch_256::<N>();
             let mut last_block = block.ops() ^ self.aes.encrypt(counters);
             writer.write(last_block);
-            for (block, writer) in data.iter::<[M256i; N]>() {
+            for (block, writer) in data.iter::<[Block256; N]>() {
                 self.hash_array(last_block);
                 let counters = ctr.increment_traunch_256::<N>();
                 last_block = block.ops() ^ self.aes.encrypt(counters);
@@ -424,16 +424,16 @@ impl<const N: usize> Context256<N> {
             }
             self.hash_array(last_block);
         }
-        for (block, writer) in data.iter::<M256i>() {
+        for (block, writer) in data.iter::<Block256>() {
             let counter = ctr.increment_traunch_256::<1>()[0];
             let block = block ^ self.aes.encrypt(counter);
             writer.write(block);
             self.hash_m256i(block);
         }
         let bytes_remaining = data.len();
-        if let Some((block, writer)) = data.remainder::<M256i>() {
+        if let Some((block, writer)) = data.remainder::<Block256>() {
             let counter = ctr.increment();
-            let counter = M256i::from([counter, M128i::from(ctr)]);
+            let counter = Block256::from([counter, Block128::from(ctr)]);
             let block = block ^ self.aes.encrypt(counter);
             let block = writer.write(block);
             if bytes_remaining > Self::BLOCK_LEN {

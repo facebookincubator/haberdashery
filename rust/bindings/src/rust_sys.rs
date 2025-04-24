@@ -12,10 +12,10 @@ mod mac;
 
 use std::path::Path;
 
-use crate::get_all_descriptors_from_flag;
-use crate::write_generated;
 use crate::Descriptor;
 use crate::Descriptors;
+use crate::get_all_descriptors_from_flag;
+use crate::write_generated;
 
 pub fn bindings() {
     let crate_path = crate::BINDINGS_PATH.join("rust_sys");

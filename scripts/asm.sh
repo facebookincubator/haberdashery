@@ -107,6 +107,8 @@ main() {
     gen_alg aes256gcm "$@"
     gen_alg aes256gcm_streaming "$@"
     gen_alg aes256gcmdndk "$@"
+    gen_alg aes256gcmdndkv2 "$@"
+    gen_alg aes256gcmdndkv2kc "$@"
     gen_alg aes256gcmsiv "$@"
     gen_alg sivmac "$@"
   fi

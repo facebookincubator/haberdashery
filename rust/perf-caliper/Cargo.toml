@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cpuid = { path = "../cpuid" }
 linkme = "0.3.17"
 perf-caliper-proc = { path = "perf-caliper-proc" }
 perf-counters = { path = "../perf-counters" }
 sflags = { path = "../sflags" }
 tabled = "0.14.0"
 units = { path = "../units" }
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+cpuid = { path = "../cpuid" }

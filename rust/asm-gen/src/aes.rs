@@ -5,17 +5,17 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use crate::intrinsics::m128i::*;
-use crate::intrinsics::m256i::*;
+use crate::block::Block128;
+use crate::block::Block256;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct AesRoundKeys<const R: usize>([M128i; R]);
+pub struct AesRoundKeys<const R: usize>([Block128; R]);
 #[allow(unused)]
 impl<const R: usize> AesRoundKeys<R> {
     #[inline]
     pub fn zero() -> Self {
-        Self([M128i::zero(); R])
+        Self([Block128::zero(); R])
     }
     #[inline]
     pub fn encrypt_round_first(&self, item: &mut impl AesRoundInput) {
@@ -30,14 +30,14 @@ impl<const R: usize> AesRoundKeys<R> {
         item.encrypt_round_last(self);
     }
 }
-impl<const R: usize> From<[M128i; R]> for AesRoundKeys<R> {
+impl<const R: usize> From<[Block128; R]> for AesRoundKeys<R> {
     #[inline]
-    fn from(v: [M128i; R]) -> Self {
+    fn from(v: [Block128; R]) -> Self {
         Self(v)
     }
 }
 impl<const R: usize> core::ops::Index<usize> for AesRoundKeys<R> {
-    type Output = M128i;
+    type Output = Block128;
     #[inline]
     fn index(&self, i: usize) -> &Self::Output {
         &self.0[i]
@@ -56,7 +56,7 @@ pub trait AesRoundInput {
     fn encrypt_round_last<const R: usize>(&mut self, key: &AesRoundKeys<R>);
 }
 
-impl AesRoundInput for M128i {
+impl AesRoundInput for Block128 {
     #[inline]
     fn encrypt_round_first<const R: usize>(&mut self, key: &AesRoundKeys<R>) {
         *self ^= key[0];
@@ -71,7 +71,7 @@ impl AesRoundInput for M128i {
     }
 }
 
-impl<const N: usize> AesRoundInput for [M128i; N] {
+impl<const N: usize> AesRoundInput for [Block128; N] {
     #[inline]
     fn encrypt_round_first<const R: usize>(&mut self, key: &AesRoundKeys<R>) {
         self.iter_mut().for_each(|b| b.encrypt_round_first(key));
@@ -86,7 +86,7 @@ impl<const N: usize> AesRoundInput for [M128i; N] {
     }
 }
 
-impl AesRoundInput for M256i {
+impl AesRoundInput for Block256 {
     #[inline]
     fn encrypt_round_first<const R: usize>(&mut self, key: &AesRoundKeys<R>) {
         *self ^= key[0].broadcast256();
@@ -101,7 +101,7 @@ impl AesRoundInput for M256i {
     }
 }
 
-impl<const N: usize> AesRoundInput for [M256i; N] {
+impl<const N: usize> AesRoundInput for [Block256; N] {
     #[inline]
     fn encrypt_round_first<const R: usize>(&mut self, key: &AesRoundKeys<R>) {
         self.iter_mut().for_each(|b| b.encrypt_round_first(key));
@@ -121,17 +121,18 @@ mod tests {
     use super::*;
     #[test]
     fn asm() {
-        // Randomly generated using M128i::random()
-        let keys = AesRoundKeys([M128i::from_hex("32ba275c155f992c98eb61f24065f271").unwrap(); 1]);
+        // Randomly generated using Block128::random()
+        let keys =
+            AesRoundKeys([Block128::from_hex("32ba275c155f992c98eb61f24065f271").unwrap(); 1]);
         let plaintext = [
-            M128i::from_hex("d903c4db0372d133edb8e7483ed89d2a").unwrap(),
-            M128i::from_hex("2be3010698daf8be981e83464ee3e122").unwrap(),
-            M128i::from_hex("f8b6f74508f80ff60c2f04379eab2ef6").unwrap(),
-            M128i::from_hex("7ee9509279cbab7d6a43d3849a618535").unwrap(),
-            M128i::from_hex("c3a2e61943e6aaffe2ce15a036320677").unwrap(),
-            M128i::from_hex("58a863ae4c56c2669180a31c776370d8").unwrap(),
-            M128i::from_hex("b879d85df7fb44dff6409364d8caaf7b").unwrap(),
-            M128i::from_hex("b44ce6c63becc857d43ddbee018a381b").unwrap(),
+            Block128::from_hex("d903c4db0372d133edb8e7483ed89d2a").unwrap(),
+            Block128::from_hex("2be3010698daf8be981e83464ee3e122").unwrap(),
+            Block128::from_hex("f8b6f74508f80ff60c2f04379eab2ef6").unwrap(),
+            Block128::from_hex("7ee9509279cbab7d6a43d3849a618535").unwrap(),
+            Block128::from_hex("c3a2e61943e6aaffe2ce15a036320677").unwrap(),
+            Block128::from_hex("58a863ae4c56c2669180a31c776370d8").unwrap(),
+            Block128::from_hex("b879d85df7fb44dff6409364d8caaf7b").unwrap(),
+            Block128::from_hex("b44ce6c63becc857d43ddbee018a381b").unwrap(),
         ];
         let mut reference_rounds = plaintext;
         reference_rounds
@@ -176,24 +177,25 @@ mod tests {
         if !cpuid::VAES.is_supported() {
             return;
         }
-        // Randomly generated using M128i::random()
-        let keys = AesRoundKeys([M128i::from_hex("32ba275c155f992c98eb61f24065f271").unwrap(); 1]);
+        // Randomly generated using Block128::random()
+        let keys =
+            AesRoundKeys([Block128::from_hex("32ba275c155f992c98eb61f24065f271").unwrap(); 1]);
         let plaintext = [
-            M256i::from_hex("d903c4db0372d133edb8e7483ed89d2ad903c4db0372d133edb8e7483ed89d2a")
+            Block256::from_hex("d903c4db0372d133edb8e7483ed89d2ad903c4db0372d133edb8e7483ed89d2a")
                 .unwrap(),
-            M256i::from_hex("2be3010698daf8be981e83464ee3e1222be3010698daf8be981e83464ee3e122")
+            Block256::from_hex("2be3010698daf8be981e83464ee3e1222be3010698daf8be981e83464ee3e122")
                 .unwrap(),
-            M256i::from_hex("f8b6f74508f80ff60c2f04379eab2ef6f8b6f74508f80ff60c2f04379eab2ef6")
+            Block256::from_hex("f8b6f74508f80ff60c2f04379eab2ef6f8b6f74508f80ff60c2f04379eab2ef6")
                 .unwrap(),
-            M256i::from_hex("7ee9509279cbab7d6a43d3849a6185357ee9509279cbab7d6a43d3849a618535")
+            Block256::from_hex("7ee9509279cbab7d6a43d3849a6185357ee9509279cbab7d6a43d3849a618535")
                 .unwrap(),
-            M256i::from_hex("c3a2e61943e6aaffe2ce15a036320677c3a2e61943e6aaffe2ce15a036320677")
+            Block256::from_hex("c3a2e61943e6aaffe2ce15a036320677c3a2e61943e6aaffe2ce15a036320677")
                 .unwrap(),
-            M256i::from_hex("58a863ae4c56c2669180a31c776370d858a863ae4c56c2669180a31c776370d8")
+            Block256::from_hex("58a863ae4c56c2669180a31c776370d858a863ae4c56c2669180a31c776370d8")
                 .unwrap(),
-            M256i::from_hex("b879d85df7fb44dff6409364d8caaf7bb879d85df7fb44dff6409364d8caaf7b")
+            Block256::from_hex("b879d85df7fb44dff6409364d8caaf7bb879d85df7fb44dff6409364d8caaf7b")
                 .unwrap(),
-            M256i::from_hex("b44ce6c63becc857d43ddbee018a381bb44ce6c63becc857d43ddbee018a381b")
+            Block256::from_hex("b44ce6c63becc857d43ddbee018a381bb44ce6c63becc857d43ddbee018a381b")
                 .unwrap(),
         ];
         let mut reference_rounds = plaintext;

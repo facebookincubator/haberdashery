@@ -10,9 +10,9 @@ mod mac;
 
 use std::path::Path;
 
+use crate::Descriptors;
 use crate::get_descriptors_from_flag;
 use crate::write_generated;
-use crate::Descriptors;
 
 pub fn bindings() {
     let path = crate::BINDINGS_PATH.join("c89");

@@ -7,9 +7,9 @@
 
 use std::collections::BTreeMap;
 
-use gen::csv::Arch;
 use gen::Event;
 use gen::Events;
+use gen::csv::Arch;
 
 const GENERATED: &str = concat!("// @", "generated");
 

@@ -10,9 +10,9 @@ use std::collections::BTreeSet;
 
 use perf_counters::event::Event;
 
-use crate::benchmark::benchmarks;
 use crate::benchmark::Benchmark;
 use crate::benchmark::BenchmarkEnum;
+use crate::benchmark::benchmarks;
 use crate::counters::counters;
 use crate::csv::Csv;
 use crate::perf::PerfControl;
@@ -56,7 +56,7 @@ mod flags {
     }
     pub fn profile() -> Vec<&'static str> {
         match PROFILE.is_empty() {
-            true => vec![cpuid::processor().canonical_name()],
+            true => vec![super::processor_name()],
             false => PROFILE.iter().map(|s| s.as_str()).collect(),
         }
     }
@@ -78,6 +78,15 @@ mod flags {
             1
         }
     }
+}
+
+#[cfg(target_arch = "x86_64")]
+fn processor_name() -> &'static str {
+    cpuid::processor().canonical_name()
+}
+#[cfg(target_arch = "aarch64")]
+fn processor_name() -> &'static str {
+    "neoversev2"
 }
 
 pub fn main(metadata_mod: Option<fn(&mut BTreeMap<String, String>)>) {
@@ -114,7 +123,6 @@ fn benchmark(
     benchmarks: &[BenchmarkEnum],
     metadata_mod: Option<fn(&mut BTreeMap<String, String>)>,
 ) {
-    let processor = cpuid::processor();
     let counters = counters();
     let mut perf_control = flags::PERF.map(|fd| unsafe { PerfControl::from_raw_fd(fd) });
     let filename = {
@@ -133,7 +141,7 @@ fn benchmark(
         if algs.len() == 1 {
             names.push(algs.first().unwrap());
         }
-        names.push(processor.canonical_name());
+        names.push(processor_name());
         names.join("_")
     };
     let csv_out = flags::CSV_OUT.as_ref().map(|path| {
@@ -220,8 +228,14 @@ fn benchmark(
         }
         table.push(results);
     }
-    let cpu = format!("{:?} ({})", processor.model, processor.raw_model);
-    let csv = Csv::new(table.results(), &[("cpu", &cpu)]);
+    #[cfg(target_arch = "x86_64")]
+    let csv = {
+        let processor = cpuid::processor();
+        let cpu = format!("{:?} ({})", processor.model, processor.raw_model);
+        Csv::new(table.results(), &[("cpu", &cpu)])
+    };
+    #[cfg(target_arch = "aarch64")]
+    let csv = Csv::new(table.results(), &[]);
     if let Some(path) = csv_out {
         std::fs::write(path, csv.build()).unwrap();
     }

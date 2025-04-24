@@ -7,14 +7,14 @@
 
 use crate::aes256::Aes256;
 use crate::aes256::NUM_ROUNDS;
-use crate::intrinsics::m128i::M128i;
+use crate::block::Block128;
 
 #[inline]
 pub fn expand_and_crypt_step<const N: usize>(
     aes: &mut Aes256,
     i: usize,
-    even_rcon: &mut M128i,
-    blocks: &mut [M128i; N],
+    even_rcon: &mut Block128,
+    blocks: &mut [Block128; N],
 ) {
     debug_assert!(i >= 2);
     debug_assert!(i < NUM_ROUNDS);
@@ -30,10 +30,10 @@ pub fn expand_and_crypt_step<const N: usize>(
 
 #[inline]
 pub fn expand_crypt_even<const N: usize>(
-    keys: [M128i; 2],
-    blocks: &mut [M128i; N],
-    rcon: M128i,
-) -> M128i {
+    keys: [Block128; 2],
+    blocks: &mut [Block128; N],
+    rcon: Block128,
+) -> Block128 {
     if cfg!(feature = "avx512f") & cfg!(feature = "avx512vl") {
         expand_crypt_even_avx512(keys, blocks, rcon)
     } else if cfg!(feature = "aes") {
@@ -44,7 +44,10 @@ pub fn expand_crypt_even<const N: usize>(
 }
 
 #[inline]
-pub fn expand_crypt_odd<const N: usize>(keys: [M128i; 2], blocks: &mut [M128i; N]) -> M128i {
+pub fn expand_crypt_odd<const N: usize>(
+    keys: [Block128; 2],
+    blocks: &mut [Block128; N],
+) -> Block128 {
     if cfg!(feature = "avx512f") & cfg!(feature = "avx512vl") {
         expand_crypt_odd_avx512(keys, blocks)
     } else if cfg!(feature = "aes") {
@@ -56,10 +59,10 @@ pub fn expand_crypt_odd<const N: usize>(keys: [M128i; 2], blocks: &mut [M128i; N
 
 #[inline]
 pub fn expand_crypt_even_ref<const N: usize>(
-    keys: [M128i; 2],
-    blocks: &mut [M128i; N],
-    rcon: M128i,
-) -> M128i {
+    keys: [Block128; 2],
+    blocks: &mut [Block128; N],
+    rcon: Block128,
+) -> Block128 {
     for block in blocks {
         *block = block.aesenc(keys[0]);
     }
@@ -73,12 +76,12 @@ pub fn expand_crypt_even_ref<const N: usize>(
 }
 #[inline]
 pub fn expand_crypt_even_asm<const N: usize>(
-    keys: [M128i; 2],
-    blocks: &mut [M128i; N],
-    rcon: M128i,
-) -> M128i {
-    let shuffle = M128i::from([0x0c0f0e0d, 0x0c0f0e0d, 0x0c0f0e0d, 0x0c0f0e0d]);
-    let mut next_key = M128i::zero();
+    keys: [Block128; 2],
+    blocks: &mut [Block128; N],
+    rcon: Block128,
+) -> Block128 {
+    let shuffle = Block128::from([0x0c0f0e0d, 0x0c0f0e0d, 0x0c0f0e0d, 0x0c0f0e0d]);
+    let mut next_key = Block128::zero();
     match N {
         1 => unsafe {
             core::arch::asm!(
@@ -155,12 +158,12 @@ pub fn expand_crypt_even_asm<const N: usize>(
 }
 #[inline]
 pub fn expand_crypt_even_avx512<const N: usize>(
-    keys: [M128i; 2],
-    blocks: &mut [M128i; N],
-    rcon: M128i,
-) -> M128i {
-    let shuffle = M128i::from([0x0c0f0e0d, 0x0c0f0e0d, 0x0c0f0e0d, 0x0c0f0e0d]);
-    let mut next_key = M128i::zero();
+    keys: [Block128; 2],
+    blocks: &mut [Block128; N],
+    rcon: Block128,
+) -> Block128 {
+    let shuffle = Block128::from([0x0c0f0e0d, 0x0c0f0e0d, 0x0c0f0e0d, 0x0c0f0e0d]);
+    let mut next_key = Block128::zero();
     match N {
         1 => unsafe {
             core::arch::asm!(
@@ -235,11 +238,14 @@ pub fn expand_crypt_even_avx512<const N: usize>(
 }
 
 #[inline]
-pub fn expand_crypt_odd_ref<const N: usize>(keys: [M128i; 2], blocks: &mut [M128i; N]) -> M128i {
+pub fn expand_crypt_odd_ref<const N: usize>(
+    keys: [Block128; 2],
+    blocks: &mut [Block128; N],
+) -> Block128 {
     for block in blocks {
         *block = block.aesenc(keys[0]);
     }
-    keys[1].shuffle32::<0xff>().aesenclast(M128i::zero())
+    keys[1].shuffle32::<0xff>().aesenclast(Block128::zero())
         ^ keys[0]
         ^ keys[0].left_byteshift::<4>()
         ^ keys[0].left_byteshift::<8>()
@@ -247,8 +253,11 @@ pub fn expand_crypt_odd_ref<const N: usize>(keys: [M128i; 2], blocks: &mut [M128
 }
 
 #[inline]
-pub fn expand_crypt_odd_asm<const N: usize>(keys: [M128i; 2], blocks: &mut [M128i; N]) -> M128i {
-    let mut next_key = M128i::zero();
+pub fn expand_crypt_odd_asm<const N: usize>(
+    keys: [Block128; 2],
+    blocks: &mut [Block128; N],
+) -> Block128 {
+    let mut next_key = Block128::zero();
     match N {
         1 => unsafe {
             core::arch::asm!(
@@ -262,7 +271,7 @@ pub fn expand_crypt_odd_asm<const N: usize>(keys: [M128i; 2], blocks: &mut [M128
                 "vpshufd $255,    {key1}, {key2}",
                 "vaesenclast      {zero}, {key2}, {key2}",
                 "vpxor            {tmp0}, {key2}, {key2}",
-                zero =    in(xmm_reg) *M128i::zero(),
+                zero =    in(xmm_reg) *Block128::zero(),
                 key0 =    in(xmm_reg) *keys[0],
                 key1 =    in(xmm_reg) *keys[1],
                 key2 =   out(xmm_reg) *next_key,
@@ -296,7 +305,7 @@ pub fn expand_crypt_odd_asm<const N: usize>(keys: [M128i; 2], blocks: &mut [M128
                 "vpshufd $255,    {key1}, {key2}",
                 "vaesenclast      {zero}, {key2}, {key2}",
                 "vpxor            {tmp0}, {key2}, {key2}",
-                zero =    in(xmm_reg) *M128i::zero(),
+                zero =    in(xmm_reg) *Block128::zero(),
                 key0 =    in(xmm_reg) *keys[0],
                 key1 =    in(xmm_reg) *keys[1],
                 key2 =   out(xmm_reg) *next_key,
@@ -323,8 +332,11 @@ pub fn expand_crypt_odd_asm<const N: usize>(keys: [M128i; 2], blocks: &mut [M128
 }
 
 #[inline]
-pub fn expand_crypt_odd_avx512<const N: usize>(keys: [M128i; 2], blocks: &mut [M128i; N]) -> M128i {
-    let mut next_key = M128i::zero();
+pub fn expand_crypt_odd_avx512<const N: usize>(
+    keys: [Block128; 2],
+    blocks: &mut [Block128; N],
+) -> Block128 {
+    let mut next_key = Block128::zero();
     match N {
         1 => unsafe {
             core::arch::asm!(
@@ -336,7 +348,7 @@ pub fn expand_crypt_odd_avx512<const N: usize>(keys: [M128i; 2], blocks: &mut [M
                 "vpshufd $255,    {key1}, {key2}",
                 "vaesenclast      {zero}, {key2}, {key2}",
                 "vpternlogq	$150, {key0}, {tmp2}, {key2}",
-                zero =    in(xmm_reg) *M128i::zero(),
+                zero =    in(xmm_reg) *Block128::zero(),
                 key0 =    in(xmm_reg) *keys[0],
                 key1 =    in(xmm_reg) *keys[1],
                 key2 =   out(xmm_reg) *next_key,
@@ -369,7 +381,7 @@ pub fn expand_crypt_odd_avx512<const N: usize>(keys: [M128i; 2], blocks: &mut [M
                 "vpshufd $255,    {key1}, {key2}",
                 "vaesenclast      {zero}, {key2}, {key2}",
                 "vpternlogq	$150, {key0}, {tmp2}, {key2}",
-                zero =    in(xmm_reg) *M128i::zero(),
+                zero =    in(xmm_reg) *Block128::zero(),
                 key0 =    in(xmm_reg) *keys[0],
                 key1 =    in(xmm_reg) *keys[1],
                 key2 =   out(xmm_reg) *next_key,
@@ -404,9 +416,9 @@ mod tests {
     fn test_expand_crypt() {
         fn compare<const N: usize>() {
             for _i in 0..128 {
-                let blocks: [M128i; N] = core::array::from_fn(|_| M128i::random());
-                let keys = [M128i::random(), M128i::random()];
-                let rcon = M128i::random();
+                let blocks: [Block128; N] = core::array::from_fn(|_| Block128::random());
+                let keys = [Block128::random(), Block128::random()];
+                let rcon = Block128::random();
                 {
                     let mut ref_blocks = blocks;
                     let mut asm_blocks = blocks;
@@ -456,10 +468,10 @@ mod tests {
         }
         fn compare_reference_impl<const N: usize>() {
             let mut aes: Aes256 = random::array().into();
-            let mut blocks = [(); N].map(|_| M128i::random());
+            let mut blocks = [(); N].map(|_| Block128::random());
             let expected_blocks = aes.encrypt(blocks);
 
-            let mut rcon = M128i::from([1, 1, 1, 1]);
+            let mut rcon = Block128::from([1, 1, 1, 1]);
             aes.encrypt_round_first(&mut blocks);
             aes.expand_step_aesenclast::<2>(&mut rcon);
             for i in 3..NUM_ROUNDS {

@@ -10,9 +10,9 @@ use core::ptr::null_mut;
 
 use openssl_sys::*;
 
-use crate::wrapper::evp_pkey::EvpPkey;
 use crate::wrapper::Free;
 use crate::wrapper::Wrapper;
+use crate::wrapper::evp_pkey::EvpPkey;
 
 const NULL_ENGINE: *mut ENGINE = null_mut();
 

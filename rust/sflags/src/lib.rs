@@ -11,8 +11,8 @@ mod flag;
 mod parse;
 mod registry;
 
-pub use flag::reference::RefFlag;
 pub use flag::Flag;
+pub use flag::reference::RefFlag;
 pub use parse::Parse;
 pub use registry::parse;
 pub use registry::parse_exact;

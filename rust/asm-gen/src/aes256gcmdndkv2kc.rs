@@ -7,10 +7,10 @@
 
 use crate::aes256::Aes256;
 use crate::aes256gcm::Aes256GcmKey;
+use crate::block::Block128;
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;
-use crate::intrinsics::m128i::M128i;
 
 const KEY_LEN: usize = 32;
 const NONCE_LEN: usize = 24;
@@ -35,15 +35,15 @@ impl From<[u8; KEY_LEN]> for Aes256GcmDndkKey {
 #[allow(unused)]
 impl Aes256GcmDndkKey {
     #[inline]
-    fn generate_block(nonce: [u8; NONCE_LEN]) -> [M128i; 5] {
-        let config: [M128i; 5] = [
+    fn generate_block(nonce: [u8; NONCE_LEN]) -> [Block128; 5] {
+        let config: [Block128; 5] = [
             [0, 0, 0, 0xe0000000].into(),
             [0, 0, 0, 0xe1000000].into(),
             [0, 0, 0, 0xe2000000].into(),
             [0, 0, 0, 0xe3000000].into(),
             [0, 0, 0, 0xe4000000].into(),
         ];
-        let mut head: M128i = unsafe { M128i::load(&nonce) };
+        let mut head: Block128 = unsafe { Block128::load(&nonce) };
         head = head.left_byteshift::<1>().right_byteshift::<1>();
         [
             head ^ config[0],
@@ -54,7 +54,7 @@ impl Aes256GcmDndkKey {
         ]
     }
     #[inline]
-    fn derive(&self, nonce: [u8; NONCE_LEN]) -> ([M128i; 2], [M128i; 2]) {
+    fn derive(&self, nonce: [u8; NONCE_LEN]) -> ([Block128; 2], [Block128; 2]) {
         let b = Self::generate_block(nonce);
         let x = [
             self.aes.encrypt(b[0]),
@@ -74,7 +74,7 @@ impl Aes256GcmDndkKey {
     ) -> (
         [u8; crate::aes256gcm::NONCE_LEN],
         Aes256GcmDndkState,
-        [M128i; 2],
+        [Block128; 2],
     ) {
         let iv: [u8; crate::aes256gcm::NONCE_LEN] = [
             nonce[15], nonce[16], nonce[17], nonce[18], //
@@ -133,7 +133,7 @@ impl Aes256GcmDndkKey {
             return false;
         };
         let (iv, state, kc) = self.make_state(nonce);
-        let Some(input_kc) = tag.read::<[M128i; 2]>() else {
+        let Some(input_kc) = tag.read::<[Block128; 2]>() else {
             return false;
         };
 

@@ -9,9 +9,9 @@ use core::arch::x86_64::__m128i;
 use core::ops::BitXor;
 use core::ops::BitXorAssign;
 
+use crate::block::Block128;
 use crate::clamped_index::ClampedIndex;
 use crate::ffi::reader::Reader;
-use crate::intrinsics::m128i::M128i;
 
 pub trait ClMul128Foil: Copy {
     fn clmul128foil(self, rhs: Self) -> ClMul128FoilProduct;
@@ -20,7 +20,7 @@ pub trait ClMul128Foil: Copy {
         self.clmul128foil(self)
     }
 }
-impl ClMul128Foil for M128i {
+impl ClMul128Foil for Block128 {
     #[inline]
     fn clmul128foil(self, rhs: Self) -> ClMul128FoilProduct {
         ClMul128FoilProduct {
@@ -33,12 +33,12 @@ impl ClMul128Foil for M128i {
     fn clmul128foil_sq(self) -> ClMul128FoilProduct {
         ClMul128FoilProduct {
             lo: self.clmul::<0x00>(self),
-            mid: M128i::zero(),
+            mid: Block128::zero(),
             hi: self.clmul::<0x11>(self),
         }
     }
 }
-impl<const N: usize> ClMul128Foil for [M128i; N] {
+impl<const N: usize> ClMul128Foil for [Block128; N] {
     #[inline]
     fn clmul128foil(self, rhs: Self) -> ClMul128FoilProduct {
         let mut result = self[0].clmul128foil(rhs[N - 1]);
@@ -50,9 +50,9 @@ impl<const N: usize> ClMul128Foil for [M128i; N] {
 }
 #[derive(Copy, Clone, Default)]
 pub struct ClMul128FoilProduct {
-    pub lo: M128i,
-    pub mid: M128i,
-    pub hi: M128i,
+    pub lo: Block128,
+    pub mid: Block128,
+    pub hi: Block128,
 }
 impl From<[__m128i; 3]> for ClMul128FoilProduct {
     #[inline]
@@ -91,7 +91,7 @@ impl BitXorAssign for ClMul128FoilProduct {
 }
 impl ClMul128FoilProduct {
     #[inline]
-    pub fn reduce(&self) -> M128i {
+    pub fn reduce(&self) -> Block128 {
         let this = self.combine_foil();
         this.reduce_mul()
     }
@@ -99,24 +99,24 @@ impl ClMul128FoilProduct {
     pub fn combine_foil(mut self) -> Self {
         self.lo ^= self.mid.left_byteshift::<8>();
         self.hi ^= self.mid.right_byteshift::<8>();
-        self.mid = M128i::zero();
+        self.mid = Block128::zero();
         self
     }
     #[inline]
-    fn reduce_mul(self) -> M128i {
+    fn reduce_mul(self) -> Block128 {
         let reduced = Self::reduce_mul_step(self.lo);
         let reduced = Self::reduce_mul_step(reduced);
         self.hi ^ reduced
     }
     #[inline]
-    fn reduce_mul_step(target: M128i) -> M128i {
-        let poly: M128i = [1, 0, 0, 0xc2_00_00_00].into();
+    fn reduce_mul_step(target: Block128) -> Block128 {
+        let poly: Block128 = [1, 0, 0, 0xc2_00_00_00].into();
         target.clmul::<0x10>(poly) ^ target.shuffle32::<0b_01_00_11_10>()
     }
 }
 
 #[inline]
-fn mulx_polyval(v: M128i) -> M128i {
+fn mulx_polyval(v: Block128) -> Block128 {
     let remainder = v.right_bitshift64::<63>();
     let v = v.left_bitshift64::<1>() ^ remainder.shuffle32::<0b01_00_11_10>();
     let remainder = remainder.shuffle32::<0b11_10_11_11>();
@@ -126,16 +126,16 @@ fn mulx_polyval(v: M128i) -> M128i {
 }
 
 #[derive(Copy, Clone)]
-pub struct ClMul128FoilPowerTable<const N: usize>([M128i; N]);
+pub struct ClMul128FoilPowerTable<const N: usize>([Block128; N]);
 impl<const N: usize> Default for ClMul128FoilPowerTable<N> {
     #[inline]
     fn default() -> Self {
-        Self([M128i::ZERO; N])
+        Self([Block128::ZERO; N])
     }
 }
 impl<const N: usize> ClMul128FoilPowerTable<N> {
     #[inline]
-    pub fn new(key: M128i) -> Self {
+    pub fn new(key: Block128) -> Self {
         let mut table = [key; N];
         for i in 1..N {
             match i % 2 {
@@ -146,15 +146,15 @@ impl<const N: usize> ClMul128FoilPowerTable<N> {
         Self(table)
     }
     #[inline]
-    pub fn new_ghash(key: M128i) -> Self {
+    pub fn new_ghash(key: Block128) -> Self {
         Self::new(mulx_polyval(key.byte_reverse()))
     }
     #[inline]
-    pub fn keys(&self) -> [M128i; N] {
+    pub fn keys(&self) -> [Block128; N] {
         self.0
     }
     #[inline]
-    pub fn clmul128foil(self, array: [M128i; N]) -> ClMul128FoilProduct {
+    pub fn clmul128foil(self, array: [Block128; N]) -> ClMul128FoilProduct {
         self.0.clmul128foil(array)
     }
     #[inline]
@@ -164,7 +164,7 @@ impl<const N: usize> ClMul128FoilPowerTable<N> {
         ClMul128FoilProduct {
             lo: lhs.clmul::<0x00>(rhs),
             mid: lhs.clmul::<0x01>(rhs),
-            hi: M128i::zero(),
+            hi: Block128::zero(),
         }
     }
     #[inline]
@@ -173,14 +173,14 @@ impl<const N: usize> ClMul128FoilPowerTable<N> {
         mut state: ClMul128FoilProduct,
         mut reader: Reader,
     ) -> ClMul128FoilProduct {
-        for mut array in reader.iter::<[M128i; N]>() {
+        for mut array in reader.iter::<[Block128; N]>() {
             array[0] ^= state.reduce();
             state = self.clmul128foil(array);
         }
-        for block in reader.iter::<M128i>() {
+        for block in reader.iter::<Block128>() {
             state = self[0].clmul128foil(block ^ state.reduce());
         }
-        if let Some(block) = reader.remainder::<M128i>() {
+        if let Some(block) = reader.remainder::<Block128>() {
             state = self[0].clmul128foil(block ^ state.reduce());
         }
         state
@@ -188,14 +188,14 @@ impl<const N: usize> ClMul128FoilPowerTable<N> {
 }
 
 impl<const N: usize> core::ops::Index<ClampedIndex<N>> for ClMul128FoilPowerTable<N> {
-    type Output = M128i;
+    type Output = Block128;
     #[inline]
     fn index(&self, i: ClampedIndex<N>) -> &Self::Output {
         unsafe { self.0.get_unchecked(*i) }
     }
 }
 impl<const N: usize> core::ops::Index<usize> for ClMul128FoilPowerTable<N> {
-    type Output = M128i;
+    type Output = Block128;
     #[inline]
     fn index(&self, i: usize) -> &Self::Output {
         &self.0[i]
@@ -239,8 +239,8 @@ mod tests {
         const N: usize = 8;
 
         for _i in 0..128 {
-            let key = M128i::random();
-            let data = random::vec(N * M128i::SIZE + 15);
+            let key = Block128::random();
+            let data = random::vec(N * Block128::SIZE + 15);
             assert_eq!(
                 {
                     let table = ClMul128FoilPowerTable::<1>::new(key);

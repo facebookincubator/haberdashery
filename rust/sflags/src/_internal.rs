@@ -8,8 +8,8 @@
 pub use paste::paste;
 
 pub use crate::convert::DefaultConvert;
-pub use crate::registry::Registration;
 pub use crate::registry::REGISTRY;
+pub use crate::registry::Registration;
 
 pub mod linkme {
     pub use linkme::*;

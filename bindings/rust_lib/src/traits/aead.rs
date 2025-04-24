@@ -5,8 +5,8 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use core::mem::transmute;
 use core::mem::MaybeUninit;
+use core::mem::transmute;
 
 pub trait Aead: Sized {
     const KEY_LEN: usize;

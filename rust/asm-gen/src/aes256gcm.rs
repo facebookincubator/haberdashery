@@ -6,12 +6,12 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use crate::aes256::Aes256;
+use crate::block::Block128;
 use crate::clmul::clmul128foil::*;
 use crate::counter128::CounterBe128;
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;
-use crate::intrinsics::m128i::M128i;
 use crate::ops::ArrayOps;
 use crate::ops::Cast;
 use crate::partial::PartialBlock;
@@ -43,8 +43,8 @@ impl<const N: usize> From<[u8; KEY_LEN]> for Aes256GcmKey<N> {
 
 impl<const N: usize> Aes256GcmKey<N> {
     #[inline]
-    pub fn new(key: [M128i; 2]) -> Self {
-        let (aes, ghash) = Aes256::new_and_encrypt(key, [M128i::zero()]);
+    pub fn new(key: [Block128; 2]) -> Self {
+        let (aes, ghash) = Aes256::new_and_encrypt(key, [Block128::zero()]);
         let polyval = ClMul128FoilPowerTable::new_ghash(ghash[0]);
         Self { aes, polyval }
     }
@@ -110,8 +110,8 @@ impl<const N: usize> Aes256GcmKey<N> {
 #[repr(C)]
 #[derive(Default, Clone)]
 pub struct Aes256GcmState<const N: usize> {
-    ghash: M128i,
-    tag_ctr: M128i,
+    ghash: Block128,
+    tag_ctr: Block128,
     ctr: CounterBe128,
     partial: PartialBlock,
     aad_len: usize,
@@ -125,7 +125,7 @@ impl<const N: usize> Aes256GcmState<N> {
             return false;
         };
         let nonce: [[u8; 4]; 3] = unsafe { core::mem::transmute(nonce) };
-        let ctr = M128i::from([
+        let ctr = Block128::from([
             u32::from_le_bytes(nonce[0]),
             u32::from_le_bytes(nonce[1]),
             u32::from_le_bytes(nonce[2]),
@@ -161,34 +161,34 @@ impl<const N: usize> Aes256GcmState<N> {
                 .reduce();
         }
         if cfg!(feature = "avx512f") {
-            for block in aad.iter::<[M128i; N]>() {
-                let mut block = block.map(M128i::byte_reverse);
+            for block in aad.iter::<[Block128; N]>() {
+                let mut block = block.map(Block128::byte_reverse);
                 block[0] ^= self.ghash;
                 self.ghash = key.polyval.clmul128foil(block).reduce();
             }
-        } else if let Some(block) = aad.read::<[M128i; N]>() {
+        } else if let Some(block) = aad.read::<[Block128; N]>() {
             let mut product = {
-                let mut block = block.map(M128i::byte_reverse);
+                let mut block = block.map(Block128::byte_reverse);
                 block[0] ^= self.ghash;
                 key.polyval.clmul128foil(block)
             };
-            for block in aad.iter::<[M128i; N]>() {
+            for block in aad.iter::<[Block128; N]>() {
                 product = {
                     self.ghash = product.reduce();
-                    let mut block = block.map(M128i::byte_reverse);
+                    let mut block = block.map(Block128::byte_reverse);
                     block[0] ^= self.ghash;
                     key.polyval.clmul128foil(block)
                 };
             }
             self.ghash = product.reduce();
         }
-        for block in aad.iter::<M128i>() {
+        for block in aad.iter::<Block128>() {
             self.ghash = key.polyval[0]
                 .clmul128foil(self.ghash ^ block.byte_reverse())
                 .reduce();
         }
         let remainder_len = aad.len();
-        if let Some(block) = aad.remainder::<M128i>() {
+        if let Some(block) = aad.remainder::<Block128>() {
             self.partial = PartialBlock::new_aad(block, remainder_len);
         }
         self.aad_len += len;
@@ -207,11 +207,11 @@ impl<const N: usize> Aes256GcmState<N> {
     pub fn iteration_asm(
         &mut self,
         key: &Aes256GcmKey<N>,
-        auth: [M128i; N],
-        counters: [M128i; N],
-        plaintext: [M128i; N],
-    ) -> [M128i; N] {
-        let auth = auth.map(M128i::byte_reverse);
+        auth: [Block128; N],
+        counters: [Block128; N],
+        plaintext: [Block128; N],
+    ) -> [Block128; N] {
+        let auth = auth.map(Block128::byte_reverse);
         // Constructor performs first round of AES and auth
         let mut state =
             crate::aesgcm::RoundState::new(key.aes, counters, auth, key.polyval.keys(), self.ghash);
@@ -254,17 +254,17 @@ impl<const N: usize> Aes256GcmState<N> {
                 .clmul128foil(self.ghash ^ block.byte_reverse())
                 .reduce();
         }
-        if let Some((block, writer)) = data.read::<[M128i; N]>() {
+        if let Some((block, writer)) = data.read::<[Block128; N]>() {
             let ctr = self.ctr.increment_traunch::<N>();
             let mut last_block = block.ops() ^ key.aes.encrypt(ctr);
             writer.write(last_block);
-            for (block, writer) in data.iter::<[M128i; N]>() {
+            for (block, writer) in data.iter::<[Block128; N]>() {
                 let ctr = self.ctr.increment_traunch::<N>();
                 last_block = match N {
                     6 => self.iteration_asm(key, last_block, ctr, block),
                     _ => {
                         {
-                            let mut block = last_block.map(M128i::byte_reverse);
+                            let mut block = last_block.map(Block128::byte_reverse);
                             block[0] ^= self.ghash;
                             self.ghash = key.polyval.clmul128foil(block).reduce();
                         }
@@ -273,11 +273,11 @@ impl<const N: usize> Aes256GcmState<N> {
                 };
                 writer.write(last_block);
             }
-            let mut block = last_block.map(M128i::byte_reverse);
+            let mut block = last_block.map(Block128::byte_reverse);
             block[0] ^= self.ghash;
             self.ghash = key.polyval.clmul128foil(block).reduce();
         }
-        for (block, writer) in data.iter::<M128i>() {
+        for (block, writer) in data.iter::<Block128>() {
             let ctr = self.ctr.increment();
             let block = key.aes.encrypt(ctr) ^ block;
             writer.write(block);
@@ -285,7 +285,7 @@ impl<const N: usize> Aes256GcmState<N> {
                 .clmul128foil(self.ghash ^ block.byte_reverse())
                 .reduce();
         }
-        if let Some((block, writer)) = data.remainder::<M128i>() {
+        if let Some((block, writer)) = data.remainder::<Block128>() {
             let ctr = self.ctr.increment();
             let pad = key.aes.encrypt(ctr);
             let block = pad ^ block;
@@ -315,13 +315,13 @@ impl<const N: usize> Aes256GcmState<N> {
             let block = (block ^ pad).byte_reverse();
             self.ghash = key.polyval[0].clmul128foil(self.ghash ^ block).reduce();
         }
-        for (block, writer) in data.iter::<[M128i; N]>() {
+        for (block, writer) in data.iter::<[Block128; N]>() {
             let ctr = self.ctr.increment_traunch::<N>();
             let block = match N {
                 6 => self.iteration_asm(key, block, ctr, block),
                 _ => {
                     {
-                        let mut block = block.map(M128i::byte_reverse);
+                        let mut block = block.map(Block128::byte_reverse);
                         block[0] ^= self.ghash;
                         self.ghash = key.polyval.clmul128foil(block).reduce();
                     }
@@ -330,7 +330,7 @@ impl<const N: usize> Aes256GcmState<N> {
             };
             writer.write(block);
         }
-        for (block, writer) in data.iter::<M128i>() {
+        for (block, writer) in data.iter::<Block128>() {
             self.ghash = key.polyval[0]
                 .clmul128foil(self.ghash ^ block.byte_reverse())
                 .reduce();
@@ -338,7 +338,7 @@ impl<const N: usize> Aes256GcmState<N> {
             let block = key.aes.encrypt(ctr) ^ block;
             writer.write(block);
         }
-        if let Some((block, writer)) = data.remainder::<M128i>() {
+        if let Some((block, writer)) = data.remainder::<Block128>() {
             let ctr = self.ctr.increment();
             let pad = key.aes.encrypt(ctr);
             let block = pad ^ block;
@@ -358,12 +358,12 @@ impl<const N: usize> Aes256GcmState<N> {
         if tag.len() != TAG_LEN {
             return false;
         }
-        let tag = tag.read::<M128i>().unwrap();
+        let tag = tag.read::<Block128>().unwrap();
         let computed_tag = self.finalize(key, false);
         computed_tag.crypto_equals(tag)
     }
     #[inline]
-    pub fn finalize(&mut self, key: &Aes256GcmKey<N>, is_encrypt: bool) -> M128i {
+    pub fn finalize(&mut self, key: &Aes256GcmKey<N>, is_encrypt: bool) -> Block128 {
         if self.crypt_len == 0 {
             self.finalize_aad(key);
         }
@@ -766,9 +766,9 @@ mod tests {
 
     #[test]
     fn comparison() {
-        use aes_gcm::aead::generic_array::GenericArray;
         use aes_gcm::AeadInPlace;
         use aes_gcm::KeyInit;
+        use aes_gcm::aead::generic_array::GenericArray;
 
         for _ in 0..128 {
             let crypt_len = 4 << 10;

@@ -9,17 +9,17 @@ use core::arch::x86_64::__m128i;
 
 use intrinsics::__m128i::*;
 
+use crate::block::Block128;
 use crate::clmul::clmul128foil::*;
-use crate::intrinsics::m128i::M128i;
 use crate::ops::ArrayOps;
 
 #[inline]
 pub fn vaesenc_vpclmulqdq_128<const N: usize>(
-    aes_key: M128i,
-    aes_data: &mut [M128i; N],
+    aes_key: Block128,
+    aes_data: &mut [Block128; N],
     auth_product: &mut ClMul128FoilProduct,
-    auth_left: M128i,
-    auth_right: M128i,
+    auth_left: Block128,
+    auth_right: Block128,
 ) {
     (*aes_data, *auth_product) = match N {
         4 => unsafe {
@@ -141,11 +141,11 @@ mod tests {
             return;
         }
         fn compare_reference_impl<const N: usize>() {
-            let aes_key = M128i::random();
-            let mut aes_data: [M128i; N] = random::random();
-            let mut auth_product = M128i::random().clmul128foil(M128i::random());
-            let auth_left = M128i::random();
-            let auth_right = M128i::random();
+            let aes_key = Block128::random();
+            let mut aes_data: [Block128; N] = random::random();
+            let mut auth_product = Block128::random().clmul128foil(Block128::random());
+            let auth_left = Block128::random();
+            let auth_right = Block128::random();
 
             let aes_data_result = aes_data.map(|data| data.aesenc(aes_key));
             let auth_product_result = auth_product ^ (auth_left.clmul128foil(auth_right));
