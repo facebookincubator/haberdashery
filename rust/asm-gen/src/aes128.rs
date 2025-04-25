@@ -7,7 +7,7 @@
 
 use crate::aes::AesRoundInput;
 use crate::aes::AesRoundKeys;
-use crate::intrinsics::m128i::M128i;
+use crate::block::Block128;
 
 pub const NUM_ROUNDS: usize = 11;
 pub(crate) const KEY_LEN: usize = 16;
@@ -19,7 +19,7 @@ const BLOCK_LEN: usize = 16;
 pub struct Aes128(AesRoundKeys<NUM_ROUNDS>);
 
 impl core::ops::Index<usize> for Aes128 {
-    type Output = M128i;
+    type Output = Block128;
     #[inline]
     fn index(&self, i: usize) -> &Self::Output {
         &self.0[i]
@@ -49,14 +49,14 @@ impl From<Aes128> for AesRoundKeys<NUM_ROUNDS> {
 impl Aes128 {
     #[inline]
     pub fn zero() -> Self {
-        Self([M128i::zero(); NUM_ROUNDS].into())
+        Self([Block128::zero(); NUM_ROUNDS].into())
     }
     #[inline]
-    pub fn new(key: M128i) -> Self {
+    pub fn new(key: Block128) -> Self {
         Self::new_aeskeygenassist(key)
     }
     #[inline]
-    pub fn new_aeskeygenassist(key: M128i) -> Self {
+    pub fn new_aeskeygenassist(key: Block128) -> Self {
         let mut this = Self::zero();
         this.0[0] = key;
         this.expand_step_aeskeygenassist::<1>();
@@ -119,7 +119,7 @@ impl Aes128 {
         ciphertext
     }
     #[inline]
-    pub fn decrypt(&self, ciphertext: M128i) -> M128i {
+    pub fn decrypt(&self, ciphertext: Block128) -> Block128 {
         (ciphertext ^ self[10])
             .aesdec(self[9].aesimc())
             .aesdec(self[8].aesimc())
@@ -151,7 +151,7 @@ mod tests {
         }
         impl TestVector {
             fn test(&self) {
-                let key = M128i::from_hex(self.key[0]).unwrap();
+                let key = Block128::from_hex(self.key[0]).unwrap();
                 let aes = Aes128::new(key);
                 for i in 0..self.key.len() {
                     assert_eq!(aes[i], self.key[i], "{i}");
@@ -205,22 +205,22 @@ mod tests {
         }
         impl TestVector {
             fn test(&self) {
-                let key = M128i::from_hex(self.key).unwrap();
+                let key = Block128::from_hex(self.key).unwrap();
                 {
                     let aes = Aes128::new(key);
-                    let plaintext = M128i::from_hex(self.plaintext).unwrap();
+                    let plaintext = Block128::from_hex(self.plaintext).unwrap();
                     let ciphertext = aes.encrypt(plaintext);
                     assert_eq!(ciphertext, self.ciphertext);
                 }
                 {
                     let aes = Aes128::new(key);
-                    let ciphertext = M128i::from_hex(self.ciphertext).unwrap();
+                    let ciphertext = Block128::from_hex(self.ciphertext).unwrap();
                     let plaintext = aes.decrypt(ciphertext);
                     assert_eq!(plaintext, self.plaintext);
                 }
                 {
                     let aes = Aes128::new_aeskeygenassist(key);
-                    let ciphertext = M128i::from_hex(self.ciphertext).unwrap();
+                    let ciphertext = Block128::from_hex(self.ciphertext).unwrap();
                     let plaintext = aes.decrypt(ciphertext);
                     assert_eq!(plaintext, self.plaintext);
                 }
@@ -244,7 +244,7 @@ mod tests {
         for _ in 0..128 {
             let key = random::array::<KEY_LEN>();
             let aes = Aes128::from(key);
-            let plaintext = M128i::random();
+            let plaintext = Block128::random();
             let ciphertext = aes.encrypt(plaintext);
 
             const N: usize = 8;
@@ -260,7 +260,7 @@ mod tests {
         for _ in 0..128 {
             let key = random::array::<KEY_LEN>();
             let aes = Aes128::from(key);
-            let plaintext = M128i::random();
+            let plaintext = Block128::random();
             let ciphertext = aes.encrypt(plaintext);
             let decrypted = aes.decrypt(ciphertext);
             assert_eq!(plaintext, decrypted);

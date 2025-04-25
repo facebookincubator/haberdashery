@@ -5,8 +5,8 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use aws_lc_sys::X25519_public_from_private;
 use aws_lc_sys::X25519;
+use aws_lc_sys::X25519_public_from_private;
 
 mod benchmarks {
     use super::*;

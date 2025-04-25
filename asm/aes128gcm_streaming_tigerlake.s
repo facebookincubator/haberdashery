@@ -2304,5 +2304,5 @@ haberdashery_aes128gcm_streaming_tigerlake_decrypt_finalize:
 	.size	haberdashery_aes128gcm_streaming_tigerlake_decrypt_finalize, .Lfunc_end7-haberdashery_aes128gcm_streaming_tigerlake_decrypt_finalize
 	.cfi_endproc
 
-	.ident	"rustc version 1.85.0-nightly (4363f9b6f 2025-01-02)"
+	.ident	"rustc version 1.86.0-nightly (9cd60bd2c 2025-02-15)"
 	.section	".note.GNU-stack","",@progbits

@@ -7,15 +7,15 @@
 
 use std::path::Path;
 
-use crate::get_descriptors_from_flag;
-use crate::write_generated;
 use crate::Descriptors;
+use crate::get_all_descriptors_from_flag;
+use crate::write_generated;
 
 pub fn bindings() {
     let crate_path = crate::BINDINGS_PATH.join("rust_bench");
-    let aead_descriptors = get_descriptors_from_flag("aead");
-    let hash_descriptors = get_descriptors_from_flag("hash");
-    let mac_descriptors = get_descriptors_from_flag("mac");
+    let aead_descriptors = get_all_descriptors_from_flag("aead");
+    let hash_descriptors = get_all_descriptors_from_flag("hash");
+    let mac_descriptors = get_all_descriptors_from_flag("mac");
     let descriptors = aead_descriptors
         .concat(hash_descriptors)
         .concat(mac_descriptors);

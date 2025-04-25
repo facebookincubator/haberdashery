@@ -7,10 +7,10 @@
 
 use crate::aes256::Aes256;
 use crate::aes256gcm::Aes256GcmKey;
+use crate::block::Block128;
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;
-use crate::intrinsics::m128i::M128i;
 
 const KEY_LEN: usize = 32;
 const NONCE_LEN: usize = 24;
@@ -33,18 +33,18 @@ impl From<[u8; KEY_LEN]> for Aes256GcmDndkKey {
 #[allow(unused)]
 impl Aes256GcmDndkKey {
     #[inline]
-    fn generate_block(nonce: [u8; NONCE_LEN]) -> [M128i; 3] {
-        let config: [M128i; 3] = [
+    fn generate_block(nonce: [u8; NONCE_LEN]) -> [Block128; 3] {
+        let config: [Block128; 3] = [
             [0, 0, 0, 0x60000000].into(),
             [0, 0, 0, 0x61000000].into(),
             [0, 0, 0, 0x62000000].into(),
         ];
-        let mut head: M128i = unsafe { M128i::load(&nonce) };
+        let mut head: Block128 = unsafe { Block128::load(&nonce) };
         head = head.left_byteshift::<1>().right_byteshift::<1>();
         [head ^ config[0], head ^ config[1], head ^ config[2]]
     }
     #[inline]
-    fn derive(&self, nonce: [u8; NONCE_LEN]) -> [M128i; 2] {
+    fn derive(&self, nonce: [u8; NONCE_LEN]) -> [Block128; 2] {
         let b = Self::generate_block(nonce);
         let x = [
             self.aes.encrypt(b[0]),

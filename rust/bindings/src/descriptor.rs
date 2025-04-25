@@ -83,6 +83,9 @@ impl Descriptors {
         self.0.extend(other.0);
         self
     }
+    pub fn filter<F: Fn(&&Descriptor) -> bool>(&self, f: F) -> Self {
+        Self(self.0.iter().filter(f).cloned().collect())
+    }
 }
 
 #[derive(Default, Clone)]

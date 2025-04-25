@@ -11,9 +11,9 @@ mod mac;
 
 use std::path::Path;
 
-use crate::get_descriptors_from_flag;
-use crate::write_generated;
 use crate::Descriptors;
+use crate::get_all_descriptors_from_flag;
+use crate::write_generated;
 
 pub fn bindings() {
     let crate_path = crate::BINDINGS_PATH.join("rust_lib");
@@ -35,12 +35,12 @@ pub fn write_cargo_toml(crate_path: &Path, descriptors: &Descriptors) {
     write_generated::toml(crate_path.join("Cargo.toml"), cargo_toml).unwrap();
 }
 pub fn unit_bindings(crate_path: &Path, primitive: &str, source_template: &str) -> Descriptors {
-    let descriptors = get_descriptors_from_flag(primitive);
+    let descriptors = get_all_descriptors_from_flag(primitive);
     for descriptor in descriptors.iter() {
         let name = &descriptor["name"];
         write_generated::rust(
             crate_path.join(format!("src/{primitive}/{name}.rs")),
-            &descriptor.apply(source_template),
+            descriptor.apply(source_template),
         )
         .unwrap();
     }
@@ -51,9 +51,20 @@ pub fn unit_bindings(crate_path: &Path, primitive: &str, source_template: &str) 
     descriptors
 }
 pub fn write_module(module_path: &Path, descriptors: &Descriptors) {
+    let descriptors: Descriptors = descriptors
+        .iter()
+        .map(|d| {
+            let mut d = d.clone();
+            if d["arch"] == "x86" {
+                d.insert("arch", "x86_64");
+            }
+            d
+        })
+        .collect::<Vec<_>>()
+        .into();
     let modules = descriptors.apply(|d| {
         d.apply(
-            r#"#[cfg(feature = "{name}")]
+            r#"#[cfg(all(feature = "{name}", target_arch = "{arch}"))]
 pub mod {name};
 "#,
         )

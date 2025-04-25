@@ -7,10 +7,10 @@
 
 use crate::aes256::Aes256;
 use crate::aes256gcm::Aes256GcmKey;
+use crate::block::Block128;
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;
-use crate::intrinsics::m128i::M128i;
 
 const KEY_LEN: usize = 32;
 const HALF_NONCE_LEN: usize = 12;
@@ -34,7 +34,7 @@ impl From<[u8; KEY_LEN]> for Aes256GcmDndkKey {
 #[allow(unused)]
 impl Aes256GcmDndkKey {
     #[inline]
-    fn split_nonce(nonce: [u8; NONCE_LEN]) -> (M128i, M128i) {
+    fn split_nonce(nonce: [u8; NONCE_LEN]) -> (Block128, Block128) {
         let nonce: [[u8; 4]; 6] = unsafe { core::mem::transmute(nonce) };
         let nonce: [u32; 6] = nonce.map(u32::from_le_bytes);
         (
@@ -43,7 +43,7 @@ impl Aes256GcmDndkKey {
         )
     }
     #[inline]
-    fn derive(&self, nonce: [u8; NONCE_LEN]) -> [M128i; 2] {
+    fn derive(&self, nonce: [u8; NONCE_LEN]) -> [Block128; 2] {
         let nonce = Self::split_nonce(nonce);
         let b = [
             nonce.0 ^ [0, 0, 0, 0], // B0

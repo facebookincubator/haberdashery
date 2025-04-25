@@ -13,8 +13,8 @@ use core::marker::PhantomData;
 use core::ops::Deref;
 use std::sync::OnceLock;
 
-use crate::registry::SetFlag;
 use crate::Parse;
+use crate::registry::SetFlag;
 
 pub struct RefFlag<T: AsRef<R>, R: ?Sized> {
     value: OnceLock<T>,

@@ -9,7 +9,7 @@ use core::mem::transmute;
 
 use crate::aes::AesRoundInput;
 use crate::aes::AesRoundKeys;
-use crate::intrinsics::m128i::*;
+use crate::block::Block128;
 
 pub const NUM_ROUNDS: usize = 13;
 pub(crate) const KEY_LEN: usize = 24;
@@ -19,7 +19,7 @@ pub(crate) const KEY_LEN: usize = 24;
 pub struct Aes192(AesRoundKeys<NUM_ROUNDS>);
 
 impl core::ops::Index<usize> for Aes192 {
-    type Output = M128i;
+    type Output = Block128;
     #[inline]
     fn index(&self, i: usize) -> &Self::Output {
         &self.0[i]
@@ -33,9 +33,9 @@ impl core::ops::IndexMut<usize> for Aes192 {
     }
 }
 
-impl From<[M128i; 2]> for Aes192 {
+impl From<[Block128; 2]> for Aes192 {
     #[inline]
-    fn from(key: [M128i; 2]) -> Self {
+    fn from(key: [Block128; 2]) -> Self {
         let mut this = Self(AesRoundKeys::zero());
         this[0] = key[0];
         this[1] = key[1];
@@ -66,7 +66,7 @@ impl From<Aes192> for AesRoundKeys<NUM_ROUNDS> {
 impl Aes192 {
     #[inline]
     pub fn zero() -> Self {
-        Self([M128i::zero(); NUM_ROUNDS].into())
+        Self([Block128::zero(); NUM_ROUNDS].into())
     }
     #[inline]
     fn expand_triplet<const N: usize>(&mut self) {
@@ -89,7 +89,7 @@ impl Aes192 {
         };
     }
     #[inline]
-    fn expand_step<const N: i32>(tmp0: M128i, tmp1: M128i) -> (M128i, M128i) {
+    fn expand_step<const N: i32>(tmp0: Block128, tmp1: Block128) -> (Block128, Block128) {
         let tmp0 = tmp0
             ^ tmp0.left_byteshift::<4>()
             ^ tmp0.left_byteshift::<8>()
@@ -138,7 +138,7 @@ impl Aes192 {
         ciphertext
     }
     #[inline]
-    pub fn decrypt(&self, ciphertext: M128i) -> M128i {
+    pub fn decrypt(&self, ciphertext: Block128) -> Block128 {
         (ciphertext ^ self[12])
             .aesdec(self[11].aesimc())
             .aesdec(self[10].aesimc())
@@ -218,13 +218,13 @@ mod tests {
                 let key: [u8; KEY_LEN] = hex::decode(self.key).unwrap().try_into().unwrap();
                 {
                     let aes = Aes192::from(key);
-                    let plaintext = M128i::from_hex(self.plaintext).unwrap();
+                    let plaintext = Block128::from_hex(self.plaintext).unwrap();
                     let ciphertext = aes.encrypt(plaintext);
                     assert_eq!(ciphertext, self.ciphertext);
                 }
                 {
                     let aes = Aes192::from(key);
-                    let ciphertext = M128i::from_hex(self.ciphertext).unwrap();
+                    let ciphertext = Block128::from_hex(self.ciphertext).unwrap();
                     let plaintext = aes.decrypt(ciphertext);
                     assert_eq!(plaintext, self.plaintext);
                 }
@@ -253,7 +253,7 @@ mod tests {
         for _ in 0..128 {
             let key = random::array::<KEY_LEN>();
             let aes = Aes192::from(key);
-            let plaintext = M128i::random();
+            let plaintext = Block128::random();
             let ciphertext = aes.encrypt(plaintext);
 
             const N: usize = 8;
@@ -269,7 +269,7 @@ mod tests {
         for _ in 0..128 {
             let key = random::array::<KEY_LEN>();
             let aes = Aes192::from(key);
-            let plaintext = M128i::random();
+            let plaintext = Block128::random();
             let ciphertext = aes.encrypt(plaintext);
             let decrypted = aes.decrypt(ciphertext);
             assert_eq!(plaintext, decrypted);

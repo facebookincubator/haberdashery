@@ -6,16 +6,16 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use core::arch::x86_64::*;
-use core::mem::size_of;
 use core::mem::MaybeUninit;
+use core::mem::size_of;
 use core::ops::Range;
 use core::ptr::copy_nonoverlapping;
 
 use intrinsics::__m128i::*;
 use intrinsics::u32::*;
 
+use super::m256i::M256i;
 use crate::ffi::pod::Pod;
-use crate::intrinsics::m256i::M256i;
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
@@ -332,6 +332,10 @@ impl M128i {
     #[inline]
     pub fn right_byteshift<const IMM8: i32>(self) -> Self {
         unsafe { self._mm_srli_si128::<IMM8>() }.into()
+    }
+    #[inline]
+    pub fn shift_left32<const IMM8: i32>(self) -> Self {
+        unsafe { self._mm_slli_epi32::<IMM8>() }.into()
     }
     #[inline]
     pub fn shift_right32<const IMM8: i32>(self) -> Self {

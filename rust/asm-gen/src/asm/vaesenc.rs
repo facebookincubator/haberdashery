@@ -9,10 +9,10 @@ use core::arch::x86_64::*;
 
 use intrinsics::__m128i::*;
 
-use crate::intrinsics::m128i::M128i;
+use crate::block::Block128;
 
 #[inline]
-pub fn vaesenc<const N: usize>(data: &mut [M128i; N], key: M128i) {
+pub fn vaesenc<const N: usize>(data: &mut [Block128; N], key: Block128) {
     if cfg!(feature = "aes") {
         vaesenc_asm(data, key);
     } else {
@@ -21,7 +21,7 @@ pub fn vaesenc<const N: usize>(data: &mut [M128i; N], key: M128i) {
 }
 
 #[inline]
-pub fn vaesenclast<const N: usize>(data: &mut [M128i; N], key: M128i) {
+pub fn vaesenclast<const N: usize>(data: &mut [Block128; N], key: Block128) {
     if cfg!(feature = "aes") {
         vaesenclast_asm(data, key);
     } else {
@@ -30,18 +30,18 @@ pub fn vaesenclast<const N: usize>(data: &mut [M128i; N], key: M128i) {
 }
 
 #[inline]
-fn vaesenc_ref<const N: usize>(data: &mut [M128i; N], key: M128i) {
+fn vaesenc_ref<const N: usize>(data: &mut [Block128; N], key: Block128) {
     data.iter_mut().for_each(|data| *data = data.aesenc(key));
 }
 
 #[inline]
-fn vaesenclast_ref<const N: usize>(data: &mut [M128i; N], key: M128i) {
+fn vaesenclast_ref<const N: usize>(data: &mut [Block128; N], key: Block128) {
     data.iter_mut()
         .for_each(|data| *data = data.aesenclast(key));
 }
 
 #[inline]
-fn vaesenc_asm<const N: usize>(data: &mut [M128i; N], key: M128i) {
+fn vaesenc_asm<const N: usize>(data: &mut [Block128; N], key: Block128) {
     match N {
         4 => unsafe {
             #[transliteral::assembly]
@@ -96,7 +96,7 @@ fn vaesenc_asm<const N: usize>(data: &mut [M128i; N], key: M128i) {
 }
 
 #[inline]
-fn vaesenclast_asm<const N: usize>(data: &mut [M128i; N], key: M128i) {
+fn vaesenclast_asm<const N: usize>(data: &mut [Block128; N], key: Block128) {
     match N {
         4 => unsafe {
             #[transliteral::assembly]
@@ -157,8 +157,8 @@ mod tests {
     #[test]
     fn test_vaesenc() {
         fn compare<const N: usize>() {
-            let key = M128i::random();
-            let mut data_ref = [(); N].map(|()| M128i::random());
+            let key = Block128::random();
+            let mut data_ref = [(); N].map(|()| Block128::random());
             let mut data_asm = data_ref.clone();
             vaesenc_ref(&mut data_ref, key);
             vaesenc_asm(&mut data_asm, key);
@@ -174,8 +174,8 @@ mod tests {
     #[test]
     fn test_vaesenclast() {
         fn compare<const N: usize>() {
-            let key = M128i::random();
-            let mut data_ref = [(); N].map(|()| M128i::random());
+            let key = Block128::random();
+            let mut data_ref = [(); N].map(|()| Block128::random());
             let mut data_asm = data_ref.clone();
             vaesenclast_ref(&mut data_ref, key);
             vaesenclast_asm(&mut data_asm, key);

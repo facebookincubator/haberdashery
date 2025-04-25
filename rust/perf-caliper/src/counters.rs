@@ -71,6 +71,20 @@ const ALL: &[&str] = &[
     "CORE_POWER_LVL2_TURBO_LICENSE",
 ];
 
+#[cfg(target_arch = "x86_64")]
+const DEFAULT: &[&str] = PORTS;
+
+#[cfg(target_arch = "aarch64")]
+const DEFAULT: &[&str] = &[
+    "cycles",
+    "instructions",
+    "0x0070", // load
+    "0x0071", // store
+    "0x0073", // arithmatic
+    "0x0074", // simd
+    "0x0077", // crypto
+];
+
 fn parse_flags() -> Vec<&'static str> {
     if let Some(group) = EVENT_GROUP.as_ref() {
         let events = match group.as_str() {
@@ -89,7 +103,7 @@ fn parse_flags() -> Vec<&'static str> {
     } else if let Some(events) = EVENTS.as_ref() {
         events.split(',').collect()
     } else {
-        PORTS.into()
+        DEFAULT.into()
     }
 }
 pub fn counters() -> Counters {

@@ -13,9 +13,14 @@ fn version(algorithm: Option<&String>, profile: Option<&String>) -> Option<Strin
             .as_ref()
             .map(String::as_str)
             .unwrap_or("../.."),
-    )
-    .join(format!(
-        "asm/sha256/{algorithm}_{profile}.sha256",
+    );
+    #[cfg(target_arch = "aarch64")]
+    let path = path.join("asm/aarch64");
+    #[cfg(target_arch = "x86_64")]
+    let path = path.join("asm");
+
+    let path = path.join(format!(
+        "sha256/{algorithm}_{profile}.sha256",
         algorithm = algorithm?,
         profile = profile?,
     ));

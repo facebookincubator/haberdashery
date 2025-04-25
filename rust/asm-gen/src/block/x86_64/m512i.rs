@@ -6,9 +6,9 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use core::arch::x86_64::*;
+use core::mem::MaybeUninit;
 use core::mem::size_of;
 use core::mem::transmute;
-use core::mem::MaybeUninit;
 use core::ops::BitAnd;
 use core::ops::BitAndAssign;
 use core::ops::BitOr;
@@ -20,8 +20,8 @@ use core::ops::DerefMut;
 
 use intrinsics::__m512i::*;
 
-use crate::intrinsics::m128i::M128i;
-use crate::intrinsics::m256i::M256i;
+use super::m128i::M128i;
+use super::m256i::M256i;
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]

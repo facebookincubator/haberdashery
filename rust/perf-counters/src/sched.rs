@@ -6,8 +6,8 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use nix::libc;
-use nix::sched::sched_setaffinity;
 use nix::sched::CpuSet;
+use nix::sched::sched_setaffinity;
 use nix::unistd::Pid;
 
 fn sched_getcpu() -> nix::Result<usize> {

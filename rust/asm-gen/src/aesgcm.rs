@@ -7,15 +7,15 @@
 
 use crate::aes::AesRoundKeys;
 use crate::asm::vaesenc_vpclmulqdq_128::vaesenc_vpclmulqdq_128;
+use crate::block::Block128;
 use crate::clmul::clmul128foil::*;
-use crate::intrinsics::m128i::M128i;
 
 pub struct RoundState<const N: usize, const R: usize> {
     product: ClMul128FoilProduct,
     aes: AesRoundKeys<R>,
-    crypt_data: [M128i; N],
-    auth_data: [M128i; N],
-    auth_key: [M128i; N],
+    crypt_data: [Block128; N],
+    auth_data: [Block128; N],
+    auth_key: [Block128; N],
     aes_index: usize,
     auth_index: usize,
 }
@@ -23,10 +23,10 @@ impl<const N: usize, const R: usize> RoundState<N, R> {
     #[inline]
     pub fn new(
         aes: impl Into<AesRoundKeys<R>>,
-        mut crypt_data: [M128i; N],
-        auth_data: impl Into<[M128i; N]>,
-        auth_key: [M128i; N],
-        hash: M128i,
+        mut crypt_data: [Block128; N],
+        auth_data: impl Into<[Block128; N]>,
+        auth_key: [Block128; N],
+        hash: Block128,
     ) -> Self {
         let mut auth_data = auth_data.into();
         auth_data[0] ^= hash;
@@ -57,7 +57,7 @@ impl<const N: usize, const R: usize> RoundState<N, R> {
         self.aes_index += 1;
     }
     #[inline]
-    pub fn finish(mut self) -> ([M128i; N], M128i) {
+    pub fn finish(mut self) -> ([Block128; N], Block128) {
         // Finish up any remaining clmul rounds
         while self.auth_index < N {
             self.crypt_cmul();

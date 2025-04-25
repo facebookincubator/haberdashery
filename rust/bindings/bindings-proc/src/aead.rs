@@ -13,8 +13,8 @@ use quote::quote;
 use syn::Type;
 
 use crate::args::Args;
-use crate::parser::func_token;
 use crate::parser::Parser;
+use crate::parser::func_token;
 
 pub fn bindings(attributes: &str, item: TokenStream) -> TokenStream {
     let args = Args::new(attributes).unwrap_or_else(|e| panic!("{e}: Couldn't parse {attributes}"));

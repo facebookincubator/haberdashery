@@ -19,7 +19,7 @@ RUN apt-get install \
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 ENV PATH=/root/.cargo/bin:$PATH
 ENV CARGO_TARGET_DIR=/root/cargo
-RUN rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2025-01-03
+RUN rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2025-02-16
 
 WORKDIR src
 CMD ["/bin/bash", "/src/scripts/asm.sh"]

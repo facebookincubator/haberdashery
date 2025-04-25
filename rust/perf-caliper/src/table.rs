@@ -15,7 +15,9 @@ use crate::benchmark::BenchmarkResult;
 const OP: &str = "operation";
 const RUNS: &str = "runs";
 const ITERS: &str = "iters";
+#[cfg(target_arch = "x86_64")]
 const START_CORE: &str = "start core";
+#[cfg(target_arch = "x86_64")]
 const END_CORE: &str = "end core";
 const WALLCLOCK: &str = "wallclock";
 
@@ -107,7 +109,9 @@ impl Table {
         let integers = [
             (RUNS, result.runs()),
             (ITERS, result.iters() as usize),
+            #[cfg(target_arch = "x86_64")]
             (START_CORE, perf.start_core as usize),
+            #[cfg(target_arch = "x86_64")]
             (END_CORE, perf.end_core as usize),
             (WALLCLOCK, perf.duration.as_millis() as usize),
         ];

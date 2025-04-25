@@ -40,6 +40,16 @@ aes256gcmdndk_haswell = ["dep:aes256gcmdndk_haswell"]
 aes256gcmdndk_skylake = ["dep:aes256gcmdndk_skylake"]
 aes256gcmdndk_skylakex = ["dep:aes256gcmdndk_skylakex"]
 aes256gcmdndk_tigerlake = ["dep:aes256gcmdndk_tigerlake"]
+aes256gcmdndkv2_broadwell = ["dep:aes256gcmdndkv2_broadwell"]
+aes256gcmdndkv2_haswell = ["dep:aes256gcmdndkv2_haswell"]
+aes256gcmdndkv2_skylake = ["dep:aes256gcmdndkv2_skylake"]
+aes256gcmdndkv2_skylakex = ["dep:aes256gcmdndkv2_skylakex"]
+aes256gcmdndkv2_tigerlake = ["dep:aes256gcmdndkv2_tigerlake"]
+aes256gcmdndkv2kc_broadwell = ["dep:aes256gcmdndkv2kc_broadwell"]
+aes256gcmdndkv2kc_haswell = ["dep:aes256gcmdndkv2kc_haswell"]
+aes256gcmdndkv2kc_skylake = ["dep:aes256gcmdndkv2kc_skylake"]
+aes256gcmdndkv2kc_skylakex = ["dep:aes256gcmdndkv2kc_skylakex"]
+aes256gcmdndkv2kc_tigerlake = ["dep:aes256gcmdndkv2kc_tigerlake"]
 aes256gcmsiv_broadwell = ["dep:aes256gcmsiv_broadwell"]
 aes256gcmsiv_haswell = ["dep:aes256gcmsiv_haswell"]
 aes256gcmsiv_skylake = ["dep:aes256gcmsiv_skylake"]
@@ -82,6 +92,16 @@ aes256gcmdndk_haswell = { path = "units/aes256gcmdndk_haswell", optional = true 
 aes256gcmdndk_skylake = { path = "units/aes256gcmdndk_skylake", optional = true }
 aes256gcmdndk_skylakex = { path = "units/aes256gcmdndk_skylakex", optional = true }
 aes256gcmdndk_tigerlake = { path = "units/aes256gcmdndk_tigerlake", optional = true }
+aes256gcmdndkv2_broadwell = { path = "units/aes256gcmdndkv2_broadwell", optional = true }
+aes256gcmdndkv2_haswell = { path = "units/aes256gcmdndkv2_haswell", optional = true }
+aes256gcmdndkv2_skylake = { path = "units/aes256gcmdndkv2_skylake", optional = true }
+aes256gcmdndkv2_skylakex = { path = "units/aes256gcmdndkv2_skylakex", optional = true }
+aes256gcmdndkv2_tigerlake = { path = "units/aes256gcmdndkv2_tigerlake", optional = true }
+aes256gcmdndkv2kc_broadwell = { path = "units/aes256gcmdndkv2kc_broadwell", optional = true }
+aes256gcmdndkv2kc_haswell = { path = "units/aes256gcmdndkv2kc_haswell", optional = true }
+aes256gcmdndkv2kc_skylake = { path = "units/aes256gcmdndkv2kc_skylake", optional = true }
+aes256gcmdndkv2kc_skylakex = { path = "units/aes256gcmdndkv2kc_skylakex", optional = true }
+aes256gcmdndkv2kc_tigerlake = { path = "units/aes256gcmdndkv2kc_tigerlake", optional = true }
 aes256gcmsiv_broadwell = { path = "units/aes256gcmsiv_broadwell", optional = true }
 aes256gcmsiv_haswell = { path = "units/aes256gcmsiv_haswell", optional = true }
 aes256gcmsiv_skylake = { path = "units/aes256gcmsiv_skylake", optional = true }
