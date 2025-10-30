@@ -7,7 +7,7 @@ core::arch::global_asm!(
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm//aes256gcmsiv_skylakex.s"),
+    include_str!("../../../../../asm/x86_64/aes256gcmsiv_skylakex.s"),
     options(att_syntax, raw)
 );
 
@@ -19,7 +19,7 @@ impl Aes256Gcmsiv {
     pub const TAG_LEN: usize = 16;
 }
 
-extern "C" {
+unsafe extern "C" {
     pub fn haberdashery_aes256gcmsiv_skylakex_init(
         this: *mut Aes256Gcmsiv,
         key: *const u8,

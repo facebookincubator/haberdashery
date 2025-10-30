@@ -14,7 +14,6 @@ harness = false
 hex = "0.4.3"
 
 [dependencies]
-cpuid = { path = "../../rust/cpuid" }
 openssl-sys = { version = "0.9.93", features = ["vendored"] }
 perf-caliper = { path = "../../rust/perf-caliper" }
 random = { path = "../../rust/random" }

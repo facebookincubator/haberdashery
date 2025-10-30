@@ -70,7 +70,7 @@ pub fn func_token(descriptor: &Descriptor, name: &str) -> TokenStream {
         None => format_ident!("{prefix}_{algorithm}_{profile}_{name}"),
     };
     quote!(
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         #[cfg(any(test, feature = #profile))]
         fn #ident
     )

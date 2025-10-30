@@ -1,0 +1,12 @@
+[build]
+target = "x86_64-unknown-linux-gnu"
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C", "no-vectorize-slp",
+    "-C", "link-args=-znostart-stop-gc",
+    "-C", "llvm-args=--inline-threshold=999999",
+    "-C", "target-cpu=sapphirerapids",
+    "-C", "target-feature=-xsavec,-xsaves,-wbnoinvd,-lzcnt,-pconfig,-enqcmd,-uintr,-amx-bf16,-amx-tile,-amx-int8",
+    "-A", "warnings",
+]

@@ -7,15 +7,15 @@
 
 use std::collections::BTreeMap;
 
-use gen::Event;
-use gen::Events;
-use gen::csv::Arch;
+use r#gen::Event;
+use r#gen::Events;
+use r#gen::csv::Arch;
 
 const GENERATED: &str = concat!("// @", "generated");
 
 fn main() {
     sflags::parse_exact();
-    let archs = gen::csv::archs("mapfile.csv");
+    let archs = r#gen::csv::archs("mapfile.csv");
     // Some archs models share the same json, we zero the model to dedup
     let mut unique_archs: Vec<Arch> = archs
         .iter()
@@ -26,7 +26,7 @@ fn main() {
         .collect();
     unique_archs.sort();
     unique_archs.dedup();
-    let arch_events: Vec<Events> = unique_archs.iter().map(gen::Events::new).collect();
+    let arch_events: Vec<Events> = unique_archs.iter().map(r#gen::Events::new).collect();
     let mut event_values = BTreeMap::<String, Option<Event>>::default();
     for events in &arch_events {
         for event in &events.events {

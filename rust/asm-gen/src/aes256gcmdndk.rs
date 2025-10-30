@@ -5,7 +5,7 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use crate::aes256::Aes256;
+use crate::aes::aes256::Aes256;
 use crate::aes256gcm::Aes256GcmKey;
 use crate::block::Block128;
 use crate::ffi::reader::Reader;
@@ -66,7 +66,7 @@ impl Aes256GcmDndkKey {
         ]
     }
     #[inline]
-    fn make_state(&self, nonce: [u8; NONCE_LEN]) -> Aes256GcmDndkState {
+    fn make_state<const N: usize>(&self, nonce: [u8; NONCE_LEN]) -> Aes256GcmDndkState<N> {
         let key = self.derive(nonce);
         Aes256GcmDndkState(Aes256GcmKey::new(key))
     }
@@ -79,7 +79,13 @@ impl Aes256GcmDndkKey {
         true
     }
     #[inline]
-    pub fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
+    pub fn encrypt<const N: usize>(
+        &self,
+        nonce: &[u8],
+        aad: Reader,
+        data: ReaderWriter,
+        tag: Writer,
+    ) -> bool {
         if tag.len() != TAG_LEN {
             return false;
         }
@@ -95,10 +101,16 @@ impl Aes256GcmDndkKey {
         let Ok(nonce) = <[u8; NONCE_LEN]>::try_from(nonce) else {
             return false;
         };
-        self.make_state(nonce).encrypt(aad, data, tag)
+        self.make_state::<N>(nonce).encrypt(aad, data, tag)
     }
     #[inline]
-    pub fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
+    pub fn decrypt<const N: usize>(
+        &self,
+        nonce: &[u8],
+        aad: Reader,
+        data: ReaderWriter,
+        tag: Reader,
+    ) -> bool {
         if tag.len() != TAG_LEN {
             return false;
         }
@@ -114,12 +126,12 @@ impl Aes256GcmDndkKey {
         let Ok(nonce) = <[u8; NONCE_LEN]>::try_from(nonce) else {
             return false;
         };
-        self.make_state(nonce).decrypt(aad, data, tag)
+        self.make_state::<N>(nonce).decrypt(aad, data, tag)
     }
 }
 
-struct Aes256GcmDndkState(Aes256GcmKey<6>);
-impl Aes256GcmDndkState {
+struct Aes256GcmDndkState<const N: usize>(Aes256GcmKey<N>);
+impl<const N: usize> Aes256GcmDndkState<N> {
     #[inline]
     fn encrypt(&self, aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
         // The aes-gcm key is single-use, derived from the DNDK nonce, so it's safe to pass an
@@ -138,6 +150,7 @@ impl Aes256GcmDndkState {
 
 #[cfg(test)]
 mod tests {
+    const LANES: usize = 6;
     use super::*;
     struct TestVector {
         key: &'static str,
@@ -166,7 +179,7 @@ mod tests {
             let plaintext = hex::decode(self.plaintext).unwrap();
             let mut ciphertext = vec![0u8; plaintext.len()];
             let mut tag = [0u8; TAG_LEN];
-            assert!(aead.encrypt(
+            assert!(aead.encrypt::<LANES>(
                 &nonce,
                 aad.as_slice().into(),
                 ReaderWriter::from_slices(&plaintext, &mut ciphertext).unwrap(),
@@ -175,7 +188,7 @@ mod tests {
             assert_eq!(hex::encode(tag), self.tag, "tag");
             assert_eq!(hex::encode(&ciphertext), self.ciphertext, "ciphertext");
             let mut plaintext = vec![0u8; plaintext.len()];
-            assert!(aead.decrypt(
+            assert!(aead.decrypt::<LANES>(
                 &nonce,
                 aad.as_slice().into(),
                 ReaderWriter::from_slices(&ciphertext, &mut plaintext).unwrap(),
@@ -186,7 +199,7 @@ mod tests {
             {
                 let mut tag = tag.clone();
                 tag[0] ^= 0x01;
-                assert!(!aead.decrypt(
+                assert!(!aead.decrypt::<LANES>(
                     &nonce,
                     aad.as_slice().into(),
                     ReaderWriter::from_slices(&ciphertext, &mut plaintext).unwrap(),
@@ -196,7 +209,7 @@ mod tests {
             {
                 let mut nonce = nonce.clone();
                 nonce[0] ^= 0x01;
-                assert!(!aead.decrypt(
+                assert!(!aead.decrypt::<LANES>(
                     &nonce,
                     aad.as_slice().into(),
                     ReaderWriter::from_slices(&ciphertext, &mut plaintext).unwrap(),
@@ -206,7 +219,7 @@ mod tests {
             if !aad.is_empty() {
                 let mut aad = aad.clone();
                 aad[0] ^= 0x01;
-                assert!(!aead.decrypt(
+                assert!(!aead.decrypt::<LANES>(
                     &nonce,
                     aad.as_slice().into(),
                     ReaderWriter::from_slices(&ciphertext, &mut plaintext).unwrap(),
@@ -216,7 +229,7 @@ mod tests {
             if !ciphertext.is_empty() {
                 let mut ciphertext = ciphertext.clone();
                 ciphertext[0] ^= 0x01;
-                assert!(!aead.decrypt(
+                assert!(!aead.decrypt::<LANES>(
                     &nonce,
                     aad.as_slice().into(),
                     ReaderWriter::from_slices(&ciphertext, &mut plaintext).unwrap(),
@@ -374,7 +387,7 @@ mod tests {
             let aead = Aes256GcmDndkKey::from(key);
             let mut ciphertext = vec![0u8; v.plaintext.len()];
             let mut tag = [0u8; TAG_LEN];
-            assert!(aead.encrypt(
+            assert!(aead.encrypt::<LANES>(
                 &v.nonce,
                 v.aad.as_slice().into(),
                 ReaderWriter::from_slices(&v.plaintext, &mut ciphertext).unwrap(),
@@ -383,7 +396,7 @@ mod tests {
             assert_eq!(ciphertext, v.ciphertext);
             assert_eq!(tag, v.tag.as_slice());
             let mut plaintext = vec![0u8; v.plaintext.len()];
-            assert!(aead.decrypt(
+            assert!(aead.decrypt::<LANES>(
                 &v.nonce,
                 v.aad.as_slice().into(),
                 ReaderWriter::from_slices(&v.ciphertext, &mut plaintext).unwrap(),

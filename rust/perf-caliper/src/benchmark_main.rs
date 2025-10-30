@@ -33,6 +33,7 @@ mod flags {
         --profile: Vec<String>;
         --by_alg: bool = false;
         --version_filter: bool = false;
+        --tsc: bool = false;
         --perf: Option<i32>;
     }
     pub fn length() -> Vec<usize> {
@@ -187,6 +188,9 @@ fn benchmark(
         }
     }
     table.show_metric("cycles");
+    if flags::TSC.value() {
+        table.show_percent("tsc");
+    }
 
     let mut header_printed = false;
     for bench in benchmarks {

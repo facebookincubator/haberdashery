@@ -23,9 +23,7 @@ pub struct Aes256GcmState(BaseState<LANES>);
     algorithm: aes256gcm,
     api: streaming,
     prefix: haberdashery,
-    profile: haswell,
     profile: broadwell,
-    profile: skylake,
     profile: skylakex,
     profile: tigerlake,
 )]

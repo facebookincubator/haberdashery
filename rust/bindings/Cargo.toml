@@ -6,5 +6,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.82"
 convert_case = "0.6.0"
+itertools = "0.14.0"
 sflags = { path = "../sflags" }
 str-proc = { path = "str-proc" }

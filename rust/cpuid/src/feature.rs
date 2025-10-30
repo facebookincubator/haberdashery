@@ -92,6 +92,7 @@ impl<const L: u32> BitOr for FeatureLeaf<L> {
 pub struct FeatureSet {
     pub(crate) leaf1: FeatureLeaf<1>,
     pub(crate) leaf7: FeatureLeaf<7>,
+    pub(crate) leaf7_1: FeatureLeaf<107>,
 }
 impl FeatureSet {
     #[inline(always)]
@@ -121,6 +122,15 @@ impl<const N: u32> From<FeatureLeaf<N>> for FeatureSet {
                 },
                 ..Self::default()
             },
+            107 => Self {
+                leaf7_1: FeatureLeaf {
+                    eax: leaf.eax,
+                    ebx: leaf.ebx,
+                    ecx: leaf.ecx,
+                    edx: leaf.edx,
+                },
+                ..Self::default()
+            },
             _ => unimplemented!(),
         }
     }
@@ -132,6 +142,7 @@ impl BitOr<FeatureLeaf<7>> for FeatureLeaf<1> {
         FeatureSet {
             leaf1: self,
             leaf7: rhs,
+            ..Self::Output::default()
         }
     }
 }
@@ -143,6 +154,7 @@ impl<T: Into<FeatureSet>> BitOr<T> for FeatureSet {
         FeatureSet {
             leaf1: self.leaf1 | rhs.leaf1,
             leaf7: self.leaf7 | rhs.leaf7,
+            leaf7_1: self.leaf7_1 | rhs.leaf7_1,
         }
     }
 }
@@ -217,19 +229,19 @@ feature!(1, edx, 29, ACC);
 feature!(1, edx, 30, IA64);
 feature!(1, edx, 31, PBE);
 
-feature!(7, eax, 4, AVX_VNNI);
-feature!(7, eax, 5, AVX512_BF16);
-feature!(7, eax, 7, CMPCCXADD);
-feature!(7, eax, 8, ARCH_PERFMON_EXT);
-feature!(7, eax, 10, FZRM);
-feature!(7, eax, 11, FSRS);
-feature!(7, eax, 12, FSRC);
-feature!(7, eax, 17, FRED);
-feature!(7, eax, 18, LKGS);
-feature!(7, eax, 19, WRMSRNS);
-feature!(7, eax, 21, AMX_FP16);
-feature!(7, eax, 23, AVX_IFMA);
-feature!(7, eax, 26, LAM);
+feature!(107, eax, 4, AVX_VNNI);
+feature!(107, eax, 5, AVX512_BF16);
+feature!(107, eax, 7, CMPCCXADD);
+feature!(107, eax, 8, ARCH_PERFMON_EXT);
+feature!(107, eax, 10, FZRM);
+feature!(107, eax, 11, FSRS);
+feature!(107, eax, 12, FSRC);
+feature!(107, eax, 17, FRED);
+feature!(107, eax, 18, LKGS);
+feature!(107, eax, 19, WRMSRNS);
+feature!(107, eax, 21, AMX_FP16);
+feature!(107, eax, 23, AVX_IFMA);
+feature!(107, eax, 26, LAM);
 
 feature!(7, ebx, 0, FSGSBASE);
 feature!(7, ebx, 1, TSC_ADJUST);
@@ -290,6 +302,7 @@ feature!(7, ecx, 30, SGX_LC);
 feature!(7, edx, 2, AVX512_4VNNIW);
 feature!(7, edx, 3, AVX512_4FMAPS);
 feature!(7, edx, 4, FSRM);
+feature!(7, edx, 5, UINTR);
 feature!(7, edx, 8, AVX512_VP2INTERSECT);
 feature!(7, edx, 9, SRBDS_CTRL);
 feature!(7, edx, 10, MD_CLEAR);

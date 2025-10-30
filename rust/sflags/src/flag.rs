@@ -83,8 +83,8 @@ impl<T: PartialEq<S>, S> PartialEq<S> for Flag<T> {
     }
 }
 impl<T: Parse + Sync + Send> SetFlag for Flag<T> {
-    fn set(&self, s: String) {
-        self.init(T::parse(&s));
+    fn set(&self, s: &[String]) {
+        self.init(T::parse(s));
     }
     fn set_default(&self) -> bool {
         if let Some(default) = self.default {

@@ -72,19 +72,42 @@ const ALL: &[&str] = &[
 ];
 
 #[cfg(target_arch = "x86_64")]
-const DEFAULT: &[&str] = PORTS;
+fn default() -> Vec<&'static str> {
+    if cpuid::processor().model == cpuid::processor::Model::AmdZen4 {
+        [
+            "cycles", //
+            "0x0100", // FPU pipe 0
+            "0x0200", // FPU pipe 1
+            "0x0400", // FPU pipe 2
+            "0x0800", // FPU pipe 3
+        ]
+        .into()
+    } else if cpuid::processor().model == cpuid::processor::Model::IntelSapphireRapids {
+        [
+            "cycles",
+            "UOPS_DISPATCHED_PORT_0",
+            "UOPS_DISPATCHED_PORT_1",
+            "UOPS_DISPATCHED_PORT_5_11",
+        ]
+        .into()
+    } else {
+        PORTS.into()
+    }
+}
 
 #[cfg(target_arch = "aarch64")]
-const DEFAULT: &[&str] = &[
-    "cycles",
-    "instructions",
-    "0x0070", // load
-    "0x0071", // store
-    "0x0073", // arithmatic
-    "0x0074", // simd
-    "0x0077", // crypto
-];
-
+fn default() -> Vec<&'static str> {
+    [
+        "cycles",
+        "instructions",
+        "0x0070", // load
+        "0x0071", // store
+        "0x0073", // arithmatic
+        "0x0074", // simd
+        "0x0077", // crypto
+    ]
+    .into()
+}
 fn parse_flags() -> Vec<&'static str> {
     if let Some(group) = EVENT_GROUP.as_ref() {
         let events = match group.as_str() {
@@ -103,7 +126,7 @@ fn parse_flags() -> Vec<&'static str> {
     } else if let Some(events) = EVENTS.as_ref() {
         events.split(',').collect()
     } else {
-        DEFAULT.into()
+        default()
     }
 }
 pub fn counters() -> Counters {

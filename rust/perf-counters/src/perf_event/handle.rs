@@ -31,10 +31,12 @@ impl PerfEventOpenHandle {
             false => Ok(Self(unsafe { File::from_raw_fd(fd) })),
         }
     }
+    #[inline(always)]
     pub fn raw_fd(&self) -> i32 {
         use std::os::fd::AsRawFd;
         self.0.as_raw_fd()
     }
+    #[inline(always)]
     pub fn read(&self) -> std::io::Result<u64> {
         let mut result = 0u64;
         let len = core::mem::size_of::<u64>();

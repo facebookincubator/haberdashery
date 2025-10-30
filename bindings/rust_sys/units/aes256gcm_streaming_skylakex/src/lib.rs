@@ -7,7 +7,7 @@ core::arch::global_asm!(
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm/aes256gcm_streaming_skylakex.s"),
+    include_str!("../../../../../asm/x86_64/aes256gcm_streaming_skylakex.s"),
     options(att_syntax, raw)
 );
 
@@ -21,7 +21,7 @@ impl Aes256GcmKey {
 #[repr(C, align(16))]
 pub struct Aes256GcmState([u8; 112]);
 
-extern "C" {
+unsafe extern "C" {
     pub fn haberdashery_aes256gcm_streaming_skylakex_init_key(
         this: *mut Aes256GcmKey,
         key: *const u8,

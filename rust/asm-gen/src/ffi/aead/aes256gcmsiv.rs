@@ -10,74 +10,163 @@ use crate::ffi::aead::Aead;
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;
-use crate::is_supported::is_supported;
 
-const ENCRYPT_LANES: usize = 8;
-const DECRYPT_LANES: usize = 6;
-
-#[repr(C)]
-#[cfg(not(feature = "tigerlake"))]
-pub struct Aes256GcmSiv(base::Aes256GcmSivKey);
-#[bindings_proc::aead(
+#[bindings_proc::bindings(
     algorithm: aes256gcmsiv,
     prefix: haberdashery,
-    profile: haswell,
+    arch: x86_64,
     profile: broadwell,
-    profile: skylake,
     profile: skylakex,
 )]
-impl Aead for Aes256GcmSiv {
-    const KEY_LEN: usize = 32;
-    const NONCE_LEN: usize = 12;
-    const TAG_LEN: usize = 16;
-    const STRUCT_SIZE: usize = 240;
-    const STRUCT_ALIGNMENT: usize = 16;
-    #[inline(always)]
-    fn init(&mut self, key: &[u8]) -> bool {
-        self.0.init(key)
-    }
-    #[inline(always)]
-    fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
-        self.0.encrypt::<ENCRYPT_LANES>(nonce, aad, data, tag)
-    }
-    #[inline(always)]
-    fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
-        self.0.decrypt::<DECRYPT_LANES>(nonce, aad, data, tag)
-    }
-    #[inline(always)]
-    fn is_supported() -> bool {
-        is_supported()
+mod x86_64 {
+    use super::*;
+    use crate::is_supported::is_supported;
+
+    const ENCRYPT_LANES: usize = 8;
+    const DECRYPT_LANES: usize = 6;
+
+    #[repr(C)]
+    pub struct Aes256GcmSiv(base::Aes256GcmSivKey);
+    impl Aead for Aes256GcmSiv {
+        const KEY_LEN: usize = 32;
+        const NONCE_LEN: usize = 12;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 240;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
+            self.0.encrypt::<ENCRYPT_LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
+            self.0.decrypt::<DECRYPT_LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            is_supported()
+        }
     }
 }
 
-#[repr(C)]
-#[cfg(feature = "tigerlake")]
-pub struct Aes256GcmSiv(base::Aes256GcmSivKey<base::SIMD256>);
-#[bindings_proc::aead(
+#[bindings_proc::bindings(
     algorithm: aes256gcmsiv,
     prefix: haberdashery,
+    arch: x86_64,
     profile: tigerlake,
 )]
-impl Aead for Aes256GcmSiv {
-    const KEY_LEN: usize = 32;
-    const NONCE_LEN: usize = 12;
-    const TAG_LEN: usize = 16;
-    const STRUCT_SIZE: usize = 240;
-    const STRUCT_ALIGNMENT: usize = 16;
-    #[inline(always)]
-    fn init(&mut self, key: &[u8]) -> bool {
-        self.0.init(key)
+mod tigerlake {
+    use super::*;
+    use crate::is_supported::is_supported;
+
+    const ENCRYPT_LANES: usize = 8;
+    const DECRYPT_LANES: usize = 8;
+
+    #[repr(C)]
+    pub struct Aes256GcmSiv(base::Aes256GcmSivKey<base::SIMD256>);
+    impl Aead for Aes256GcmSiv {
+        const KEY_LEN: usize = 32;
+        const NONCE_LEN: usize = 12;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 240;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
+            self.0.encrypt::<ENCRYPT_LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
+            self.0.decrypt::<DECRYPT_LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            is_supported()
+        }
     }
-    #[inline(always)]
-    fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
-        self.0.encrypt::<ENCRYPT_LANES>(nonce, aad, data, tag)
+}
+
+#[bindings_proc::bindings(
+    algorithm: aes256gcmsiv,
+    prefix: haberdashery,
+    arch: x86_64,
+    profile: zen4,
+    profile: sapphirerapids,
+)]
+mod zen4 {
+    use super::*;
+    use crate::is_supported::is_supported;
+
+    const ENCRYPT_LANES: usize = 8;
+    const DECRYPT_LANES: usize = 8;
+
+    #[repr(C)]
+    pub struct Aes256GcmSiv(base::Aes256GcmSivKey<base::SIMD512>);
+    impl Aead for Aes256GcmSiv {
+        const KEY_LEN: usize = 32;
+        const NONCE_LEN: usize = 12;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 240;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
+            self.0.encrypt::<ENCRYPT_LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
+            self.0.decrypt::<DECRYPT_LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            is_supported()
+        }
     }
-    #[inline(always)]
-    fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
-        self.0.decrypt::<DECRYPT_LANES>(nonce, aad, data, tag)
-    }
-    #[inline(always)]
-    fn is_supported() -> bool {
-        is_supported()
+}
+#[bindings_proc::bindings(
+    algorithm: aes256gcmsiv,
+    prefix: haberdashery,
+    arch: aarch64,
+    profile: neoversev2,
+)]
+mod x86_64 {
+    use super::*;
+
+    const ENCRYPT_LANES: usize = 8;
+    const DECRYPT_LANES: usize = 8;
+
+    #[repr(C)]
+    pub struct Aes256GcmSiv(base::Aes256GcmSivKey);
+    impl Aead for Aes256GcmSiv {
+        const KEY_LEN: usize = 32;
+        const NONCE_LEN: usize = 12;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 240;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
+            self.0.encrypt::<ENCRYPT_LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
+            self.0.decrypt::<DECRYPT_LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            true
+        }
     }
 }

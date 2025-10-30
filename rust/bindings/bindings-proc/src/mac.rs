@@ -5,44 +5,14 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use std::path::Path;
-
 use bindings::Descriptor;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Type;
 
-use crate::args::Args;
-use crate::parser::Parser;
 use crate::parser::func_token;
 
-pub fn bindings(attributes: &str, item: TokenStream) -> TokenStream {
-    let args = Args::new(attributes).unwrap_or_else(|e| panic!("{e}: Couldn't parse {attributes}"));
-    let parser = Parser::new(&item, &args, "mac");
-    let mut result = TokenStream::default();
-    let descriptors = parser.descriptors();
-    descriptors.iter().for_each(|descriptor| {
-        let profile = &descriptor["profile"];
-        if profile == "skylakex" {
-            result.extend(quote!(#[cfg(any(not(feature = "asm_gen"), feature = #profile))]));
-        } else {
-            result.extend(quote!(#[cfg(all(feature = "asm_gen", feature = #profile))]));
-        }
-        result.extend(item.clone());
-        result.extend(parser.assert_size(parser.self_ty(), "struct_size", profile));
-        result.extend(parser.assert_alignment(parser.self_ty(), "struct_alignment", profile));
-        result.extend(profile_binding(parser.self_ty(), descriptor));
-    });
-    if let Ok(path) = std::env::var("DESCRIPTOR_DIR") {
-        let path = Path::new(&path).join("mac");
-        std::fs::create_dir_all(&path)
-            .unwrap_or_else(|e| panic!("{e}: Couldn't create directory for {path:?}"));
-        descriptors.write_files(&path);
-    }
-    result
-}
-
-fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
+pub fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
     let fn_init = func_token(descriptor, "init");
     let fn_sign = func_token(descriptor, "sign");
     let fn_verify = func_token(descriptor, "verify");
@@ -114,7 +84,7 @@ mod tests {
         pretty_assertions::assert_eq!(
             profile_binding(&ty, &descriptor).pretty(),
             stringify!(
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_polyvalmac_skylake_init(
                     this: &mut PolyvalMac,
@@ -127,7 +97,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_polyvalmac_skylake_sign(
                     this: &PolyvalMac,
@@ -143,7 +113,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_polyvalmac_skylake_verify(
                     this: &PolyvalMac,
@@ -159,7 +129,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_polyvalmac_skylake_is_supported() -> i32 {
                     match PolyvalMac::is_supported() {

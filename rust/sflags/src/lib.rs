@@ -65,7 +65,7 @@ macro_rules! _internal_define {
                 = sflags::Flag::<$flag_type>::new()
                 $(.with_default($default))*;
             const _: () = {
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 fn [<$name _has_duplicate_sflags_definitions>]() {}
                 #[sflags::_internal::linkme::distributed_slice(
                     sflags::_internal::REGISTRY
@@ -88,7 +88,7 @@ macro_rules! _internal_define_ref {
                 = sflags::RefFlag::<$base_ty, $ref_ty>::new()
                 $(.with_default($default))*;
             const _: () = {
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 fn [<$name _has_duplicate_sflags_definitions>]() {}
                 #[sflags::_internal::linkme::distributed_slice(
                     sflags::_internal::REGISTRY

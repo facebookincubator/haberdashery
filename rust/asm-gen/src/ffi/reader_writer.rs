@@ -15,6 +15,10 @@ impl<'a, 'b> ReaderWriter<'a, 'b> {
     pub unsafe fn reader_ptr(&self) -> (*const u8, usize) {
         (self.0.reader_ptr, self.0.len)
     }
+    #[inline]
+    pub unsafe fn writer_ptr(&self) -> (*const u8, usize) {
+        (self.0.writer_ptr, self.0.len)
+    }
     #[cfg(test)]
     pub unsafe fn writer_ptr_for_test(&self) -> (*mut u8, usize) {
         (self.0.writer_ptr, self.0.len)
@@ -79,7 +83,7 @@ impl<'a, 'b> ReaderWriter<'a, 'b> {
         self.0.len == 0
     }
     #[inline]
-    pub fn iter<T: Pod>(&mut self) -> Iter<T> {
+    pub fn iter<T: Pod>(&mut self) -> Iter<'_, T> {
         Iter::new(unsafe { core::mem::transmute(&mut self.0) })
     }
 }

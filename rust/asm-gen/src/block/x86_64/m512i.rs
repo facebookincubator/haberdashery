@@ -19,9 +19,11 @@ use core::ops::Deref;
 use core::ops::DerefMut;
 
 use intrinsics::__m512i::*;
+use intrinsics::u64::*;
 
 use super::m128i::M128i;
 use super::m256i::M256i;
+use crate::ffi::pod::Pod;
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
@@ -36,7 +38,7 @@ impl M512i {
     }
     #[inline]
     pub unsafe fn load<T>(ptr: *const T) -> Self {
-        unsafe { _mm512_loadu_si512(ptr as *const i32) }.into()
+        unsafe { _mm512_loadu_si512(ptr as *const _) }.into()
     }
     #[inline]
     pub unsafe fn store<T>(self, ptr: *mut T) {
@@ -60,6 +62,42 @@ impl M512i {
     #[inline]
     pub fn zero() -> Self {
         unsafe { __m512i::_mm512_setzero_si512() }
+    }
+    #[inline]
+    pub fn clmul<const IMM8: i32>(self, other: Self) -> Self {
+        unsafe { self._mm512_clmulepi64_epi128::<IMM8>(other) }.into()
+    }
+    #[inline]
+    pub fn unpacklo64(self, other: Self) -> Self {
+        unsafe { self._mm512_unpacklo_epi64(other) }
+    }
+    #[inline]
+    pub fn unpackhi64(self, other: Self) -> Self {
+        unsafe { self._mm512_unpackhi_epi64(other) }
+    }
+    #[inline]
+    pub fn left_byteshift128<const IMM8: i32>(self) -> Self {
+        unsafe { _mm512_bslli_epi128::<IMM8>(self.into()) }.into()
+    }
+    #[inline]
+    pub fn right_byteshift128<const IMM8: i32>(self) -> Self {
+        unsafe { _mm512_bsrli_epi128::<IMM8>(self.into()) }.into()
+    }
+    #[inline]
+    pub fn shuffle32<const IMM8: i32>(self) -> Self {
+        unsafe { _mm512_shuffle_epi32::<IMM8>(self.into()) }.into()
+    }
+    #[inline]
+    pub fn add32(self, other: impl Into<Self>) -> Self {
+        unsafe { self._mm512_add_epi32(other.into()) }
+    }
+    #[inline]
+    pub fn aesenc(self, round_key: Self) -> Self {
+        unsafe { self._mm512_aesenc_epi128(round_key) }
+    }
+    #[inline]
+    pub fn aesenclast(self, round_key: Self) -> Self {
+        unsafe { self._mm512_aesenclast_epi128(round_key) }
     }
 }
 impl Default for M512i {
@@ -202,6 +240,27 @@ impl From<M512i> for [M256i; 2] {
                 reg._mm512_extracti64x4_epi64::<1>().into(),
             ]
         }
+    }
+}
+unsafe impl Pod for M512i {
+    #[inline]
+    unsafe fn load(ptr: *const u8) -> Self {
+        unsafe { Self::load(ptr) }
+    }
+    #[inline]
+    #[track_caller]
+    unsafe fn load_partial(ptr: *const u8, len: usize) -> Self {
+        let mask = unsafe { 0xff_ff_ff_ff._bzhi_u64(len as u32) };
+        unsafe { __m512i::_mm512_maskz_loadu_epi8(mask, ptr as *const i8) }
+    }
+    #[inline]
+    unsafe fn store(&self, ptr: *mut u8) {
+        unsafe { Self::store(*self, ptr) }
+    }
+    #[inline]
+    unsafe fn store_partial(&self, ptr: *mut u8, len: usize) {
+        let mask = unsafe { 0xff_ff_ff_ff._bzhi_u64(len as u32) };
+        unsafe { _mm512_mask_storeu_epi8(ptr as *mut i8, mask, self.0) }
     }
 }
 

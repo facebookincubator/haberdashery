@@ -12,17 +12,18 @@ core::arch::global_asm!(
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm/{name}.s"),
+    include_str!("../../../../../asm/{arch}/{name}.s"),
     options(att_syntax, raw)
 );
 
 #[repr(C, align({struct_alignment}))]
+#[derive(Clone)]
 pub struct {algorithm:UpperCamel}([u8; {struct_size}]);
 impl {algorithm:UpperCamel} {
     pub const DIGEST_LEN: usize = {digest_len};
 }
 
-extern "C" {
+unsafe extern "C" {
     pub fn {prefix}_{name}_init(
         this: *mut {algorithm:UpperCamel},
     ) -> i32;

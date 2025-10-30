@@ -28,7 +28,7 @@ use crate::ffi::pod::Pod;
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
-pub struct M256i(__m256i);
+pub struct M256i(pub __m256i);
 impl M256i {
     pub const SIZE: usize = size_of::<Self>();
     pub const ZERO: Self = Self::from_bytes([0u8; Self::SIZE]);
@@ -78,10 +78,10 @@ impl<T: Into<M256i>> BitXor<T> for M256i {
         unsafe { self._mm256_xor_si256(rhs.into()) }
     }
 }
-impl BitXorAssign for M256i {
+impl<T: Into<M256i>> BitXorAssign<T> for M256i {
     #[inline]
-    fn bitxor_assign(&mut self, other: Self) {
-        *self = *self ^ other;
+    fn bitxor_assign(&mut self, other: T) {
+        *self = *self ^ other.into();
     }
 }
 impl<T: Into<M256i>> BitAnd<T> for M256i {
@@ -91,10 +91,10 @@ impl<T: Into<M256i>> BitAnd<T> for M256i {
         unsafe { self._mm256_and_si256(other.into()) }
     }
 }
-impl BitAndAssign for M256i {
+impl<T: Into<M256i>> BitAndAssign<T> for M256i {
     #[inline]
-    fn bitand_assign(&mut self, other: Self) {
-        *self = *self & other;
+    fn bitand_assign(&mut self, other: T) {
+        *self = *self & other.into();
     }
 }
 impl<T: Into<M256i>> BitOr<T> for M256i {
@@ -104,10 +104,10 @@ impl<T: Into<M256i>> BitOr<T> for M256i {
         unsafe { self._mm256_or_si256(other.into()) }
     }
 }
-impl BitOrAssign for M256i {
+impl<T: Into<M256i>> BitOrAssign<T> for M256i {
     #[inline]
-    fn bitor_assign(&mut self, other: Self) {
-        *self = *self | other;
+    fn bitor_assign(&mut self, other: T) {
+        *self = *self | other.into();
     }
 }
 impl Deref for M256i {
@@ -204,7 +204,7 @@ unsafe impl Pod for M256i {
     }
     #[inline]
     unsafe fn store_partial(&self, ptr: *mut u8, len: usize) {
-        self.store_range(ptr, 0..len)
+        unsafe { self.store_range(ptr, 0..len) }
     }
 }
 
@@ -263,16 +263,16 @@ impl M256i {
         );
         range.start = range.start.min(range.end);
         if cfg!(feature = "avx512vl") && cfg!(feature = "avx512bw") {
-            self.mov_range_avx512(range)
+            unsafe { self.mov_range_avx512(range) }
         } else {
-            self.mov_range_ref(range)
+            unsafe { self.mov_range_ref(range) }
         }
     }
     #[inline]
     pub unsafe fn mov_range_avx512(self, range: Range<usize>) -> Self {
         let Range { start, end } = range;
-        let start_mask = 0xff_ff_ff_ff._bzhi_u32(start as u32);
-        let end_mask = 0xff_ff_ff_ff._bzhi_u32(end as u32);
+        let start_mask = unsafe { 0xff_ff_ff_ff._bzhi_u32(start as u32) };
+        let end_mask = unsafe { 0xff_ff_ff_ff._bzhi_u32(end as u32) };
         unsafe { __m256i::_mm256_maskz_mov_epi8(start_mask ^ end_mask, self) }
     }
     #[inline]
@@ -294,16 +294,16 @@ impl M256i {
         );
         range.start = range.start.min(range.end);
         if cfg!(feature = "avx512vl") && cfg!(feature = "avx512bw") {
-            Self::load_range_avx512(ptr, range)
+            unsafe { Self::load_range_avx512(ptr, range) }
         } else {
-            Self::load_range_ref(ptr, range)
+            unsafe { Self::load_range_ref(ptr, range) }
         }
     }
     #[inline]
     pub unsafe fn load_range_avx512(ptr: *const u8, range: Range<usize>) -> Self {
         let Range { start, end } = range;
-        let start_mask = 0xff_ff_ff_ff._bzhi_u32(start as u32);
-        let end_mask = 0xff_ff_ff_ff._bzhi_u32(end as u32);
+        let start_mask = unsafe { 0xff_ff_ff_ff._bzhi_u32(start as u32) };
+        let end_mask = unsafe { 0xff_ff_ff_ff._bzhi_u32(end as u32) };
         unsafe {
             __m256i::_mm256_maskz_loadu_epi8(start_mask ^ end_mask, ptr.sub(start) as *const i8)
         }
@@ -328,16 +328,16 @@ impl M256i {
         );
         range.start = range.start.min(range.end);
         if cfg!(feature = "avx512vl") && cfg!(feature = "avx512bw") {
-            self.store_range_avx512(ptr, range);
+            unsafe { self.store_range_avx512(ptr, range) }
         } else {
-            self.store_range_ref(ptr, range);
+            unsafe { self.store_range_ref(ptr, range) }
         }
     }
     #[inline]
     pub unsafe fn store_range_avx512(self, ptr: *mut u8, range: Range<usize>) {
         let Range { start, end } = range;
-        let start_mask = 0xff_ff_ff_ff._bzhi_u32(start as u32);
-        let end_mask = 0xff_ff_ff_ff._bzhi_u32(end as u32);
+        let start_mask = unsafe { 0xff_ff_ff_ff._bzhi_u32(start as u32) };
+        let end_mask = unsafe { 0xff_ff_ff_ff._bzhi_u32(end as u32) };
         unsafe { _mm256_mask_storeu_epi8(ptr.sub(start) as *mut i8, start_mask ^ end_mask, self.0) }
     }
     #[inline]

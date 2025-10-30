@@ -45,7 +45,11 @@ pub fn vaesenc_vpclmulqdq_128<const N: usize>(
                 auth_product[1] = auth_product[1]._mm_xor_si128(tmp);
             }
             let mut aes_data = aes_data.ops().map_into_generic();
-            let mut auth_product = (*auth_product).into();
+            let mut auth_product = [
+                auth_product.lo.into(),
+                auth_product.mid.into(),
+                auth_product.hi.into(),
+            ];
             vaesenc_vpclmulqdq_128(
                 &mut aes_data,
                 aes_key.into(),
@@ -53,7 +57,14 @@ pub fn vaesenc_vpclmulqdq_128<const N: usize>(
                 auth_right.into(),
                 &mut auth_product,
             );
-            (aes_data.ops().map_into_generic(), auth_product.into())
+            (
+                aes_data.ops().map_into_generic(),
+                ClMul128FoilProduct {
+                    lo: auth_product[0].into(),
+                    mid: auth_product[1].into(),
+                    hi: auth_product[2].into(),
+                },
+            )
         },
         6 => unsafe {
             #[transliteral::assembly]
@@ -80,7 +91,11 @@ pub fn vaesenc_vpclmulqdq_128<const N: usize>(
                 auth_product[1] = auth_product[1]._mm_xor_si128(tmp);
             }
             let mut aes_data = aes_data.ops().map_into_generic();
-            let mut auth_product = (*auth_product).into();
+            let mut auth_product = [
+                auth_product.lo.into(),
+                auth_product.mid.into(),
+                auth_product.hi.into(),
+            ];
             vaesenc_vpclmulqdq_128(
                 &mut aes_data,
                 aes_key.into(),
@@ -88,7 +103,14 @@ pub fn vaesenc_vpclmulqdq_128<const N: usize>(
                 auth_right.into(),
                 &mut auth_product,
             );
-            (aes_data.ops().map_into_generic(), auth_product.into())
+            (
+                aes_data.ops().map_into_generic(),
+                ClMul128FoilProduct {
+                    lo: auth_product[0].into(),
+                    mid: auth_product[1].into(),
+                    hi: auth_product[2].into(),
+                },
+            )
         },
         8 => unsafe {
             #[transliteral::assembly]
@@ -117,7 +139,11 @@ pub fn vaesenc_vpclmulqdq_128<const N: usize>(
                 auth_product[1] = auth_product[1]._mm_xor_si128(tmp);
             }
             let mut aes_data = aes_data.ops().map_into_generic();
-            let mut auth_product = (*auth_product).into();
+            let mut auth_product = [
+                auth_product.lo.into(),
+                auth_product.mid.into(),
+                auth_product.hi.into(),
+            ];
             vaesenc_vpclmulqdq_128(
                 &mut aes_data,
                 aes_key.into(),
@@ -125,7 +151,14 @@ pub fn vaesenc_vpclmulqdq_128<const N: usize>(
                 auth_right.into(),
                 &mut auth_product,
             );
-            (aes_data.ops().map_into_generic(), auth_product.into())
+            (
+                aes_data.ops().map_into_generic(),
+                ClMul128FoilProduct {
+                    lo: auth_product[0].into(),
+                    mid: auth_product[1].into(),
+                    hi: auth_product[2].into(),
+                },
+            )
         },
         _ => unimplemented!(),
     };

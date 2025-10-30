@@ -18,7 +18,7 @@ $(TARGETS): $(TESTS)
 %.test.o: %.o %_test.c %.h
 	@$(CXX) $(CXX_FLAGS) -o $@ $^
 
-%.o: ../../../asm/%.s
+%.o: ../../../asm/x86_64/%.s
 	@$(CXX) $(CXX_FLAGS) -o $@ -c $^
 
 clean:

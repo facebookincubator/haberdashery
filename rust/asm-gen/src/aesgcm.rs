@@ -5,8 +5,9 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+pub mod aesclmul256;
+
 use crate::aes::AesRoundKeys;
-use crate::asm::vaesenc_vpclmulqdq_128::vaesenc_vpclmulqdq_128;
 use crate::block::Block128;
 use crate::clmul::clmul128foil::*;
 
@@ -79,7 +80,7 @@ impl<const N: usize, const R: usize> RoundState<N, R> {
     pub fn crypt_cmul(&mut self) {
         debug_assert!(self.aes_index < R);
         debug_assert!(self.auth_index < N);
-        vaesenc_vpclmulqdq_128(
+        crate::asm::vaesenc_vpclmulqdq_128::vaesenc_vpclmulqdq_128(
             self.aes[self.aes_index],
             &mut self.crypt_data,
             &mut self.product,

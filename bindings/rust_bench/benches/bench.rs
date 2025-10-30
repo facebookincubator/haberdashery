@@ -17,7 +17,7 @@ fn version(algorithm: Option<&String>, profile: Option<&String>) -> Option<Strin
     #[cfg(target_arch = "aarch64")]
     let path = path.join("asm/aarch64");
     #[cfg(target_arch = "x86_64")]
-    let path = path.join("asm");
+    let path = path.join("asm/x86_64");
 
     let path = path.join(format!(
         "sha256/{algorithm}_{profile}.sha256",

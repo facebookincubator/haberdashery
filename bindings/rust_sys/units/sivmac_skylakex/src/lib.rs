@@ -7,7 +7,7 @@ core::arch::global_asm!(
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm/sivmac_skylakex.s"),
+    include_str!("../../../../../asm/x86_64/sivmac_skylakex.s"),
     options(att_syntax, raw)
 );
 
@@ -18,7 +18,7 @@ impl SivMac {
     pub const TAG_LEN: usize = 16;
 }
 
-extern "C" {
+unsafe extern "C" {
     pub fn haberdashery_sivmac_skylakex_init(
         this: *mut SivMac,
         key: *const u8,

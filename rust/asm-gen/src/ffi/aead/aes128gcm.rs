@@ -10,39 +10,42 @@ use crate::ffi::aead::Aead;
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;
-use crate::is_supported::is_supported;
 
-#[repr(C)]
-pub struct Aes128Gcm(BaseKey<6>);
-#[bindings_proc::aead(
+#[bindings_proc::bindings(
     algorithm: aes128gcm,
     prefix: haberdashery,
-    profile: haswell,
+    arch: x86_64,
     profile: broadwell,
-    profile: skylake,
     profile: skylakex,
     profile: tigerlake,
 )]
-impl Aead for Aes128Gcm {
-    const KEY_LEN: usize = 16;
-    const NONCE_LEN: usize = 12;
-    const TAG_LEN: usize = 16;
-    const STRUCT_SIZE: usize = 272;
-    const STRUCT_ALIGNMENT: usize = 16;
-    #[inline(always)]
-    fn init(&mut self, key: &[u8]) -> bool {
-        self.0.init(key)
-    }
-    #[inline(always)]
-    fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
-        self.0.encrypt(nonce, aad, data, tag)
-    }
-    #[inline(always)]
-    fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
-        self.0.decrypt(nonce, aad, data, tag)
-    }
-    #[inline(always)]
-    fn is_supported() -> bool {
-        is_supported()
+mod x86_64 {
+    use super::*;
+    use crate::is_supported::is_supported;
+
+    #[repr(C)]
+    pub struct Aes128Gcm(BaseKey<6>);
+    impl Aead for Aes128Gcm {
+        const KEY_LEN: usize = 16;
+        const NONCE_LEN: usize = 12;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 272;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
+            self.0.encrypt(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
+            self.0.decrypt(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            is_supported()
+        }
     }
 }

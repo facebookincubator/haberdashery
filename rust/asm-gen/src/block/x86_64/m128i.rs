@@ -5,6 +5,8 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use core::arch::x86_64::*;
 use core::mem::MaybeUninit;
 use core::mem::size_of;
@@ -15,6 +17,7 @@ use intrinsics::__m128i::*;
 use intrinsics::u32::*;
 
 use super::m256i::M256i;
+use super::m512i::M512i;
 use crate::ffi::pod::Pod;
 
 #[repr(transparent)]
@@ -410,6 +413,10 @@ impl M128i {
         unsafe { self._mm256_broadcastsi128_si256() }
     }
     #[inline]
+    pub fn broadcast512(self) -> M512i {
+        [self; 4].into()
+    }
+    #[inline]
     pub fn align<const IMM8: i32>(self, other: Self) -> Self {
         unsafe { self._mm_alignr_epi8::<IMM8>(other) }.into()
     }
@@ -540,6 +547,18 @@ mod tests {
                     random.shuffle32::<0xff>().aesenclast(M128i::zero())
                 );
             }
+        }
+    }
+
+    #[test]
+    fn byte_reverse() {
+        for _ in 0..128 {
+            let base: [u8; 16] = random::random();
+            let reversed: [u8; 16] = core::array::from_fn(|i| base[M128i::SIZE - i - 1]);
+            let base = M128i::from(base);
+            let reversed = M128i::from(reversed);
+            assert_eq!(base.byte_reverse().byte_reverse(), base);
+            assert_eq!(base.byte_reverse(), reversed);
         }
     }
 
@@ -675,5 +694,17 @@ mod tests {
                 [a[1], b[1]]
             );
         }
+    }
+    #[test]
+    fn bitshift64() {
+        let base = M128i::from([0x01; 16]);
+        assert_eq!(base.left_bitshift64::<1>(), [0x02; 16]);
+        assert_eq!(base.right_bitshift64::<1>(), [0x00_80_80_80_80_80_80_80; 2]);
+
+        let base = M128i::from([0xff; 16]);
+        assert_eq!(base.left_bitshift64::<4>(), [0xff_ff_ff_ff_ff_ff_ff_f0; 2]);
+        assert_eq!(base.right_bitshift64::<4>(), [0x0f_ff_ff_ff_ff_ff_ff_ff; 2]);
+        assert_eq!(base.left_bitshift64::<60>(), [0xf0_00_00_00_00_00_00_00; 2]);
+        assert_eq!(base.right_bitshift64::<60>(), [0x0f; 2]);
     }
 }

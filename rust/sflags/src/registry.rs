@@ -5,8 +5,10 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+use std::collections::BTreeMap;
+
 pub trait SetFlag: Sync {
-    fn set(&self, s: String);
+    fn set(&self, s: &[String]);
     fn set_default(&self) -> bool;
 }
 
@@ -54,7 +56,12 @@ pub fn parse_exact() {
 }
 pub fn parse() -> Vec<String> {
     let mut leftovers = Vec::<String>::default();
-    for arg in std::env::args().skip(1).rev() {
+    let mut flag_map = BTreeMap::<String, Vec<String>>::new();
+    let mut args = std::env::args().skip(1);
+    for arg in args.by_ref() {
+        if arg == "--" {
+            break;
+        }
         let Some(name_value) = arg.strip_prefix("--") else {
             leftovers.push(arg);
             continue;
@@ -63,12 +70,21 @@ pub fn parse() -> Vec<String> {
             leftovers.push(arg);
             continue;
         };
-        let Some(flag) = get_flag(&name) else {
+        if get_flag(&name).is_none() {
             leftovers.push(arg);
             continue;
-        };
-        flag.set(value.into());
+        }
+        if let Some(values) = flag_map.get_mut(&name) {
+            values.push(value.to_string());
+        } else {
+            flag_map.insert(name, vec![value.to_string()]);
+        }
     }
+    for (name, values) in flag_map {
+        let flag = get_flag(&name).unwrap();
+        flag.set(&values);
+    }
+    args.for_each(|arg| leftovers.push(arg));
     for registration in REGISTRY {
         if !registration.set_default() {
             panic!("Flag not set: --{}", registration.name);

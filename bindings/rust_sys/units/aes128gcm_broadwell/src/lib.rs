@@ -7,7 +7,7 @@ core::arch::global_asm!(
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm//aes128gcm_broadwell.s"),
+    include_str!("../../../../../asm/x86_64/aes128gcm_broadwell.s"),
     options(att_syntax, raw)
 );
 
@@ -19,7 +19,7 @@ impl Aes128Gcm {
     pub const TAG_LEN: usize = 16;
 }
 
-extern "C" {
+unsafe extern "C" {
     pub fn haberdashery_aes128gcm_broadwell_init(
         this: *mut Aes128Gcm,
         key: *const u8,

@@ -20,7 +20,7 @@ sflags::define! {
 }
 #[cfg(target_arch = "aarch64")]
 sflags::define! {
-    --events: &str = "0x0077,0x0074,0x4004"; // crypto, simd, hwctr
+    --events: &str = "0x77,0x74,0x73,0x78,0x79"; // crypto, simd, int, branch, branch miss
 }
 #[cfg(debug_assertions)]
 sflags::define! {
@@ -32,7 +32,7 @@ sflags::define! {
 }
 #[cfg(all(not(debug_assertions), target_arch = "aarch64"))]
 sflags::define! {
-    --iters: usize = 1 << 26;
+    --iters: usize = 1 << 20;
 }
 
 fn main() {
@@ -144,19 +144,26 @@ fn aes256(mut iterations: usize) {
     use core::arch::aarch64::*;
     // aes256 uses 15 rounds
     const ROUNDS: usize = 15;
-    // The instructions aese and aesmc share the same pipline and have latency 2 and throughput 4.
+    // The instructions aese and aesmc share the same pipline and have
+    // latency 2 and throughput 4. The single xor can run in parallel.
     //
-    // Each round requires an aese instruction followed by a aesmc instruction, which can be done
-    // with latency 4 and throughput 2. Thus, LANES needs to be at least 8. Indeed, 8 LANES seems
-    // to be suitable in practise.
+    // Each round requires an aese instruction followed by a aesmc
+    // instruction, which can be done with latency 4 and throughput 2. Thus,
+    // LANES needs to be at least 8. Indeed, 8 LANES seems to be suitable in
+    // practise.
     //
-    // This suggests we'll measure:
-    //  - 56 cycles per iteration (8 128-bit blocks)
-    //  - 7 cycles per 128-bit block
-    //  - 0.4375 cycles per byte
+    // This suggests we'll measure per iteration:
+    //  - 224 instructions
+    //  - 216 crypto instructions (96.43%)
+    //  - 8 simd instructions (3.57%)
+    //  - 26 cycles per iteration
     //
-    //  We measure 60 cycles per iteration, with 95% usage of the crypto pipeline.
-    //  60 * 95% gives 57 cycles per iteration.
+    // 26 cycles per iteration is 0.231 cycles per byte
+    //
+    //  We measure 30 cycles per iteration, 226 instructions per iteration,
+    //  95.58% crypto, 3.58% simd, and 0.2343 cycles per byte.
+    //  Branch and decrement in the loop make up for the missing two
+    //  instructions.
     const LANES: usize = 8;
     unsafe {
         let key: [uint8x16_t; ROUNDS] = [core::mem::transmute([0u8; 16]); ROUNDS];

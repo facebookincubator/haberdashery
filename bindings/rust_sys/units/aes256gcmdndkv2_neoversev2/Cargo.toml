@@ -1,0 +1,11 @@
+# @generated
+
+[package]
+name = "aes256gcmdndkv2_neoversev2"
+edition = "2021"
+
+[features]
+asm-path = []
+
+[lib]
+doctest = false

@@ -23,7 +23,7 @@ pub fn bindings(attributes: &str, item: TokenStream) -> TokenStream {
     let descriptors = parser.descriptors();
     descriptors.iter().for_each(|descriptor| {
         let profile = &descriptor["profile"];
-        if profile == "skylakex" {
+        if profile == "skylakex" || profile == "neoversev2" {
             result.extend(quote!(#[cfg(any(not(feature = "asm_gen"), feature = #profile))]));
         } else {
             result.extend(quote!(#[cfg(all(feature = "asm_gen", feature = #profile))]));
@@ -42,7 +42,7 @@ pub fn bindings(attributes: &str, item: TokenStream) -> TokenStream {
     result
 }
 
-fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
+pub fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
     let fn_init = func_token(descriptor, "init");
     let fn_encrypt = func_token(descriptor, "encrypt");
     let fn_decrypt = func_token(descriptor, "decrypt");
@@ -144,7 +144,7 @@ mod tests {
         pretty_assertions::assert_eq!(
             profile_binding(&ty, &descriptor).pretty(),
             stringify!(
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_init(
                     this: &mut Aes256Gcm,
@@ -157,7 +157,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_encrypt(
                     this: &Aes256Gcm,
@@ -188,7 +188,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_decrypt(
                     this: &Aes256Gcm,
@@ -219,7 +219,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_is_supported() -> i32 {
                     match Aes256Gcm::is_supported() {

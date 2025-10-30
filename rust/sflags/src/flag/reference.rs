@@ -82,8 +82,8 @@ impl<T: AsRef<R>, R: PartialEq<R> + ?Sized> PartialEq<R> for RefFlag<T, R> {
     }
 }
 impl<T: AsRef<R> + Parse + Sync + Send, R: ?Sized + Sync> SetFlag for RefFlag<T, R> {
-    fn set(&self, s: String) {
-        self.init(T::parse(&s));
+    fn set(&self, s: &[String]) {
+        self.init(T::parse(s));
     }
     fn set_default(&self) -> bool {
         if let Some(default) = self.default {

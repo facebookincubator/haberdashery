@@ -13,7 +13,7 @@ pub use crate::randomizable::Randomizable;
 pub use crate::x86::*;
 
 pub fn slice(buf: &mut [u8]) {
-    getrandom::getrandom(buf).unwrap();
+    getrandom::fill(buf).unwrap();
 }
 pub fn array<const N: usize>() -> [u8; N] {
     let mut result = [0u8; N];

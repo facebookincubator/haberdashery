@@ -42,7 +42,7 @@ pub fn bindings(attributes: &str, item: TokenStream) -> TokenStream {
     result
 }
 
-fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
+pub fn profile_binding(ty: &Type, descriptor: &Descriptor) -> TokenStream {
     let fn_init = func_token(descriptor, "init");
     let fn_update = func_token(descriptor, "update");
     let fn_finalize = func_token(descriptor, "finalize");
@@ -114,7 +114,7 @@ mod tests {
         pretty_assertions::assert_eq!(
             profile_binding(&ty, &descriptor).pretty(),
             stringify!(
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_sha256_skylake_init(this: &mut Sha256) -> i32 {
                     match this.init() {
@@ -122,7 +122,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_sha256_skylake_update(
                     this: &mut Sha256,
@@ -135,7 +135,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_sha256_skylake_finalize(this: &mut Sha256) -> i32 {
                     match this.finalize() {
@@ -143,7 +143,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_sha256_skylake_digest(
                     this: &Sha256,
@@ -156,7 +156,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_sha256_skylake_is_supported() -> i32 {
                     match Sha256::is_supported() {

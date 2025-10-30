@@ -5,8 +5,8 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use crate::aes128::Aes128;
-use crate::aes128::KEY_LEN;
+use crate::aes::aes128::Aes128;
+use crate::aes::aes128::KEY_LEN;
 use crate::block::Block128;
 use crate::clmul::clmul128foil::*;
 use crate::counter128::CounterBe128;
@@ -200,6 +200,7 @@ impl<const N: usize> Aes128GcmState<N> {
         }
     }
     #[inline]
+    #[cfg(target_arch = "x86_64")]
     pub fn iteration_asm(
         &mut self,
         key: &Aes128GcmKey<N>,
@@ -257,6 +258,7 @@ impl<const N: usize> Aes128GcmState<N> {
             for (block, writer) in data.iter::<[Block128; N]>() {
                 let ctr = self.ctr.increment_traunch::<N>();
                 last_block = match N {
+                    #[cfg(target_arch = "x86_64")]
                     6 | 8 => self.iteration_asm(key, last_block, ctr, block),
                     _ => {
                         {
@@ -314,6 +316,7 @@ impl<const N: usize> Aes128GcmState<N> {
         for (block, writer) in data.iter::<[Block128; N]>() {
             let ctr = self.ctr.increment_traunch::<N>();
             let block = match N {
+                #[cfg(target_arch = "x86_64")]
                 6 | 8 => self.iteration_asm(key, block, ctr, block),
                 _ => {
                     {

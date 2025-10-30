@@ -49,6 +49,20 @@ impl<'a> Writer<'a> {
         }
     }
     #[inline]
+    pub fn split(&self, len: usize) -> (Self, Self) {
+        debug_assert!(
+            len <= self.len,
+            "Invalid Writer::split length: {len} > {}",
+            self.len
+        );
+        unsafe {
+            (
+                Self::new(self.ptr, len),
+                Self::new(self.ptr.add(len), self.len - len),
+            )
+        }
+    }
+    #[inline]
     #[track_caller]
     unsafe fn advance(&mut self, len: usize) -> *mut u8 {
         debug_assert!(

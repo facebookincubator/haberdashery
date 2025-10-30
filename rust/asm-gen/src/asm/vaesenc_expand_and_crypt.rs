@@ -5,8 +5,8 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use crate::aes256::Aes256;
-use crate::aes256::NUM_ROUNDS;
+use crate::aes::aes256::Aes256;
+use crate::aes::aes256::NUM_ROUNDS;
 use crate::block::Block128;
 
 #[inline]

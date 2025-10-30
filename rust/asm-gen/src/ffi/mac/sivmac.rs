@@ -8,70 +8,109 @@
 use crate::ffi::mac::Mac;
 use crate::ffi::reader::Reader;
 use crate::ffi::writer::Writer;
-use crate::is_supported::is_supported;
 use crate::sivmac as base;
 
-#[repr(C)]
-#[cfg(not(feature = "tigerlake"))]
-pub struct SivMac(base::SivMacPower128<8>);
-#[bindings_proc::mac(
+#[bindings_proc::bindings(
     algorithm: siv_mac,
     prefix: haberdashery,
-    profile: haswell,
+    arch: x86_64,
     profile: broadwell,
-    profile: skylake,
     profile: skylakex,
 )]
-impl Mac for SivMac {
-    const KEY_LEN: usize = 32;
-    const TAG_LEN: usize = 16;
-    const STRUCT_SIZE: usize = 368;
-    const STRUCT_ALIGNMENT: usize = 16;
-    #[inline(always)]
-    fn init(&mut self, key: &[u8]) -> bool {
-        self.0.init(key)
-    }
-    #[inline(always)]
-    fn sign(&self, message: Reader, tag: Writer) -> bool {
-        self.0.sign(message, tag)
-    }
-    #[inline(always)]
-    fn verify(&self, message: Reader, tag: Reader) -> bool {
-        self.0.verify(message, tag)
-    }
-    #[inline(always)]
-    fn is_supported() -> bool {
-        is_supported()
+mod x86_64 {
+    use super::*;
+    use crate::is_supported::is_supported;
+
+    #[repr(C)]
+    pub struct SivMac(base::SivMacPower128<8>);
+    impl Mac for SivMac {
+        const KEY_LEN: usize = 32;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 368;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn sign(&self, message: Reader, tag: Writer) -> bool {
+            self.0.sign(message, tag)
+        }
+        #[inline(always)]
+        fn verify(&self, message: Reader, tag: Reader) -> bool {
+            self.0.verify(message, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            is_supported()
+        }
     }
 }
 
-#[repr(C)]
-#[cfg(feature = "tigerlake")]
-pub struct SivMac(base::SivMacPower256<8>);
-#[bindings_proc::mac(
+#[bindings_proc::bindings(
     algorithm: siv_mac,
     prefix: haberdashery,
+    arch: x86_64,
     profile: tigerlake,
 )]
-impl Mac for SivMac {
-    const KEY_LEN: usize = 32;
-    const TAG_LEN: usize = 16;
-    const STRUCT_SIZE: usize = 384;
-    const STRUCT_ALIGNMENT: usize = 16;
-    #[inline(always)]
-    fn init(&mut self, key: &[u8]) -> bool {
-        self.0.init(key)
+mod tigerlake {
+    use super::*;
+    use crate::is_supported::is_supported;
+
+    pub struct SivMac(base::SivMacPower256<8>);
+    impl Mac for SivMac {
+        const KEY_LEN: usize = 32;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 384;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn sign(&self, message: Reader, tag: Writer) -> bool {
+            self.0.sign(message, tag)
+        }
+        #[inline(always)]
+        fn verify(&self, message: Reader, tag: Reader) -> bool {
+            self.0.verify(message, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            is_supported()
+        }
     }
-    #[inline(always)]
-    fn sign(&self, message: Reader, tag: Writer) -> bool {
-        self.0.sign(message, tag)
-    }
-    #[inline(always)]
-    fn verify(&self, message: Reader, tag: Reader) -> bool {
-        self.0.verify(message, tag)
-    }
-    #[inline(always)]
-    fn is_supported() -> bool {
-        is_supported()
+}
+#[bindings_proc::bindings(
+    algorithm: siv_mac,
+    prefix: haberdashery,
+    arch: aarch64,
+    profile: neoversev2,
+)]
+mod aarch64 {
+    use super::*;
+    #[repr(C)]
+    pub struct SivMac(base::SivMacPower128<8>);
+    impl Mac for SivMac {
+        const KEY_LEN: usize = 32;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 368;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn sign(&self, message: Reader, tag: Writer) -> bool {
+            self.0.sign(message, tag)
+        }
+        #[inline(always)]
+        fn verify(&self, message: Reader, tag: Reader) -> bool {
+            self.0.verify(message, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            true
+        }
     }
 }

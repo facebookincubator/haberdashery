@@ -8,6 +8,7 @@
 mod aead;
 mod aead_streaming;
 mod args;
+mod bindings;
 mod hash;
 mod mac;
 mod parser;
@@ -29,6 +30,6 @@ pub fn hash(attributes: TokenStream, item: TokenStream) -> TokenStream {
     hash::bindings(&attributes.to_string(), item.into()).into()
 }
 #[proc_macro_attribute]
-pub fn mac(attributes: TokenStream, item: TokenStream) -> TokenStream {
-    mac::bindings(&attributes.to_string(), item.into()).into()
+pub fn bindings(attributes: TokenStream, item: TokenStream) -> TokenStream {
+    bindings::bindings(&attributes.to_string(), item.into()).into()
 }

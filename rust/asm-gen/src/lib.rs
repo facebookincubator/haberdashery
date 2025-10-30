@@ -6,25 +6,24 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 #![cfg_attr(not(test), no_std)]
-#![feature(array_chunks)]
 #![feature(linkage)]
-#![feature(stdarch_x86_avx512)]
 #![allow(unexpected_cfgs)]
-#[cfg(not(target_arch = "x86_64"))]
-compile_error!("only x86_64 is supported, try: cargo build --target=x86_64-unknown-linux-gnu");
+#![allow(clippy::let_and_return)]
 
 mod aes;
-mod aes128;
+#[cfg(target_arch = "x86_64")]
 pub mod aes128gcm;
-mod aes192;
+#[cfg(target_arch = "x86_64")]
 pub mod aes192gcm;
-mod aes256;
 pub mod aes256gcm;
 pub mod aes256gcmdndk;
 pub mod aes256gcmdndkv2;
 pub mod aes256gcmdndkv2kc;
 pub mod aes256gcmsiv;
+#[cfg(target_arch = "x86_64")]
 mod aesgcm;
+#[cfg(target_arch = "aarch64")]
+mod aesgcm_aarch64;
 pub mod asm;
 pub mod block;
 mod clamped_index;

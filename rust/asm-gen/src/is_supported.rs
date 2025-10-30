@@ -6,20 +6,30 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 #[inline]
+#[cfg(target_arch = "x86_64")]
 pub fn is_supported() -> bool {
     if cfg!(feature = "haswell") {
         cpuid::haswell().is_supported()
     } else if cfg!(feature = "broadwell") {
         cpuid::broadwell().is_supported()
+    } else if cfg!(feature = "sapphirerapids") {
+        cpuid::sapphirerapids().is_supported()
     } else if cfg!(feature = "skylake") {
         cpuid::skylake().is_supported()
     } else if cfg!(feature = "skylakex") {
         cpuid::skylakex().is_supported()
-    } else if cfg!(feature = "zen3") {
-        cpuid::zen3().is_supported()
     } else if cfg!(feature = "tigerlake") {
         cpuid::tigerlake().is_supported()
+    } else if cfg!(feature = "zen3") {
+        cpuid::zen3().is_supported()
+    } else if cfg!(feature = "zen4") {
+        cpuid::zen4().is_supported()
     } else {
         unimplemented!()
     }
+}
+#[inline]
+#[cfg(not(target_arch = "x86_64"))]
+pub fn is_supported() -> bool {
+    true
 }

@@ -7,7 +7,7 @@ core::arch::global_asm!(
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm//aes192gcm_tigerlake.s"),
+    include_str!("../../../../../asm/x86_64/aes192gcm_tigerlake.s"),
     options(att_syntax, raw)
 );
 
@@ -19,7 +19,7 @@ impl Aes192Gcm {
     pub const TAG_LEN: usize = 16;
 }
 
-extern "C" {
+unsafe extern "C" {
     pub fn haberdashery_aes192gcm_tigerlake_init(
         this: *mut Aes192Gcm,
         key: *const u8,

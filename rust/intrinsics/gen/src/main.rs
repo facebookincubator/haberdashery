@@ -7,8 +7,8 @@
 
 use std::fmt::Write;
 
-use gen::Intrinsic;
-use gen::Type;
+use r#gen::Intrinsic;
+use r#gen::Type;
 
 const TYPES: &[Type] = &[
     Type::M128i,
@@ -25,9 +25,9 @@ const TYPES: &[Type] = &[
 ];
 
 fn main() {
-    let mut intrinsics: Vec<Intrinsic> = gen::xml::intrinsics()
+    let mut intrinsics: Vec<Intrinsic> = r#gen::xml::intrinsics()
         .iter()
-        .filter_map(gen::Intrinsic::new)
+        .filter_map(r#gen::Intrinsic::new)
         .collect();
     intrinsics.sort();
     intrinsics.dedup();

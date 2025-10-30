@@ -9,10 +9,10 @@ use crate::event::Event;
 use crate::perf_event::handle::PerfEventOpenHandle;
 use crate::perf_event::page::PerfEventMmapPage;
 
-#[cfg_attr(not(feature = "rdpmc"), allow(unused))]
 pub struct Counter {
     pub event: Event,
     file: PerfEventOpenHandle,
+    #[cfg_attr(not(all(target_arch = "x86_64", feature = "rdpmc")), allow(unused))]
     page: PerfEventMmapPage,
 }
 impl Counter {
@@ -29,6 +29,7 @@ impl Counter {
         Ok(Self { event, file, page })
     }
     #[inline(always)]
+    #[cfg(all(target_arch = "x86_64", feature = "rdpmc"))]
     pub fn offset(&self) -> i64 {
         self.page.offset
     }
@@ -42,18 +43,16 @@ impl Counter {
     }
     #[inline(always)]
     #[cfg(not(all(target_arch = "x86_64", feature = "rdpmc")))]
+    pub fn offset(&self) -> i64 {
+        0
+    }
+    #[inline(always)]
+    #[cfg(not(all(target_arch = "x86_64", feature = "rdpmc")))]
     pub fn read(&self) -> u64 {
         self.read_file()
     }
     #[inline(always)]
     fn read_file(&self) -> u64 {
-        let mut result = 0u64;
-        let ptr: *mut u64 = &mut result;
-        let len = core::mem::size_of::<u64>();
-        assert_eq!(
-            unsafe { nix::libc::read(self.file.raw_fd(), ptr as _, len) },
-            len as _,
-        );
-        result
+        self.file.read().unwrap()
     }
 }

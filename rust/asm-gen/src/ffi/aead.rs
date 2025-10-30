@@ -5,9 +5,11 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+#[cfg(target_arch = "x86_64")]
 #[cfg(any(not(feature = "asm_gen"), feature = "aes128gcm"))]
 pub mod aes128gcm;
 
+#[cfg(target_arch = "x86_64")]
 #[cfg(any(not(feature = "asm_gen"), feature = "aes192gcm"))]
 pub mod aes192gcm;
 

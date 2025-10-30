@@ -24,7 +24,7 @@ impl {algorithm:UpperCamel} {
     pub const TAG_LEN: usize = {tag_len};
 }
 
-extern "C" {
+unsafe extern "C" {
     pub fn {prefix}_{name}_init(
         this: *mut {algorithm:UpperCamel},
         key: *const u8,

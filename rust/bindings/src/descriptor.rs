@@ -38,8 +38,16 @@ impl std::iter::IntoIterator for Descriptors {
         self.0.into_iter()
     }
 }
+impl<'a> std::iter::IntoIterator for &'a Descriptors {
+    type Item = &'a Descriptor;
+    type IntoIter = std::slice::Iter<'a, Descriptor>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
 impl Descriptors {
-    pub fn iter(&self) -> core::slice::Iter<Descriptor> {
+    pub fn iter(&self) -> core::slice::Iter<'_, Descriptor> {
         self.0.iter()
     }
     pub fn apply<F: Fn(&Descriptor) -> String>(&self, f: F) -> Vec<String> {
@@ -56,18 +64,20 @@ impl Descriptors {
         for line in template.lines() {
             if line.contains("{generated}") {
                 result.push(first.apply(line));
-                result.push(String::from("\n"));
             } else if line == first.apply(line) {
                 result.push(line.into());
-                result.push(String::from("\n"));
             } else {
-                for descriptor in self.iter() {
-                    result.push(descriptor.apply(line));
-                    result.push(String::from("\n"));
-                }
+                use itertools::Itertools;
+                result.push(
+                    self.iter()
+                        .map(|descriptor| descriptor.apply(line))
+                        .sorted()
+                        .join("\n"),
+                );
             }
         }
-        result.concat()
+        result.push(String::default());
+        result.join("\n")
     }
     pub fn write_files(&self, path: &Path) {
         self.iter().for_each(|descriptor| {
@@ -88,7 +98,7 @@ impl Descriptors {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Descriptor {
     map: BTreeMap<String, String>,
 }
@@ -118,9 +128,6 @@ impl Descriptor {
             None => format!("{algorithm}_{profile}"),
         };
         this.insert("name", name);
-        if !this.contains_key("arch") {
-            this.insert("arch", "x86");
-        }
         this
     }
     pub fn insert(&mut self, key: impl Into<String>, value: impl Into<String>) {
