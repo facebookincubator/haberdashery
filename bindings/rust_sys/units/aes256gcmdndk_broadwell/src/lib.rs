@@ -7,7 +7,7 @@ core::arch::global_asm!(
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm//aes256gcmdndk_broadwell.s"),
+    include_str!("../../../../../asm/x86_64/aes256gcmdndk_broadwell.s"),
     options(att_syntax, raw)
 );
 
@@ -19,7 +19,7 @@ impl Aes256Gcmdndk {
     pub const TAG_LEN: usize = 16;
 }
 
-extern "C" {
+unsafe extern "C" {
     pub fn haberdashery_aes256gcmdndk_broadwell_init(
         this: *mut Aes256Gcmdndk,
         key: *const u8,

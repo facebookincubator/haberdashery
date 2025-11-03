@@ -5,6 +5,8 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use core::iter::Iterator;
 use core::marker::PhantomData;
 
@@ -28,6 +30,20 @@ impl<'a> Reader<'a> {
         unsafe { Self::new(self.0.ptr, self.0.len) }
     }
     #[inline]
+    pub fn split(&self, len: usize) -> (Self, Self) {
+        debug_assert!(
+            len <= self.0.len,
+            "Invalid Reader::split length: {len} > {}",
+            self.0.len
+        );
+        unsafe {
+            (
+                Self::new(self.0.ptr, len),
+                Self::new(self.0.ptr.add(len), self.0.len - len),
+            )
+        }
+    }
+    #[inline]
     pub fn len(&self) -> usize {
         self.0.len
     }
@@ -49,7 +65,7 @@ impl<'a> Reader<'a> {
         self.0.remainder()
     }
     #[inline]
-    pub fn iter<T: Pod>(&mut self) -> Iter<T> {
+    pub fn iter<T: Pod>(&mut self) -> Iter<'_, T> {
         Iter::new(unsafe { core::mem::transmute(&mut self.0) })
     }
     #[inline]

@@ -51,17 +51,6 @@ pub fn unit_bindings(crate_path: &Path, primitive: &str, source_template: &str) 
     descriptors
 }
 pub fn write_module(module_path: &Path, descriptors: &Descriptors) {
-    let descriptors: Descriptors = descriptors
-        .iter()
-        .map(|d| {
-            let mut d = d.clone();
-            if d["arch"] == "x86" {
-                d.insert("arch", "x86_64");
-            }
-            d
-        })
-        .collect::<Vec<_>>()
-        .into();
     let modules = descriptors.apply(|d| {
         d.apply(
             r#"#[cfg(all(feature = "{name}", target_arch = "{arch}"))]

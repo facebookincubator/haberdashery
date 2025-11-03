@@ -20,8 +20,8 @@ impl Default for PartialBlock {
     #[inline]
     fn default() -> Self {
         Self {
-            pad: Block128::zero(),
-            partial: Block128::zero(),
+            pad: Block128::ZERO,
+            partial: Block128::ZERO,
             partial_len: 0,
         }
     }
@@ -37,7 +37,7 @@ impl PartialBlock {
     }
     #[inline]
     pub fn new_aad(partial: Block128, partial_len: usize) -> Self {
-        Self::new(Block128::zero(), partial, partial_len)
+        Self::new(Block128::ZERO, partial, partial_len)
     }
     #[inline]
     pub fn fill_crypt(&mut self, data: &mut ReaderWriter) -> Option<(Block128, Block128)> {

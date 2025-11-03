@@ -15,23 +15,31 @@ name = "bench"
 harness = false
 
 [features]
-asm_gen =[]
+default = ["dep:perf-caliper"]
 
-# microarchs
+asm_gen = []
+
+# x86_64 microarchs
 haswell = ["asm_gen", "aes"]
 broadwell = ["asm_gen", "aes"]
+sapphirerapids = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw", "vpclmulqdq", "shani"]
 skylake = ["asm_gen", "aes"]
 skylakex = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw"]
 tigerlake = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw", "vpclmulqdq", "shani"]
-zen3 =[]
+zen4 = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw", "vpclmulqdq", "shani"]
+
+# aarch64 microarchs
+neoversev2 =["asm_gen", "aes", "sha3", "sve"]
 
 # cpu features
 aes = []
+avx512bw = []
 avx512f = []
 avx512vl = []
-avx512bw = []
-vpclmulqdq = []
+sha3 = []
 shani = []
+sve = []
+vpclmulqdq = []
 
 # algorithms
 aegis128l = []
@@ -51,11 +59,13 @@ very_long_tests = []
 
 [dependencies]
 bindings-proc = { path = "../bindings/bindings-proc" }
-cpuid = { path = "../cpuid" }
 hex = "0.4.3"
 hmac = "0.12.1"
+perf-caliper = { path = "../perf-caliper", optional = true }
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+cpuid = { path = "../cpuid" }
 intrinsics = { path = "../intrinsics" }
-perf-caliper = { path = "../perf-caliper" }
 transliteral = { path = "../transliteral" }
 
 [dev-dependencies]
@@ -66,5 +76,6 @@ hex2 = { package = "hex", path = "../hex" }
 hex-literal = "0.4.1"
 random = { path = "../random" }
 sha2 = "0.10.8"
+sha3 = "0.10.8"
 static-env = { path = "../static-env" }
 test-vectors = { path = "../test-vectors" }

@@ -77,10 +77,8 @@ c89() {
     --descriptor-path="${DESCRIPTOR_DIR}" \
     --name=c89
   echo_with_date "bindings/c89 testing"
-  cd "${BINDINGS_DIR}/c89/aead"
-  make
-  cd "${BINDINGS_DIR}/c89/mac"
-  make
+  cd "${PROJECT_DIR}"
+  ./scripts/make.sh bindings/c89
 }
 
 openssl_evp() {

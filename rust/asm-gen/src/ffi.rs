@@ -6,7 +6,9 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 pub mod aead;
+#[cfg(target_arch = "x86_64")]
 pub mod aead_streaming;
+#[cfg(target_arch = "x86_64")]
 pub mod hash;
 pub mod mac;
 pub mod pod;

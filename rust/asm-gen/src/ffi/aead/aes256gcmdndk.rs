@@ -10,39 +10,83 @@ use crate::ffi::aead::Aead;
 use crate::ffi::reader::Reader;
 use crate::ffi::reader_writer::ReaderWriter;
 use crate::ffi::writer::Writer;
-use crate::is_supported::is_supported;
 
-#[repr(C)]
-pub struct Aes256GcmDndk(BaseKey);
-#[bindings_proc::aead(
+#[bindings_proc::bindings(
     algorithm: aes256gcmdndk,
     prefix: haberdashery,
-    profile: haswell,
+    arch: x86_64,
     profile: broadwell,
-    profile: skylake,
     profile: skylakex,
     profile: tigerlake,
 )]
-impl Aead for Aes256GcmDndk {
-    const KEY_LEN: usize = 32;
-    const NONCE_LEN: usize = 24;
-    const TAG_LEN: usize = 16;
-    const STRUCT_SIZE: usize = 240;
-    const STRUCT_ALIGNMENT: usize = 16;
-    #[inline(always)]
-    fn init(&mut self, key: &[u8]) -> bool {
-        self.0.init(key)
+mod x86_64 {
+    use super::*;
+    use crate::is_supported::is_supported;
+
+    const LANES: usize = 6;
+
+    #[repr(C)]
+    pub struct Aes256GcmDndk(BaseKey);
+    impl Aead for Aes256GcmDndk {
+        const KEY_LEN: usize = 32;
+        const NONCE_LEN: usize = 24;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 240;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
+            self.0.encrypt::<LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
+            self.0.decrypt::<LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            is_supported()
+        }
     }
-    #[inline(always)]
-    fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
-        self.0.encrypt(nonce, aad, data, tag)
-    }
-    #[inline(always)]
-    fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
-        self.0.decrypt(nonce, aad, data, tag)
-    }
-    #[inline(always)]
-    fn is_supported() -> bool {
-        is_supported()
+}
+
+#[bindings_proc::bindings(
+    algorithm: aes256gcmdndk,
+    prefix: haberdashery,
+    arch: aarch64,
+    profile: neoversev2,
+)]
+mod aarch64 {
+    use super::*;
+    use crate::is_supported::is_supported;
+
+    const LANES: usize = 8;
+
+    #[repr(C)]
+    pub struct Aes256GcmDndk(BaseKey);
+    impl Aead for Aes256GcmDndk {
+        const KEY_LEN: usize = 32;
+        const NONCE_LEN: usize = 24;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 240;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
+            self.0.encrypt::<LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
+            self.0.decrypt::<LANES>(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            is_supported()
+        }
     }
 }

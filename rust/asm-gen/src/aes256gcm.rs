@@ -5,7 +5,7 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use crate::aes256::Aes256;
+use crate::aes::aes256::Aes256;
 use crate::block::Block128;
 use crate::clmul::clmul128foil::*;
 use crate::counter128::CounterBe128;
@@ -44,7 +44,7 @@ impl<const N: usize> From<[u8; KEY_LEN]> for Aes256GcmKey<N> {
 impl<const N: usize> Aes256GcmKey<N> {
     #[inline]
     pub fn new(key: [Block128; 2]) -> Self {
-        let (aes, ghash) = Aes256::new_and_encrypt(key, [Block128::zero()]);
+        let (aes, ghash) = Aes256::new_and_encrypt(key, [Block128::ZERO]);
         let polyval = ClMul128FoilPowerTable::new_ghash(ghash[0]);
         Self { aes, polyval }
     }
@@ -204,6 +204,7 @@ impl<const N: usize> Aes256GcmState<N> {
         }
     }
     #[inline]
+    #[cfg(target_arch = "x86_64")]
     pub fn iteration_asm(
         &mut self,
         key: &Aes256GcmKey<N>,
@@ -261,6 +262,36 @@ impl<const N: usize> Aes256GcmState<N> {
             for (block, writer) in data.iter::<[Block128; N]>() {
                 let ctr = self.ctr.increment_traunch::<N>();
                 last_block = match N {
+                    #[cfg(target_arch = "aarch64")]
+                    0..16 => {
+                        use crate::aesgcm_aarch64::Aes256ClMul128FoilState;
+                        let mut state = Aes256ClMul128FoilState::new(
+                            key.aes,
+                            ctr,
+                            self.ghash,
+                            last_block.map(Block128::byte_reverse),
+                            key.polyval.keys(),
+                        );
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        state.round();
+                        let block = block.ops() ^ state.aes_data();
+                        self.ghash = state.clmul_state();
+                        block
+                    }
+                    #[cfg(target_arch = "x86_64")]
                     6 => self.iteration_asm(key, last_block, ctr, block),
                     _ => {
                         {
@@ -318,6 +349,36 @@ impl<const N: usize> Aes256GcmState<N> {
         for (block, writer) in data.iter::<[Block128; N]>() {
             let ctr = self.ctr.increment_traunch::<N>();
             let block = match N {
+                #[cfg(target_arch = "aarch64")]
+                0..16 => {
+                    use crate::aesgcm_aarch64::Aes256ClMul128FoilState;
+                    let mut state = Aes256ClMul128FoilState::new(
+                        key.aes,
+                        ctr,
+                        self.ghash,
+                        block.map(Block128::byte_reverse),
+                        key.polyval.keys(),
+                    );
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    state.round();
+                    let block = block.ops() ^ state.aes_data();
+                    self.ghash = state.clmul_state();
+                    block
+                }
+                #[cfg(target_arch = "x86_64")]
                 6 => self.iteration_asm(key, block, ctr, block),
                 _ => {
                     {
@@ -499,7 +560,7 @@ mod tests {
     }
 
     // https://luca-giuzzi.unibs.it/corsi/Support/papers-cryptography/gcm-spec.pdf
-    const VECTORS: [TestVector; 8] = [
+    const VECTORS: &[TestVector] = &[
         TestVector {
             plaintext: "",
             aad: "",
@@ -1021,5 +1082,36 @@ mod tests {
             verify_cozybuf::<256>(&v);
         }
         assert!(reader.is_empty());
+    }
+
+    #[test]
+    fn large() {
+        fn large<const N: usize>() {
+            let len = random::usize() % (1 << 20) + (1 << 20);
+            let key: [u8; KEY_LEN] = random::random();
+            let aead = Aes256GcmKey::<N>::from(key);
+            let nonce: [u8; NONCE_LEN] = random::random();
+            let aad = random::vec(len);
+            let plaintext = random::vec(len);
+            let mut ciphertext = vec![0u8; plaintext.len()];
+            let mut tag = [0u8; TAG_LEN];
+            assert!(aead.encrypt(
+                &nonce,
+                aad.as_slice().into(),
+                ReaderWriter::from_slices(&plaintext, &mut ciphertext).unwrap(),
+                tag.as_mut_slice().into()
+            ));
+            let mut decrypted = vec![0u8; plaintext.len()];
+            assert!(aead.decrypt(
+                &nonce,
+                aad.as_slice().into(),
+                ReaderWriter::from_slices(&ciphertext, &mut decrypted).unwrap(),
+                tag.as_slice().into()
+            ));
+            assert_eq!(plaintext, decrypted);
+        }
+        large::<4>();
+        large::<6>();
+        large::<8>();
     }
 }

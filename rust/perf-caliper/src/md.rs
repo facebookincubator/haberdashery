@@ -113,7 +113,7 @@ impl Data {
     pub fn data(&self) -> &[Datum] {
         &self.0
     }
-    pub fn by_length(&self) -> LengthMap {
+    pub fn by_length(&self) -> LengthMap<'_> {
         let mut result = LengthMap::default();
         for datum in self.data() {
             result.entry(datum.length).or_default().push(datum);

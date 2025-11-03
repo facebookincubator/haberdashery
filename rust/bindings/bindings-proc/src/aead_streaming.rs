@@ -176,7 +176,7 @@ mod tests {
         .into();
         pretty_assertions::assert_eq!(
             stringify!(
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_init_key(
                     this: &mut Aes256GcmKey,
@@ -189,7 +189,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_is_supported() -> i32 {
                     match Aes256GcmState::is_supported() {
@@ -197,7 +197,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_init_state(
                     this: &mut Aes256GcmState,
@@ -211,7 +211,7 @@ mod tests {
                         false => 0,
                     }
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_aad_update(
                     this: &mut Aes256GcmState,
@@ -222,7 +222,7 @@ mod tests {
                     let aad = unsafe { crate::ffi::reader::Reader::new(aad, aad_len) };
                     this.aad_update(key, aad)
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_encrypt_update(
                     this: &mut Aes256GcmState,
@@ -242,7 +242,7 @@ mod tests {
                     };
                     this.encrypt_update(key, data)
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_encrypt_finalize(
                     this: &mut Aes256GcmState,
@@ -253,7 +253,7 @@ mod tests {
                     let tag = crate::ffi::writer::Writer::new(tag, tag_len);
                     this.encrypt_finalize(key, tag)
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_decrypt_update(
                     this: &mut Aes256GcmState,
@@ -273,7 +273,7 @@ mod tests {
                     };
                     this.decrypt_update(key, data)
                 }
-                #[no_mangle]
+                #[unsafe(no_mangle)]
                 #[cfg(any(test, feature = "skylake"))]
                 fn haberdashery_aes256gcm_skylake_decrypt_finalize(
                     this: &mut Aes256GcmState,

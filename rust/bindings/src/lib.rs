@@ -33,7 +33,7 @@ fn get_all_descriptors_from_flag(primitive: &str) -> Descriptors {
 }
 
 fn get_descriptors_from_flag(primitive: &str) -> Descriptors {
-    get_all_descriptors_from_flag(primitive).filter(|d| d["arch"] == "x86")
+    get_all_descriptors_from_flag(primitive).filter(|d| d["arch"] == "x86_64")
 }
 
 pub fn openssl_evp() {

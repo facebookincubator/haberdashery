@@ -5,6 +5,12 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-pub mod clmul128foil;
-pub mod clmul256foil;
-pub mod clmul256karatsuba;
+#[cfg(target_arch = "aarch64")]
+mod aarch64;
+#[cfg(target_arch = "aarch64")]
+pub use aarch64::*;
+
+#[cfg(target_arch = "x86_64")]
+mod x86_64;
+#[cfg(target_arch = "x86_64")]
+pub use x86_64::*;

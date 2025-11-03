@@ -23,7 +23,7 @@ $(TARGETS): $(TESTS)
 %.c.o: %.c %.s.o
 	@$(CXX) $(CXX_FLAGS) -L$(LIB) $(LDLIBS) -o $@ -c $<
 
-%.s.o: ../../../asm/%.s
+%.s.o: ../../../asm/x86_64/%.s
 	@$(CXX) $(CXX_FLAGS) -o $@ -c $^
 
 clean:

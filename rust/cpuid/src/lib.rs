@@ -9,6 +9,7 @@
 mod arch;
 pub mod feature;
 pub mod processor;
+pub mod xcr0;
 
 pub use arch::*;
 pub use feature::*;

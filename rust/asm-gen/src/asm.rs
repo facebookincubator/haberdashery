@@ -5,6 +5,11 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+#[cfg(target_arch = "aarch64")]
+pub mod aarch64;
+#[cfg(target_arch = "x86_64")]
 pub mod vaesenc;
+#[cfg(target_arch = "x86_64")]
 pub mod vaesenc_expand_and_crypt;
+#[cfg(target_arch = "x86_64")]
 pub mod vaesenc_vpclmulqdq_128;

@@ -5,7 +5,7 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use crate::aes256::Aes256;
+use crate::aes::aes256::Aes256;
 use crate::aes256gcm::Aes256GcmKey;
 use crate::block::Block128;
 use crate::ffi::reader::Reader;
@@ -40,7 +40,15 @@ impl Aes256GcmDndkKey {
             [0, 0, 0, 0x62000000].into(),
         ];
         let mut head: Block128 = unsafe { Block128::load(&nonce) };
-        head = head.left_byteshift::<1>().right_byteshift::<1>();
+        #[cfg(target_arch = "x86_64")]
+        {
+            head = head.left_byteshift::<1>().right_byteshift::<1>();
+        }
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            head = unsafe { head.mov_range(0..15) };
+        }
+
         [head ^ config[0], head ^ config[1], head ^ config[2]]
     }
     #[inline]
@@ -234,15 +242,71 @@ mod tests {
 
     #[test]
     fn crypt_vectors() {
-        [TestVector {
-            key: "0100000000000000000000000000000000000000000000000000000000000000",
-            nonce: "000102030405060708090a0b0c0d0e0f1011121314151617",
-            derived: "d974a46fbbeb3dec953ce088ef6b608573248947acf51606de5a1e5b72629197",
-            aad: "0100000011",
-            plaintext: "11000001",
-            ciphertext: "7f6e39cc",
-            tag: "b61df0a502c167164e99fa23b7d12b9d",
-        }]
+        [
+            TestVector {
+                key: "0000000000000000000000000000000000000000000000000000000000000000",
+                nonce: "000000000000000000000000000000000000000000000000",
+                derived: "6dd86131283a6ee15d34297610a2fd262b9c906a9a76e4f17bf420c8c723d80c",
+                aad: "0000000000000000",
+                plaintext: "0000000000000000",
+                ciphertext: "0acfad6e1f5de5cd",
+                tag: "37dd83b43cb9e0c57e1ff32f23aff55a",
+            },
+            TestVector {
+                key: "0100000000000000000000000000000000000000000000000000000000000000",
+                nonce: "000102030405060708090a0b0c0d0e0f1011121314151617",
+                derived: "d974a46fbbeb3dec953ce088ef6b608573248947acf51606de5a1e5b72629197",
+                aad: "0100000011",
+                plaintext: "11000001",
+                ciphertext: "7f6e39cc",
+                tag: "b61df0a502c167164e99fa23b7d12b9d",
+            },
+            TestVector {
+                key: "01ff000000000000000000000000000000000000000000000000000000000000",
+                nonce: "17161514131211100f0e0d0c0b0a09080706050403020100",
+                derived: "cc01983b80085610b9116ede3cd13d7768d1981bd5f33a1e73b586eb95ab1142",
+                aad: "0100000011",
+                plaintext: "11000001",
+                ciphertext: "df510e36",
+                tag: "1ab683fd667ebf4456a691f67f390ed5",
+            },
+            TestVector {
+                key: "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                nonce: "000102030405060708090a0b0c0d0e0f1011121314151617",
+                derived: "3728d086a6d7e1d6491f8a5215825cf02ca859f6b94255d277587a0cc68bc005",
+                aad: "aabbccddeeff",
+                plaintext: "deadbeef",
+                ciphertext: "2a8e8088",
+                tag: "fb47056cef3ed0174f9c2fb279c151b9",
+            },
+            TestVector {
+                key: "ac26691099c7538d03aa670a25c13747917e09edd0f7a71844218b4bd0664d3e",
+                nonce: "9a01aa58977d7589e0de2f7eaae921330f215260767c7dc5",
+                derived: "49b385db6081d6c0e624dd93529f788fedb1eed043639731da7ed64747017d53",
+                aad: "",
+                plaintext: "828bdfe3ef1fbe",
+                ciphertext: "293c8d9360e186",
+                tag: "6a73237aa6fe2afe89cca8d5bdc7df69",
+            },
+            TestVector {
+                key: "ac26691099c7538d03aa670a25c13747917e09edd0f7a71844218b4bd0664d3e",
+                nonce: "9a01aa58977d7589e0de2f7eaae921330f215260767c7dc5",
+                derived: "49b385db6081d6c0e624dd93529f788fedb1eed043639731da7ed64747017d53",
+                aad: "912fe205339c18",
+                plaintext: "828bdfe3ef1fbe",
+                ciphertext: "293c8d9360e186",
+                tag: "ae9987238abaea27b685fbe151174ac9",
+            },
+            TestVector {
+                key: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                nonce: "0102030405060708090a0b0c0d0e0f101112131415161718",
+                derived: "88dd3c958ea4222f9d83f535cc6de39327001250295eff96168e6a1026cbe940",
+                aad: "0011223344",
+                plaintext: "cafebabe",
+                ciphertext: "2d2f0fbf",
+                tag: "0a1f72c6ab6b98fa236688410c10dd7b",
+            },
+        ]
         .iter()
         .for_each(|v| v.test());
     }

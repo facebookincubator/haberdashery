@@ -145,11 +145,16 @@ impl Table {
                     false => format!("{counter:.4}"),
                 };
                 cells.push(self.left_format(key, &value));
-            };
+            } else if key == "tsc" {
+                cells.push(self.left_format("tsc", &format!("{tsc:.4}")));
+            }
         }
         for key in &self.show_percent {
             if let Some((_, counter)) = perf.rdpmc.iter().find(|(event, _)| event.name() == key) {
                 let percent = 100.0 * counter / cycles;
+                cells.push(self.right_format(key, &format!("{percent:.2}%")));
+            } else if key == "tsc" {
+                let percent = 100.0 * tsc / cycles;
                 cells.push(self.right_format(key, &format!("{percent:.2}%")));
             };
         }
@@ -190,14 +195,15 @@ impl Table {
 
 fn short_name(s: &str) -> &str {
     match s {
-        "UOPS_EXECUTED_PORT_PORT_0" => "port0",
-        "UOPS_EXECUTED_PORT_PORT_1" => "port1",
+        "UOPS_EXECUTED_PORT_PORT_0" | "UOPS_DISPATCHED_PORT_0" => "port0",
+        "UOPS_EXECUTED_PORT_PORT_1" | "UOPS_DISPATCHED_PORT_1" => "port1",
         "UOPS_EXECUTED_PORT_PORT_2" => "port2",
         "UOPS_EXECUTED_PORT_PORT_3" => "port3",
         "UOPS_EXECUTED_PORT_PORT_4" => "port4",
         "UOPS_EXECUTED_PORT_PORT_5" => "port5",
         "UOPS_EXECUTED_PORT_PORT_6" => "port6",
         "UOPS_EXECUTED_PORT_PORT_7" => "port7",
+        "UOPS_DISPATCHED_PORT_5_11" => "port5/11",
         "CORE_POWER_LVL0_TURBO_LICENSE" => "pow0",
         "CORE_POWER_LVL1_TURBO_LICENSE" => "pow1",
         "CORE_POWER_LVL2_TURBO_LICENSE" => "pow2",
@@ -205,6 +211,11 @@ fn short_name(s: &str) -> &str {
         "UOPS_EXECUTED_CORE_CYCLES_GE_2" => "uops>=2",
         "UOPS_EXECUTED_CORE_CYCLES_GE_3" => "uops>=3",
         "UOPS_EXECUTED_CORE_CYCLES_GE_4" => "uops>=4",
+        "0x0070" => "load",
+        "0x0071" => "store",
+        "0x0073" => "alu",
+        "0x0074" => "simd",
+        "0x0077" => "crypto",
         s => s,
     }
 }

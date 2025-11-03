@@ -8,12 +8,12 @@
 pub const UNIT_SRC: &str = r#"#[cfg(feature = "asm-path")]
 core::arch::global_asm!(
     include_str!(concat!(env!("HABERDASHERY_ASM_PATH"), "/{name}.s")),
-    options(att_syntax, raw)
+    options({asm_options})
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm/{name}.s"),
-    options(att_syntax, raw)
+    include_str!("../../../../../asm/{arch}/{name}.s"),
+    options({asm_options})
 );
 
 #[repr(C, align({struct_alignment}))]
@@ -23,7 +23,7 @@ impl {algorithm:UpperCamel} {
     pub const TAG_LEN: usize = {tag_len};
 }
 
-extern "C" {
+unsafe extern "C" {
     pub fn {prefix}_{name}_init(
         this: *mut {algorithm:UpperCamel},
         key: *const u8,

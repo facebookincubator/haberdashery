@@ -5,10 +5,12 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-use crate::aes256::Aes256;
+use crate::aes::aes256::Aes256;
 use crate::block::Block128;
+#[cfg(target_arch = "x86_64")]
 use crate::block::Block256;
 use crate::clmul::clmul128foil::*;
+#[cfg(target_arch = "x86_64")]
 use crate::clmul::clmul256karatsuba::*;
 use crate::ffi::reader::Reader;
 use crate::ffi::writer::Writer;
@@ -49,7 +51,7 @@ impl<const N: usize> SivMacPower128<N> {
     #[cfg(test)]
     fn new(aes_key: [Block128; 2], polyval_key: Block128) -> Self {
         Self {
-            aes: Aes256::new(aes_key),
+            aes: Aes256::from(aes_key),
             polyval: ClMul128FoilPowerTable::new(polyval_key),
         }
     }
@@ -59,17 +61,29 @@ impl<const N: usize> SivMacPower128<N> {
             return false;
         };
         let (aes_key, polyval_key) = derive_sivmac_key(key);
-        self.aes = Aes256::new(aes_key);
+        self.aes = Aes256::from(aes_key);
         self.polyval = ClMul128FoilPowerTable::new(polyval_key);
         true
     }
     #[inline]
+    #[cfg(target_arch = "aarch64")]
+    fn hash_internal(&self, message: Reader) -> Block128 {
+        let bitlen = 8 * message.len() as u64;
+        let len_block: Block128 = [bitlen, 0].into();
+        let state = self
+            .polyval
+            .clmul128foil_reader(Default::default(), message)
+            .reduce();
+        self.polyval[0].clmul128foil(len_block ^ state).reduce()
+    }
+    #[inline]
+    #[cfg(target_arch = "x86_64")]
     fn hash_internal(&self, mut message: Reader) -> Block128 {
         // Append the message as raw blocks and finalize the polyval by encoding the length.
         // This follows aes-256-gcms-siv when taking aad=message, plaintext=empty.
         let bitlen = 8 * message.len() as u64;
         let len_block = [bitlen, 0];
-        let mut state = Block128::zero();
+        let mut state = Block128::ZERO;
         if cfg!(feature = "avx512f") {
             for mut array in message.iter::<[Block128; N]>() {
                 array[0] ^= state;
@@ -173,15 +187,17 @@ impl<const N: usize> SivMacPower128<N> {
         self.sign_internal(message).crypto_equals(tag)
     }
 }
+#[cfg(target_arch = "x86_64")]
 pub struct SivMacPower256<const N: usize> {
     aes: Aes256,
     polyval: ClMul256KaratsubaPowerTable<N>,
 }
+#[cfg(target_arch = "x86_64")]
 impl<const N: usize> SivMacPower256<N> {
     #[cfg(test)]
     fn new(aes_key: [Block128; 2], polyval_key: Block128) -> Self {
         Self {
-            aes: Aes256::new(aes_key),
+            aes: Aes256::from(aes_key),
             polyval: ClMul256KaratsubaPowerTable::new(polyval_key),
         }
     }
@@ -191,7 +207,7 @@ impl<const N: usize> SivMacPower256<N> {
             return false;
         };
         let (aes_key, polyval_key) = derive_sivmac_key(key);
-        self.aes = Aes256::new(aes_key);
+        self.aes = Aes256::from(aes_key);
         self.polyval = ClMul256KaratsubaPowerTable::new(polyval_key);
         true
     }
@@ -236,12 +252,12 @@ impl<const N: usize> SivMacPower256<N> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ffi::reader_writer::ReaderWriter;
 
     const LANES: usize = 8;
 
     pub struct SivMacKey<const N: usize> {
         sivmac128: SivMacPower128<N>,
+        #[cfg(target_arch = "x86_64")]
         sivmac256: Option<SivMacPower256<N>>,
     }
     impl<const N: usize> From<[u8; KEY_LEN]> for SivMacKey<N> {
@@ -251,6 +267,7 @@ mod tests {
         }
     }
     impl<const N: usize> SivMacKey<N> {
+        #[cfg(target_arch = "x86_64")]
         fn new(aes_key: [Block128; 2], polyval_key: Block128) -> Self {
             let sivmac256 = cpuid::VPCLMULQDQ
                 .is_supported()
@@ -258,6 +275,12 @@ mod tests {
             Self {
                 sivmac128: SivMacPower128::new(aes_key, polyval_key),
                 sivmac256,
+            }
+        }
+        #[cfg(target_arch = "aarch64")]
+        fn new(aes_key: [Block128; 2], polyval_key: Block128) -> Self {
+            Self {
+                sivmac128: SivMacPower128::new(aes_key, polyval_key),
             }
         }
         pub fn aes(&self) -> &Aes256 {
@@ -278,6 +301,7 @@ mod tests {
             let tag: Block128 = tag.into();
             tag_writer.write(tag);
 
+            #[cfg(target_arch = "x86_64")]
             if let Some(mac) = self.sivmac256.as_ref() {
                 let mut other = [0u8; TAG_LEN];
                 assert!(mac.sign(message, Writer::from(other.as_mut_slice())));
@@ -289,6 +313,7 @@ mod tests {
             let verified = self
                 .sivmac128
                 .verify(message.clone_for_test(), tag.clone_for_test());
+            #[cfg(target_arch = "x86_64")]
             if let Some(mac) = self.sivmac256.as_ref() {
                 assert_eq!(
                     verified,
@@ -444,7 +469,9 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_arch = "x86_64")]
     fn aes256gcmsiv_comparison() {
+        use crate::ffi::reader_writer::ReaderWriter;
         fn sivmac(key: [u8; KEY_LEN], message: &[u8]) -> [u8; TAG_LEN] {
             let mac = SivMacKey::<LANES>::from(key);
             let mut tag = [0u8; TAG_LEN];

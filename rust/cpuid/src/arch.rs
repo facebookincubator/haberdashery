@@ -92,6 +92,22 @@ pub fn tigerlake() -> FeatureSet {
         | KL
 }
 #[inline(always)]
+pub fn sapphirerapids() -> FeatureSet {
+    // GCC's sapphirerapids extensions minus xsavec, xsaves, lzcnt, pwrite, wbnoinvd,
+    // pconfig, enqcmd, uintr, amx-bf16, amx-tile, amx-int8
+    icelake() // line break
+        | CLWB
+        | MOVDIRI
+        | MOVDIR64B
+        | CLDEMOTE
+        | WAITPKG
+        | SERIALIZE
+        | TSXLDTRK
+        | AVX_VNNI
+        | AVX512_FP16
+        | AVX512_BF16
+}
+#[inline(always)]
 pub fn zen3() -> FeatureSet {
     // GCC's znver3 minux xsavec, xsaves, wbnoinvd
     MOVBE

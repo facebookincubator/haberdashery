@@ -56,9 +56,6 @@ pub fn unit_bindings(
         };
         let mut descriptor = descriptor.clone();
         descriptor.insert("asm_options", asm_options);
-        if descriptor["arch"] == "x86" {
-            descriptor.insert("arch", "");
-        }
         write_compilation_unit(
             &crate_path.join(format!("units/{name}")),
             &descriptor,
@@ -75,7 +72,7 @@ pub fn write_cargo_toml(crate_path: &Path, descriptors: &Descriptors) {
     let feature_lines = descriptors.apply(|d| d.apply("{name} = [\"dep:{name}\"]\n"));
     let mut x86_dep_lines: Vec<String> = descriptors
         .iter()
-        .filter(|d| d["arch"] == "x86")
+        .filter(|d| d["arch"] == "x86_64")
         .map(|d| d.apply("{name} = { path = \"units/{name}\", optional = true }\n"))
         .collect();
     x86_dep_lines.sort();
@@ -117,40 +114,18 @@ pub fn write_compilation_unit(
     .unwrap();
 }
 pub fn write_module(module_path: &Path, descriptors: &Descriptors) {
-    let mut x86_modules: Vec<String> = descriptors
+    let mut modules: Vec<String> = descriptors
         .iter()
-        .filter(|d| d["arch"] == "x86")
         .map(|d| {
             d.apply(
-                r#"#[cfg(all(feature = "{name}", target_arch = "x86_64"))]
+                r#"#[cfg(all(feature = "{name}", target_arch = "{arch}"))]
 pub mod {name};
 "#,
             )
         })
         .collect();
-    x86_modules.sort();
-    let mut aarch64_modules: Vec<String> = descriptors
-        .iter()
-        .filter(|d| d["arch"] == "aarch64")
-        .map(|d| {
-            d.apply(
-                r#"#[cfg(all(feature = "{name}", target_arch = "aarch64"))]
-pub mod {name};
-"#,
-            )
-        })
-        .collect();
-    aarch64_modules.sort();
-    write_generated::rust(
-        module_path,
-        [
-            x86_modules.concat(),
-            "\n".to_string(),
-            aarch64_modules.concat(),
-        ]
-        .concat(),
-    )
-    .unwrap();
+    modules.sort();
+    write_generated::rust(module_path, [modules.concat()].concat()).unwrap();
 }
 pub fn write_lib_rs(lib_path: &Path, descriptors: &Descriptors) {
     let mut modules = descriptors.apply(|d| d.apply("pub mod {primitive};\n"));

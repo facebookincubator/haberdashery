@@ -1,0 +1,70 @@
+/* @{generated} */
+#ifndef {prefix:UpperSnake}_{algorithm:UpperSnake}_{api:UpperSnake}_{profile:UpperSnake}_H
+#define {prefix:UpperSnake}_{algorithm:UpperSnake}_{api:UpperSnake}_{profile:UpperSnake}_H
+
+#include <stdlib.h>
+#include <string.h>
+
+#define {prefix:UpperSnake}_{algorithm:UpperSnake}_{profile:UpperSnake}_KEY_LEN {key_len}
+#define {prefix:UpperSnake}_{algorithm:UpperSnake}_{profile:UpperSnake}_NONCE_LEN {nonce_len}
+#define {prefix:UpperSnake}_{algorithm:UpperSnake}_{profile:UpperSnake}_TAG_LEN {tag_len}
+
+__attribute__((aligned({key_struct_alignment})))
+typedef struct {prefix:Snake}_{algorithm:Flat}_{api:Flat}_{profile:Snake}_key_t {
+  unsigned char value[{key_struct_size}];
+} {prefix:Snake}_{algorithm:Flat}_{api:Flat}_{profile:Snake}_key_t;
+
+__attribute__((aligned({state_struct_alignment})))
+typedef struct {prefix:Snake}_{algorithm:Flat}_{api:Flat}_{profile:Snake}_state_t {
+  unsigned char value[{state_struct_size}];
+} {prefix:Snake}_{algorithm:Flat}_{api:Flat}_{profile:Snake}_state_t;
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+int {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_init_key(
+    {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_key_t *key,
+    const unsigned char *key_bytes,
+    size_t key_bytes_len);
+int {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_init_state(
+    {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_state_t *state,
+    const {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_key_t *key,
+    const unsigned char *nonce,
+    size_t nonce_len);
+int {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_aad_update(
+    {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_state_t *state,
+    const {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_key_t *key,
+    const unsigned char *aad,
+    size_t aad_len);
+int {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_encrypt_update(
+    {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_state_t *state,
+    const {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_key_t *key,
+    const unsigned char *plaintext,
+    size_t plaintext_len,
+    unsigned char *ciphertext,
+    size_t ciphertext_len);
+int {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_encrypt_finalize(
+    {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_state_t *state,
+    const {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_key_t *key,
+    unsigned char *tag,
+    size_t tag_len);
+int {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_decrypt_update(
+    {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_state_t *state,
+    const {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_key_t *key,
+    const unsigned char *plaintext,
+    size_t plaintext_len,
+    unsigned char *ciphertext,
+    size_t ciphertext_len);
+int {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_decrypt_finalize(
+    {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_state_t *state,
+    const {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_key_t *key,
+    const unsigned char *tag,
+    size_t tag_len);
+int {prefix}_{algorithm:Flat}_{api:Flat}_{profile}_is_supported(void);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */
+#endif /* {prefix:UpperSnake}_{algorithm:UpperSnake}_{api:UpperSnake}_{profile:UpperSnake}_H */

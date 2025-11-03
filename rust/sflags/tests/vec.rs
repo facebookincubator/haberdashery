@@ -26,6 +26,13 @@ fn set_many() {
     cmd.assert().success().stdout("[1, 2, 3, 4, 5]");
 }
 #[test]
+fn repeat() {
+    let mut cmd = test_helper::command(std::file!());
+    cmd.arg("--flag=1");
+    cmd.arg("--flag=2,3,4,5");
+    cmd.assert().success().stdout("[1, 2, 3, 4, 5]");
+}
+#[test]
 fn set_nan() {
     let mut cmd = test_helper::command(std::file!());
     cmd.arg("--flag=banana");

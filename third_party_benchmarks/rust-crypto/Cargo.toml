@@ -13,3 +13,4 @@ harness = false
 [dependencies]
 aes-gcm = "0.10.3"
 perf-caliper = { path = "../../rust/perf-caliper" }
+sha2 = "0.10.9"

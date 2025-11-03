@@ -7,6 +7,8 @@
 
 use std::collections::BTreeMap;
 
+use bindings::Descriptor;
+
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Args(BTreeMap<&'static str, Vec<String>>);
 impl Args {
@@ -69,13 +71,21 @@ impl Args {
         self.0
             .get(Self::ARCH)
             .and_then(|x| x.first())
-            .map_or("x86", String::as_ref)
+            .map_or("x86_64", String::as_ref)
     }
     pub fn api(&self) -> &str {
         self.get_single(Self::API)
     }
     pub fn profiles(&self) -> &[String] {
         self.0.get(Self::PROFILE).map_or(&[], Vec::as_ref)
+    }
+    pub fn extend(&self, descriptor: &mut Descriptor) {
+        for (&key, value) in &self.0 {
+            let Some(value) = value.first() else {
+                continue;
+            };
+            descriptor.insert(key, value);
+        }
     }
 }
 

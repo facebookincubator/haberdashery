@@ -8,12 +8,12 @@
 pub const UNIT_SRC: &str = r#"#[cfg(feature = "asm-path")]
 core::arch::global_asm!(
     include_str!(concat!(env!("HABERDASHERY_ASM_PATH"), "/{name}.s")),
-    options(att_syntax, raw)
+    options({asm_options})
 );
 #[cfg(not(feature = "asm-path"))]
 core::arch::global_asm!(
-    include_str!("../../../../../asm/{name}.s"),
-    options(att_syntax, raw)
+    include_str!("../../../../../asm/{arch}/{name}.s"),
+    options({asm_options})
 );
 
 #[repr(C, align({key_struct_alignment}))]
@@ -26,7 +26,7 @@ impl {algorithm:UpperCamel}Key {
 #[repr(C, align({state_struct_alignment}))]
 pub struct {algorithm:UpperCamel}State([u8; {state_struct_size}]);
 
-extern "C" {
+unsafe extern "C" {
     pub fn {prefix}_{name}_init_key(
         this: *mut {algorithm:UpperCamel}Key,
         key: *const u8,
