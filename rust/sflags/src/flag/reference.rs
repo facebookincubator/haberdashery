@@ -91,4 +91,7 @@ impl<T: AsRef<R> + Parse + Sync + Send, R: ?Sized + Sync> SetFlag for RefFlag<T,
         }
         self.value.get().is_some()
     }
+    fn needs_value(&self) -> bool {
+        T::NEEDS_VALUE
+    }
 }

@@ -29,7 +29,7 @@ pub fn rdpmc(event: u32) -> u64 {
 pub fn mask() -> u64 {
     const SHIFT: usize = 16;
     const MASK: u32 = 0xff;
-    let leaf_0ah = unsafe { core::arch::x86_64::__cpuid(0x0a) };
+    let leaf_0ah = core::arch::x86_64::__cpuid(0x0a);
     let mut width = (leaf_0ah.eax >> SHIFT) & MASK;
     if width == 0 {
         width = 40;

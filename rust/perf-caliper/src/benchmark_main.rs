@@ -194,7 +194,7 @@ fn benchmark(
 
     let mut header_printed = false;
     for bench in benchmarks {
-        let mut bench = Benchmark::new(&counters, &bench);
+        let mut bench = Benchmark::new(&counters, bench);
         if let Some(perf) = perf_control.as_mut() {
             perf.enable();
             bench.run_first();

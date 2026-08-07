@@ -9,8 +9,8 @@
 use std::process::Command;
 
 pub fn bin_name(file: &str) -> &str {
-    let file_parts = file.split(std::path::MAIN_SEPARATOR);
-    let file_name = file_parts.last().unwrap();
+    let mut file_parts = file.split(std::path::MAIN_SEPARATOR);
+    let file_name = file_parts.next_back().unwrap();
     file_name.strip_suffix(".rs").unwrap()
 }
 

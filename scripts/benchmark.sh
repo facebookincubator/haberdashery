@@ -23,9 +23,6 @@ main() {
     "haberdashery")
       LIB_DIR="${PROJECT_DIR}/bindings/rust_bench"
       ;;
-    "x25519")
-      LIB_DIR="${PROJECT_DIR}/bindings/x25519"
-      ;;
     "openssl")
       LIB_DIR="${PROJECT_DIR}/third_party_benchmarks/openssl"
       ;;

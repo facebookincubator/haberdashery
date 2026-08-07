@@ -49,12 +49,10 @@ proc macros which is used to auto-generate bindings. Binding metadata can be
 found in `descriptors`.
 
 The assembly can be (re)generated via the script `scripts/asm.sh`. Bindings
-can be (re)generated with the script `scripts/bindings.sh`. Dockerized
-versions of these scripts are available in `podman/assembly.Dockerfile` and
-`podman/bindings.Dockerfile`. The script `scripts/podman.sh` demonstrates how
-to call these containers. These containers are intended to demonstrate dev
-and source dependencies, a typical developer will likely prefer to call the
-corresponding scripts directly.
+can be (re)generated with the script `scripts/bindings.sh`. Reproducible Nix
+development shells for generation and testing are defined in `flake.nix` and
+can be run with `scripts/nix.sh`. For example, `scripts/nix.sh assembly` runs
+assembly generation with its pinned Rust toolchain and build dependencies.
 
 ### Example bindings
 Although the algorithms are implemented in rust, the rust implementations are
@@ -63,9 +61,9 @@ consume the generated assembly via rust bindings like any other language.  Rust
 "sys" bindings are located in `bindings/rust_sys` and can be tested with
 `scripts/cargo.sh bindings/rust_sys --all-features` or via a direct call to
 `cargo`. Rust trait-based bindings are in `bindings/rust_lib`. c89-themed
-bindings are located in `c` and can be tested with `scripts/make.sh sys` or via
-a direct call to `make`. A dockerized example of building and testing is in
-`podman/test_c89.Dockerfile`.
+bindings are located in `bindings/c89` and can be tested with
+`scripts/make.sh bindings/c89` or via a direct call to `make`. The same tests
+can be run in the Nix environment with `scripts/nix.sh test_c89`.
 
 ### Testing
 `test_vectors` contains binary test vectors in a bespoke format. Our
@@ -80,23 +78,23 @@ The rust code that generates the assembly/bindings/etc can be tested with
 optimizations in `rust/asm-gen` are feature-gated and may not be tested
 against by default. To test these features, an explicit call like
 `scripts/cargo.sh asm-gen --features=skylakex` may be needed or the
-corresponding call `cargo --features=skylakex` directly on the `asm-gen`
-crate.
+corresponding call
+`cargo test --manifest-path=rust/asm-gen/Cargo.toml --features=skylakex`.
 
 ### Benchmarks
 Benchmarks are found in `benchmark_data`, both csv and markdown. Currently,
-only benchmarks for broadwell and skylakex are present. Skylakex is similar to
-skylake but uses some avx512 extensions. In particular, we take advantage of
-`vpternlogq` and `xmm16`-`xmm31` but do not use instructions wider than
-128-bit. Haswell, and tigerlake assembly exists, but has not been as carefully
-optimized and we do not include benchmarks.
+benchmark data is included for SkylakeX, Tiger Lake, Sapphire Rapids, Zen 4,
+and Neoverse V2. SkylakeX is similar to Skylake but uses some AVX-512
+extensions. In particular, we take advantage of `vpternlogq` and
+`xmm16`-`xmm31` but do not use instructions wider than 128 bits.
 
 ## Algorithms and APIs
-We support three AEAD algorithms, aes256gcm, aes256gcmsiv, aes256gcmdndk, and
-a MAC algorithm, sivmac. All four algorithms are available in a contiguous
-API, where inputs and outputs are a pointer and length. In the future, we
-intend to offer scatter/gather APIs for all algorithms and streaming APIs for
-some algorithms.
+We support seven AEAD algorithms: AES-128-GCM, AES-192-GCM, AES-256-GCM,
+AES-256-GCM-SIV, AES-256-GCM-DNDK, AES-256-GCM-DNDK-v2, and
+AES-256-GCM-DNDK-v2-KC. We also support the SIVMAC MAC algorithm. All eight
+algorithms are available through a contiguous API, where inputs and outputs
+are represented by a pointer and length. AES-128-GCM and AES-256-GCM also
+provide streaming APIs.
 
 We refer to the collection of symbols/functions within a single assembly file
 as an "implementation". Each implementation has an `is_supported` function
@@ -151,18 +149,25 @@ pair was produced by the `sign` function.
 ## Algorithms and platforms
 We produce assembly for the following micro-architectures, only some assembly
 has been optimized for the target platform and algorithm.
- - HW = Haswell
  - BW = Broadwell
- - SL = Skylake
  - SLX = SkylakeX
  - TL = Tigerlake
+ - SPR = Sapphire Rapids
+ - Z4 = Zen 4
+ - N2 = Neoverse V2
 
-|primitive|algorithm    | HW | BW | SL | SLX | TL |
-|---------|-------------|:--:|:--:|:--:|:---:|:--:|
-|AEAD     |aes256gcm    |&cross;|&check;|&cross;|&check;|&cross;|
-|AEAD     |aes256gcmsiv |&cross;|&check;|&cross;|&check;|&cross;|
-|AEAD     |aes256gcmdndk|&cross;|&check;|&cross;|&check;|&cross;|
-|MAC      |sivmac       |&cross;|&check;|&cross;|&check;|&cross;|
+|primitive|algorithm              | BW | SLX | TL | SPR | Z4 | N2 |
+|---------|-----------------------|:--:|:---:|:--:|:---:|:--:|:--:|
+|AEAD     |aes128gcm              |&check;|&check;|&check;|&cross;|&cross;|&cross;|
+|AEAD     |aes128gcm_streaming    |&check;|&check;|&check;|&cross;|&cross;|&cross;|
+|AEAD     |aes192gcm              |&check;|&check;|&check;|&cross;|&cross;|&cross;|
+|AEAD     |aes256gcm              |&check;|&check;|&check;|&cross;|&cross;|&check;|
+|AEAD     |aes256gcm_streaming    |&check;|&check;|&check;|&cross;|&cross;|&cross;|
+|AEAD     |aes256gcmdndk          |&check;|&check;|&check;|&cross;|&cross;|&check;|
+|AEAD     |aes256gcmdndkv2        |&check;|&check;|&check;|&cross;|&cross;|&check;|
+|AEAD     |aes256gcmdndkv2kc      |&check;|&check;|&check;|&cross;|&cross;|&check;|
+|AEAD     |aes256gcmsiv           |&check;|&check;|&check;|&check;|&check;|&check;|
+|MAC      |sivmac                 |&check;|&check;|&check;|&cross;|&cross;|&check;|
 
 ## License
 Haberdashery is dual-licensed under either the MIT License or the Apache

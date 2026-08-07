@@ -6,16 +6,16 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 pub trait Parse: Sized {
+    const NEEDS_VALUE: bool = true;
     fn parse(s: &[String]) -> Self {
         Self::parse_single(s.iter().last().unwrap())
     }
     fn parse_single(_s: &str) -> Self {
-        // This isn't called directly, only by default parse implementation
-        // There's likely a way to split this into two traits
         unimplemented!()
     }
 }
 impl<T: Parse> Parse for Option<T> {
+    const NEEDS_VALUE: bool = T::NEEDS_VALUE;
     fn parse(s: &[String]) -> Self {
         Some(T::parse(s))
     }
@@ -24,6 +24,7 @@ impl<T: Parse> Parse for Option<T> {
     }
 }
 impl<T: Parse> Parse for Vec<T> {
+    const NEEDS_VALUE: bool = T::NEEDS_VALUE;
     fn parse(s: &[String]) -> Self {
         s.iter()
             .flat_map(|s| s.split(',').map(str::trim).map(T::parse_single))
@@ -111,6 +112,7 @@ impl Parse for usize {
     }
 }
 impl Parse for bool {
+    const NEEDS_VALUE: bool = false;
     fn parse_single(s: &str) -> Self {
         s.parse::<bool>().expect("Couldn't parse bool")
     }

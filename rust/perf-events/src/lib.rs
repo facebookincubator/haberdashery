@@ -1070,7 +1070,7 @@ impl Event {
             "instructions" => return Some(Self::Instructions),
             _ => {}
         }
-        let eax = unsafe { core::arch::x86_64::__cpuid(1) }.eax;
+        let eax = core::arch::x86_64::__cpuid(1).eax;
         let model = ((eax >> 4) & 0x0f) | ((eax >> 12) & 0xf0);
         match model {
             0x1a => nehalem_ep::Event::new(name),

@@ -5,6 +5,8 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
+#![allow(unsafe_op_in_unsafe_fn)]
+
 pub mod benchmark;
 pub mod benchmark_main;
 pub mod counters;

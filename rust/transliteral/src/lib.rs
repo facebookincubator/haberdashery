@@ -20,7 +20,7 @@ pub fn assembly(
 }
 
 fn assembly_internal(item: TokenStream) -> TokenStream {
-    let mut item_fn = syn::parse2::<ItemFn>(item.clone())
+    let item_fn = syn::parse2::<ItemFn>(item.clone())
         .unwrap_or_else(|e| panic!("{e}: Couldn't parse ItemFn"));
     let sig = item_fn.sig.clone();
     let inputs = sig.inputs.clone();
@@ -50,27 +50,38 @@ fn assembly_internal(item: TokenStream) -> TokenStream {
     let asm = quote!(
         #[allow(unused)]
         #sig {
-            core::arch::asm!(
-                #(#asm_statements,)*
-                #(#(#asm_args,)*)*
-                options(
-                    att_syntax,
-                    nomem,
-                    nostack,
-                    preserves_flags,
-                    pure,
-                ),
-            )
+            unsafe {
+                core::arch::asm!(
+                    #(#asm_statements,)*
+                    #(#(#asm_args,)*)*
+                    options(
+                        att_syntax,
+                        nomem,
+                        nostack,
+                        preserves_flags,
+                        pure,
+                    ),
+                )
+            }
         }
     );
 
     let mut result = TokenStream::new();
     result.extend(asm);
-    item_fn.sig.ident = Ident::new(&format!("{}_ref", sig.ident), Span::call_site());
 
+    // Re-emit the source body as a `_ref` fallback. Since the Rust 2024 edition an
+    // `unsafe fn` body is not implicitly an unsafe block, so wrap the intrinsic calls
+    // in `unsafe {}` to satisfy `unsafe_op_in_unsafe_fn`.
+    let ref_attrs = &item_fn.attrs;
+    let ref_stmts = &item_fn.block.stmts;
     result.extend(quote!(
         #[allow(unused)]
-        #item_fn
+        #(#ref_attrs)*
+        #ref_sig {
+            unsafe {
+                #(#ref_stmts)*
+            }
+        }
     ));
     result
 }
@@ -316,16 +327,20 @@ mod tests {
             stringify!(
                 #[allow(unused)]
                 unsafe fn xor(lhs: &mut __m128i, rhs: __m128i) {
-                    core::arch::asm!(
-                        "vpxor {rhs}, {lhs}, {lhs}",
-                        lhs = inout(xmm_reg) *lhs,
-                        rhs = in(xmm_reg) rhs,
-                        options(att_syntax, nomem, nostack, preserves_flags, pure,),
-                    )
+                    unsafe {
+                        core::arch::asm!(
+                            "vpxor {rhs}, {lhs}, {lhs}",
+                            lhs = inout(xmm_reg) *lhs,
+                            rhs = in(xmm_reg) rhs,
+                            options(att_syntax, nomem, nostack, preserves_flags, pure,),
+                        )
+                    }
                 }
                 #[allow(unused)]
                 unsafe fn xor_ref(lhs: &mut __m128i, rhs: __m128i) {
-                    *lhs = lhs._mm_xor_si128(rhs);
+                    unsafe {
+                        *lhs = lhs._mm_xor_si128(rhs);
+                    }
                 }
             )
             .pretty()
@@ -347,24 +362,28 @@ mod tests {
             stringify!(
                 #[allow(unused)]
                 unsafe fn xor(lhs: &mut [__m128i; 3], rhs: [__m128i; 3]) {
-                    core::arch::asm!(
-                        "vpxor {rhs0}, {lhs0}, {lhs0}",
-                        "vpxor {rhs1}, {lhs1}, {lhs1}",
-                        "vpxor {rhs2}, {lhs2}, {lhs2}",
-                        lhs0 = inout(xmm_reg) lhs[0usize],
-                        lhs1 = inout(xmm_reg) lhs[1usize],
-                        lhs2 = inout(xmm_reg) lhs[2usize],
-                        rhs0 = in(xmm_reg) rhs[0usize],
-                        rhs1 = in(xmm_reg) rhs[1usize],
-                        rhs2 = in(xmm_reg) rhs[2usize],
-                        options(att_syntax, nomem, nostack, preserves_flags, pure,),
-                    )
+                    unsafe {
+                        core::arch::asm!(
+                            "vpxor {rhs0}, {lhs0}, {lhs0}",
+                            "vpxor {rhs1}, {lhs1}, {lhs1}",
+                            "vpxor {rhs2}, {lhs2}, {lhs2}",
+                            lhs0 = inout(xmm_reg) lhs[0usize],
+                            lhs1 = inout(xmm_reg) lhs[1usize],
+                            lhs2 = inout(xmm_reg) lhs[2usize],
+                            rhs0 = in(xmm_reg) rhs[0usize],
+                            rhs1 = in(xmm_reg) rhs[1usize],
+                            rhs2 = in(xmm_reg) rhs[2usize],
+                            options(att_syntax, nomem, nostack, preserves_flags, pure,),
+                        )
+                    }
                 }
                 #[allow(unused)]
                 unsafe fn xor_ref(lhs: &mut [__m128i; 3], rhs: [__m128i; 3]) {
-                    lhs[0] = lhs[0]._mm_xor_si128(rhs[0]);
-                    lhs[1] = lhs[1]._mm_xor_si128(rhs[1]);
-                    lhs[2] = lhs[2]._mm_xor_si128(rhs[2]);
+                    unsafe {
+                        lhs[0] = lhs[0]._mm_xor_si128(rhs[0]);
+                        lhs[1] = lhs[1]._mm_xor_si128(rhs[1]);
+                        lhs[2] = lhs[2]._mm_xor_si128(rhs[2]);
+                    }
                 }
             )
             .pretty()
@@ -386,23 +405,27 @@ mod tests {
             stringify!(
                 #[allow(unused)]
                 unsafe fn xor(lhs: &mut __m128i, data: [__m128i; 3]) {
-                    core::arch::asm!(
-                        "vpxor {data0}, {lhs}, {lhs}",
-                        "vpxor {data2}, {data1}, {tmp}",
-                        "vpxor {tmp}, {lhs}, {lhs}",
-                        lhs = inout(xmm_reg) *lhs,
-                        data0 = in(xmm_reg) data[0usize],
-                        data1 = in(xmm_reg) data[1usize],
-                        data2 = in(xmm_reg) data[2usize],
-                        tmp = out(xmm_reg) _,
-                        options(att_syntax, nomem, nostack, preserves_flags, pure,),
-                    )
+                    unsafe {
+                        core::arch::asm!(
+                            "vpxor {data0}, {lhs}, {lhs}",
+                            "vpxor {data2}, {data1}, {tmp}",
+                            "vpxor {tmp}, {lhs}, {lhs}",
+                            lhs = inout(xmm_reg) *lhs,
+                            data0 = in(xmm_reg) data[0usize],
+                            data1 = in(xmm_reg) data[1usize],
+                            data2 = in(xmm_reg) data[2usize],
+                            tmp = out(xmm_reg) _,
+                            options(att_syntax, nomem, nostack, preserves_flags, pure,),
+                        )
+                    }
                 }
                 #[allow(unused)]
                 unsafe fn xor_ref(lhs: &mut __m128i, data: [__m128i; 3]) {
-                    *lhs = lhs._mm_xor_si128(data[0]);
-                    let tmp = data[1]._mm_xor_si128(data[2]);
-                    *lhs = lhs._mm_xor_si128(tmp);
+                    unsafe {
+                        *lhs = lhs._mm_xor_si128(data[0]);
+                        let tmp = data[1]._mm_xor_si128(data[2]);
+                        *lhs = lhs._mm_xor_si128(tmp);
+                    }
                 }
             )
             .pretty()

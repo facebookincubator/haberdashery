@@ -13,7 +13,7 @@ use crate::feature::*;
 
 #[inline(always)]
 pub fn haswell() -> FeatureSet {
-    // GCC's haswell extensions plus AES
+    // GCC's haswell extensions plus AES minus rdrand
     MOVBE
         | MMX
         | SSE
@@ -28,7 +28,6 @@ pub fn haswell() -> FeatureSet {
         | XSAVE
         | PCLMULQDQ
         | FSGSBASE
-        | RDRAND
         | F16C
         | AVX2
         | BMI1
@@ -38,9 +37,8 @@ pub fn haswell() -> FeatureSet {
 }
 #[inline(always)]
 pub fn broadwell() -> FeatureSet {
-    // GCC's broadwell extensions plus aes minux lzcnt
+    // GCC's broadwell extensions plus aes minus lzcnt, rdseed
     haswell() // line break
-        | RDSEED
         | ADX
 }
 #[inline(always)]
@@ -109,7 +107,7 @@ pub fn sapphirerapids() -> FeatureSet {
 }
 #[inline(always)]
 pub fn zen3() -> FeatureSet {
-    // GCC's znver3 minux xsavec, xsaves, wbnoinvd
+    // GCC's znver3 minus xsavec, xsaves, wbnoinvd, rdseed
     MOVBE
         | MMX
         | SSE
@@ -119,7 +117,9 @@ pub fn zen3() -> FeatureSet {
         | SSE4_1
         | SSE4_2
         | POPCNT
+        | FXSR
         | AVX
+        | XSAVE
         | PCLMULQDQ
         | FSGSBASE
         | F16C
@@ -128,7 +128,6 @@ pub fn zen3() -> FeatureSet {
         | BMI2
         | CLWB
         | FMA
-        | RDSEED
         | ADX
         | AES
         | CLFLUSHOPT
@@ -140,7 +139,7 @@ pub fn zen3() -> FeatureSet {
 }
 #[inline(always)]
 pub fn zen4() -> FeatureSet {
-    // GCC's znver4 minux xsavec, xsaves, wbnoinvd
+    // GCC's znver4 minus xsavec, xsaves, wbnoinvd, rdseed
     zen3() // line break
         | RDPID
         | AVX512F

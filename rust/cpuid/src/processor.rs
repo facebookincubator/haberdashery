@@ -18,9 +18,9 @@ pub struct Processor {
 impl Default for Processor {
     #[inline(always)]
     fn default() -> Self {
-        let leaf1 = unsafe { core::arch::x86_64::__cpuid(1) };
-        let leaf7 = unsafe { core::arch::x86_64::__cpuid(7) };
-        let leaf7_1 = unsafe { core::arch::x86_64::__cpuid_count(7, 1) };
+        let leaf1 = core::arch::x86_64::__cpuid(1);
+        let leaf7 = core::arch::x86_64::__cpuid(7);
+        let leaf7_1 = core::arch::x86_64::__cpuid_count(7, 1);
         let raw_model = RawModel {
             family: shift_and_mask_byte(leaf1.eax, 8, 0xf),
             extended_family: shift_and_mask_u16(leaf1.eax, 20, 0xff),
@@ -161,6 +161,7 @@ impl From<RawModel> for Model {
             (0xf, 0x0, 0x7, 0x0a) => AmdZen4,
             (0xf, 0x8, 0x7, 0x0a) => AmdZen4,
             (0xf, 0x0, 0xa, 0x0a) => AmdZen4,
+            (0xf, 0x1, 0x1, 0x0a) => AmdZen4,
             _ => Unknown,
         }
     }

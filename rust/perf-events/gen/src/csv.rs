@@ -33,7 +33,7 @@ impl Arch {
         let path = cells.get(2)?.strip_prefix('/')?;
         let name = path
             .split('/')
-            .last()?
+            .next_back()?
             .strip_suffix("_core.json")?
             .to_case(Case::Snake);
         if *cells.get(3)? != "core" {

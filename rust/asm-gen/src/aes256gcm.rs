@@ -106,6 +106,63 @@ impl<const N: usize> Aes256GcmKey<N> {
         }
         state.decrypt_finalize(self, tag)
     }
+    #[inline]
+    pub fn encrypt_variable_tag(
+        &self,
+        nonce: &[u8],
+        aad: Reader,
+        data: ReaderWriter,
+        tag: Writer,
+    ) -> bool {
+        if aad.len() >= MAX_AAD_BYTES {
+            return false;
+        }
+        if data.len() >= MAX_CRYPT_BYTES {
+            return false;
+        }
+        let mut state = Aes256GcmState::default();
+        if !state.init(self, nonce) {
+            return false;
+        }
+        if aad.len() != state.aad_update(self, aad) {
+            return false;
+        }
+        if data.is_empty() {
+            state.finalize_aad(self);
+        } else if data.len() != state.encrypt_update(self, data) {
+            return false;
+        }
+        state.encrypt_finalize_variable_tag(self, tag);
+        true
+    }
+    #[inline]
+    pub fn decrypt_variable_tag(
+        &self,
+        nonce: &[u8],
+        aad: Reader,
+        data: ReaderWriter,
+        tag: Reader,
+    ) -> bool {
+        if aad.len() >= MAX_AAD_BYTES {
+            return false;
+        }
+        if data.len() >= MAX_CRYPT_BYTES {
+            return false;
+        }
+        let mut state = Aes256GcmState::default();
+        if !state.init(self, nonce) {
+            return false;
+        }
+        if aad.len() != state.aad_update(self, aad) {
+            return false;
+        }
+        if data.is_empty() {
+            state.finalize_aad(self);
+        } else if data.len() != state.decrypt_update(self, data) {
+            return false;
+        }
+        state.decrypt_finalize_variable_tag(self, tag)
+    }
 }
 #[repr(C)]
 #[derive(Default, Clone)]
@@ -359,21 +416,21 @@ impl<const N: usize> Aes256GcmState<N> {
                         block.map(Block128::byte_reverse),
                         key.polyval.keys(),
                     );
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
-                    state.round();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
+                    state.round_decrypt();
                     let block = block.ops() ^ state.aes_data();
                     self.ghash = state.clmul_state();
                     block
@@ -412,16 +469,59 @@ impl<const N: usize> Aes256GcmState<N> {
     }
     #[inline]
     pub fn encrypt_finalize(&mut self, key: &Aes256GcmKey<N>, mut tag: Writer) -> usize {
-        tag.write(self.finalize(key, true))
+        if tag.len() != TAG_LEN {
+            0
+        } else {
+            tag.write(self.finalize(key, true))
+        }
     }
     #[inline]
     pub fn decrypt_finalize(&mut self, key: &Aes256GcmKey<N>, mut tag: Reader) -> bool {
         if tag.len() != TAG_LEN {
-            return false;
+            false
+        } else {
+            let computed_tag = self.finalize(key, false);
+            let extracted_tag = tag.read::<Block128>().unwrap();
+            computed_tag.crypto_equals(extracted_tag)
         }
-        let tag = tag.read::<Block128>().unwrap();
-        let computed_tag = self.finalize(key, false);
-        computed_tag.crypto_equals(tag)
+    }
+    #[inline]
+    pub fn encrypt_finalize_variable_tag(
+        &mut self,
+        key: &Aes256GcmKey<N>,
+        mut tag: Writer,
+    ) -> usize {
+        match tag.len() {
+            0..TAG_LEN => {
+                let computed_tag = self.finalize(key, true).to_bytes();
+                tag.write_bytes(&computed_tag[0..tag.len()])
+            }
+            TAG_LEN => tag.write(self.finalize(key, true)),
+            _ => 0,
+        }
+    }
+    #[inline]
+    pub fn decrypt_finalize_variable_tag(
+        &mut self,
+        key: &Aes256GcmKey<N>,
+        mut tag: Reader,
+    ) -> bool {
+        match tag.len() {
+            0..TAG_LEN => {
+                let computed_tag = self.finalize(key, false);
+                let computed_tag = unsafe { computed_tag.mov_range(0..tag.len()) };
+                let mut extracted_tag = [0; Block128::SIZE];
+                unsafe { tag.read_bytes(extracted_tag.as_mut_ptr(), tag.len()) };
+                let extracted_tag: Block128 = extracted_tag.into();
+                computed_tag.crypto_equals(extracted_tag)
+            }
+            TAG_LEN => {
+                let computed_tag = self.finalize(key, false);
+                let extracted_tag = tag.read::<Block128>().unwrap();
+                computed_tag.crypto_equals(extracted_tag)
+            }
+            _ => false,
+        }
     }
     #[inline]
     pub fn finalize(&mut self, key: &Aes256GcmKey<N>, is_encrypt: bool) -> Block128 {

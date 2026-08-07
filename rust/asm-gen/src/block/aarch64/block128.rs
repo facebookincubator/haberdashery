@@ -6,6 +6,7 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use core::arch::aarch64::*;
+use core::arch::asm;
 use core::mem::size_of;
 use core::ops::Range;
 use core::ptr::copy_nonoverlapping;
@@ -31,6 +32,10 @@ impl Block128 {
     #[inline]
     pub const fn from_bytes(bytes: [u8; Self::SIZE]) -> Self {
         unsafe { core::mem::transmute(bytes) }
+    }
+    #[inline]
+    pub fn to_bytes(self) -> [u8; Self::SIZE] {
+        self.into()
     }
     #[inline]
     pub const fn from_u32(bytes: [u32; 4]) -> Self {
@@ -181,6 +186,20 @@ impl Block128 {
         unsafe { vmull_high_p64(self.into(), other.into()) }.into()
     }
     #[inline]
+    pub fn clmul_hi_alt(self, other: Self) -> Self {
+        let result: uint8x16_t;
+        unsafe {
+            asm!(
+                "pmull2 {result:v}.1q, {lhs:v}.2d, {rhs:v}.2d",
+                result = out(vreg) result,
+                lhs = in(vreg) self.0,
+                rhs = in(vreg) other.0,
+                options(pure, nomem, nostack, preserves_flags),
+            );
+        }
+        Self(result)
+    }
+    #[inline]
     pub fn swap_lanes64(self) -> Self {
         unsafe { vextq_u64::<1>(self.into(), self.into()) }.into()
     }
@@ -225,6 +244,14 @@ impl Block128 {
     #[inline]
     pub fn bcax(self, b: impl Into<Self>, c: impl Into<Self>) -> Self {
         unsafe { vbcaxq_u64(self.into(), b.into().into(), c.into().into()) }.into()
+    }
+    #[inline]
+    pub fn blend8(self, other: Self, mask: impl Into<Self>) -> Self {
+        unsafe { vbslq_u8(mask.into().0, other.0, self.0) }.into()
+    }
+    #[inline]
+    pub fn shuffle8(self, shuffle: impl Into<Self>) -> Self {
+        unsafe { vqtbl1q_u8(self.0, shuffle.into().into()) }.into()
     }
     #[inline]
     pub fn byte_reverse(self) -> Self {

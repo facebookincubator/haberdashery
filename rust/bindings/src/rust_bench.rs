@@ -39,7 +39,7 @@ pub fn write_cargo_toml(crate_path: &Path, descriptors: &Descriptors) {
 pub const CARGO_TOML_HEADER: &str = r#"[package]
 name = "haberdashery_bench"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [[bench]]
 name = "bench"

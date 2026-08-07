@@ -2,7 +2,7 @@
 
 [package]
 name = "sivmac_broadwell"
-edition = "2021"
+edition = "2024"
 
 [features]
 asm-path = []

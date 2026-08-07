@@ -1,7 +1,7 @@
 [package]
 name = "haberdashery-asm-gen"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [profile.bench]
 inherits = "release"
@@ -17,7 +17,8 @@ harness = false
 [features]
 default = ["dep:perf-caliper"]
 
-asm_gen = []
+asm_gen = [
+]
 
 # x86_64 microarchs
 haswell = ["asm_gen", "aes"]
@@ -42,7 +43,6 @@ sve = []
 vpclmulqdq = []
 
 # algorithms
-aegis128l = []
 aes128gcm = []
 aes128gcm_streaming = []
 aes192gcm = []
@@ -54,8 +54,6 @@ aes256gcmdndkv2kc = []
 aes256gcmsiv = []
 sivmac = []
 
-# x25519 rfc test vectors take a particularly long time
-very_long_tests = []
 
 [dependencies]
 bindings-proc = { path = "../bindings/bindings-proc" }
