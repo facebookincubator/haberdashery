@@ -2,7 +2,7 @@
 
 [package]
 name = "aes256gcm_streaming_skylakex"
-edition = "2021"
+edition = "2024"
 
 [features]
 asm-path = []

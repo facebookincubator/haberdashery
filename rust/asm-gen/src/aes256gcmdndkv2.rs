@@ -124,6 +124,54 @@ impl Aes256GcmDndkKey {
         let (iv, state) = self.make_state(nonce);
         state.decrypt(iv, aad, data, tag)
     }
+    #[inline]
+    pub fn encrypt_variable_tag(
+        &self,
+        nonce: &[u8],
+        aad: Reader,
+        data: ReaderWriter,
+        tag: Writer,
+    ) -> bool {
+        let mut tag = tag;
+        if nonce.len() != NONCE_LEN {
+            return false;
+        }
+        if aad.len() >= MAX_AAD_BYTES {
+            return false;
+        }
+        if data.len() >= MAX_CRYPT_BYTES {
+            return false;
+        }
+        let Ok(nonce) = <[u8; NONCE_LEN]>::try_from(nonce) else {
+            return false;
+        };
+        let (iv, state) = self.make_state(nonce);
+        state.encrypt_variable_tag(iv, aad, data, tag)
+    }
+    #[inline]
+    pub fn decrypt_variable_tag(
+        &self,
+        nonce: &[u8],
+        aad: Reader,
+        data: ReaderWriter,
+        tag: Reader,
+    ) -> bool {
+        let mut tag = tag;
+        if nonce.len() != NONCE_LEN {
+            return false;
+        }
+        if aad.len() >= MAX_AAD_BYTES {
+            return false;
+        }
+        if data.len() >= MAX_CRYPT_BYTES {
+            return false;
+        }
+        let Ok(nonce) = <[u8; NONCE_LEN]>::try_from(nonce) else {
+            return false;
+        };
+        let (iv, state) = self.make_state(nonce);
+        state.decrypt_variable_tag(iv, aad, data, tag)
+    }
 }
 
 struct Aes256GcmDndkState(Aes256GcmKey<6>);
@@ -147,6 +195,26 @@ impl Aes256GcmDndkState {
         tag: Reader,
     ) -> bool {
         self.0.decrypt(&iv, aad, data, tag)
+    }
+    #[inline]
+    fn encrypt_variable_tag(
+        &self,
+        iv: [u8; crate::aes256gcm::NONCE_LEN],
+        aad: Reader,
+        data: ReaderWriter,
+        tag: Writer,
+    ) -> bool {
+        self.0.encrypt_variable_tag(&iv, aad, data, tag)
+    }
+    #[inline]
+    fn decrypt_variable_tag(
+        &self,
+        iv: [u8; crate::aes256gcm::NONCE_LEN],
+        aad: Reader,
+        data: ReaderWriter,
+        tag: Reader,
+    ) -> bool {
+        self.0.decrypt_variable_tag(&iv, aad, data, tag)
     }
 }
 

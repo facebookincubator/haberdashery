@@ -6,7 +6,6 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 #![cfg_attr(not(test), no_std)]
-#![feature(linkage)]
 #![allow(unexpected_cfgs)]
 #![allow(clippy::let_and_return)]
 

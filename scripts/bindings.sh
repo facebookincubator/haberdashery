@@ -14,6 +14,8 @@ DESCRIPTOR_DIR="${PROJECT_DIR}/descriptors"
 readonly DESCRIPTOR_DIR
 BINDINGS_DIR="${PROJECT_DIR}/bindings"
 readonly BINDINGS_DIR
+DEFAULT_ARCH=$(rustup toolchain list -q|awk -F'-' 'NR==1{print $2}')
+readonly DEFAULT_ARCH
 
 echo_with_date() {
   date=$(date)
@@ -76,9 +78,11 @@ c89() {
     --bindings-path="${BINDINGS_DIR}"  \
     --descriptor-path="${DESCRIPTOR_DIR}" \
     --name=c89
-  echo_with_date "bindings/c89 testing"
-  cd "${PROJECT_DIR}"
-  ./scripts/make.sh bindings/c89
+  if [ "${DEFAULT_ARCH}" == "x86_64" ]; then
+    echo_with_date "bindings/c89 testing"
+    cd "${PROJECT_DIR}"
+    ./scripts/make.sh bindings/c89
+  fi
 }
 
 openssl_evp() {
@@ -89,9 +93,11 @@ openssl_evp() {
     --bindings-path="${BINDINGS_DIR}"  \
     --descriptor-path="${DESCRIPTOR_DIR}" \
     --name=openssl_evp
-  echo_with_date "bindings/openssl_evp testing"
-  cd "${BINDINGS_DIR}/openssl_evp/aead_streaming"
-  make
+  if [ "${DEFAULT_ARCH}" == "x86_64" ]; then
+    echo_with_date "bindings/openssl_evp testing"
+    cd "${BINDINGS_DIR}/openssl_evp/aead_streaming"
+    make
+  fi
 }
 
 main() {

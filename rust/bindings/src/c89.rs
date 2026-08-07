@@ -23,7 +23,6 @@ pub fn bindings() {
 
 pub fn unit_bindings2(path: &Path, primitive: &str, files: &[(&str, &str)]) -> Descriptors {
     let descriptors = get_descriptors_from_flag(primitive);
-    let descriptors = Descriptors::from(descriptors);
 
     let path = path.join(primitive);
     std::fs::create_dir_all(&path).unwrap_or_else(|e| panic!("{e}: Couldn't make path {path:?}"));

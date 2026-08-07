@@ -2,7 +2,7 @@
 
 [package]
 name = "sivmac_neoversev2"
-edition = "2021"
+edition = "2024"
 
 [features]
 asm-path = []

@@ -199,7 +199,7 @@ impl Aes256 {
             ^ self[N - 2].left_byteshift::<4>()
             ^ self[N - 2].left_byteshift::<8>()
             ^ self[N - 2].left_byteshift::<12>();
-        self[N] = if N % 2 == 0 {
+        self[N] = if N.is_multiple_of(2) {
             let rcon = *even_rcon;
             *even_rcon = even_rcon.left_bitshift64::<1>();
             self[N - 1]

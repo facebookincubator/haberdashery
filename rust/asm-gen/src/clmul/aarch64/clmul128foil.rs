@@ -69,6 +69,17 @@ impl ClMul128Foil for Block128 {
         }
     }
 }
+
+#[inline]
+fn clmul128foil_alt(lhs: Block128, rhs: Block128) -> ClMul128FoilProduct {
+    let swapped = lhs.swap_lanes64();
+    ClMul128FoilProduct {
+        lo: lhs.clmul_lo(rhs),
+        mid: swapped.clmul_lo(rhs) ^ swapped.clmul_hi_alt(rhs),
+        hi: lhs.clmul_hi_alt(rhs),
+    }
+}
+
 impl<const N: usize> ClMul128Foil for [Block128; N] {
     #[inline]
     fn clmul128foil(self, rhs: Self) -> ClMul128FoilProduct {
@@ -172,6 +183,14 @@ impl<const N: usize> ClMul128FoilPowerTable<N> {
     #[inline]
     pub fn clmul128foil(self, array: [Block128; N]) -> ClMul128FoilProduct {
         self.0.clmul128foil(array)
+    }
+    #[inline]
+    pub fn clmul128foil_alt(self, array: [Block128; N]) -> ClMul128FoilProduct {
+        let mut result = clmul128foil_alt(self.0[0], array[N - 1]);
+        for i in 1..N {
+            result ^= clmul128foil_alt(self.0[i], array[N - 1 - i]);
+        }
+        result
     }
     #[inline]
     pub fn clmul128foil_reader(

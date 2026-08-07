@@ -263,6 +263,12 @@ impl<const N: usize> Context128<N> {
         self.hash = self.polyval.clmul128foil(array).reduce();
     }
     #[inline]
+    #[cfg(target_arch = "aarch64")]
+    pub fn hash_array_alt(&mut self, mut array: [Block128; N]) {
+        array[0] ^= self.hash;
+        self.hash = self.polyval.clmul128foil_alt(array).reduce();
+    }
+    #[inline]
     pub fn hash(&mut self, mut message: Reader) {
         for array in message.iter::<[Block128; N]>() {
             self.hash_array(array);
@@ -357,6 +363,9 @@ impl<const N: usize> Context128<N> {
                     #[cfg(target_arch = "x86_64")]
                     6 => self.iteration_asm(last_block, counters, block),
                     _ => {
+                        #[cfg(target_arch = "aarch64")]
+                        self.hash_array_alt(last_block);
+                        #[cfg(not(target_arch = "aarch64"))]
                         self.hash_array(last_block);
                         block.ops() ^ self.aes.encrypt(counters)
                     }
@@ -922,7 +931,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(fbcode_build))]
     fn comparison() {
         use aes_gcm_siv::AeadInPlace;
         use aes_gcm_siv::KeyInit;

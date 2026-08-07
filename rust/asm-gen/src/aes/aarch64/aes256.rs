@@ -331,4 +331,137 @@ mod tests {
         let decrypted_plaintext = ciphertext.map(|c| aes.decrypt(c));
         assert_eq!(decrypted_plaintext, plaintext);
     }
+
+    #[test]
+    fn expand() {
+        struct TestVector {
+            key: [&'static str; NUM_ROUNDS],
+        }
+        impl TestVector {
+            fn test(&self) {
+                let key = [
+                    Block128::from_hex(self.key[0]).unwrap(),
+                    Block128::from_hex(self.key[1]).unwrap(),
+                ];
+                let aes = Aes256::from(key);
+                for i in 0..self.key.len() {
+                    assert_eq!(aes[i], self.key[i], "{i}");
+                }
+            }
+        }
+
+        [
+            TestVector {
+                key: [
+                    "00000000000000000000000000000000",
+                    "00000000000000000000000000000000",
+                    "62636363626363636263636362636363",
+                    "aafbfbfbaafbfbfbaafbfbfbaafbfbfb",
+                    "6f6c6ccf0d0f0fac6f6c6ccf0d0f0fac",
+                    "7d8d8d6ad77676917d8d8d6ad7767691",
+                    "5354edc15e5be26d31378ea23c38810e",
+                    "968a81c141fcf7503c717a3aeb070cab",
+                    "9eaa8f28c0f16d45f1c6e3e7cdfe62e9",
+                    "2b312bdf6acddc8f56bca6b5bdbbaa1e",
+                    "6406fd52a4f79017553173f098cf1119",
+                    "6dbba90b0776758451cad331ec71792f",
+                    "e7b0e89c4347788b16760b7b8eb91a62",
+                    "74ed0ba1739b7e252251ad14ce20d43b",
+                    "10f80a1753bf729c45c979e7cb706385",
+                ],
+            },
+            //
+        ]
+        .iter()
+        .for_each(|x| x.test());
+    }
+    #[test]
+    fn encrypt() {
+        struct TestVector {
+            key: [&'static str; 2],
+            plaintext: &'static str,
+            ciphertext: &'static str,
+        }
+        impl TestVector {
+            fn test(&self) {
+                let key = [
+                    Block128::from_hex(self.key[0]).unwrap(),
+                    Block128::from_hex(self.key[1]).unwrap(),
+                ];
+                let aes = Aes256::from(key);
+                let plaintext = Block128::from_hex(self.plaintext).unwrap();
+                let ciphertext = aes.encrypt(plaintext);
+                assert_eq!(ciphertext, self.ciphertext);
+                let decrypted = aes.decrypt(ciphertext);
+                assert_eq!(decrypted, self.plaintext);
+            }
+        }
+
+        // https://csrc.nist.gov/files/pubs/fips/197/final/docs/fips-197.pdf
+        [
+            TestVector {
+                key: [
+                    "000102030405060708090a0b0c0d0e0f",
+                    "101112131415161718191a1b1c1d1e1f",
+                ],
+                plaintext: "00112233445566778899aabbccddeeff",
+                ciphertext: "8ea2b7ca516745bfeafc49904b496089",
+            },
+            //
+        ]
+        .iter()
+        .for_each(|x| x.test());
+    }
+    #[test]
+    fn encrypt_traunch() {
+        for _ in 0..128 {
+            let key = random::array::<KEY_LEN>();
+            let aes = Aes256::from(key);
+            let plaintext = Block128::random();
+            let ciphertext = aes.encrypt(plaintext);
+
+            const N: usize = 8;
+            let traunch = [plaintext; N];
+            let traunch = aes.encrypt(traunch);
+            for block in traunch {
+                assert_eq!(ciphertext, block);
+            }
+        }
+    }
+    #[test]
+    fn encrypt_decrypt() {
+        for _ in 0..128 {
+            let key = random::array::<KEY_LEN>();
+            let aes = Aes256::from(key);
+            let plaintext = Block128::random();
+            let ciphertext = aes.encrypt(plaintext);
+            let decrypted = aes.decrypt(ciphertext);
+            assert_eq!(plaintext, decrypted);
+        }
+    }
+    #[test]
+    fn new_and_encrypt() {
+        fn random_block128_array<const N: usize>() -> [Block128; N] {
+            let mut result = [Block128::ZERO; N];
+            for i in 0..N {
+                result[i] = Block128::random();
+            }
+            result
+        }
+        fn test_new_and_encrypt<const N: usize>() {
+            for _ in 0..128 {
+                let key: [Block128; 2] = random_block128_array();
+                let plaintext: [Block128; N] = random_block128_array();
+                let (aes, ciphertext) = Aes256::new_and_encrypt(key, plaintext);
+                assert_eq!(aes.encrypt(plaintext), ciphertext);
+                assert_eq!(Aes256::from(key).encrypt(plaintext), ciphertext);
+            }
+        }
+        test_new_and_encrypt::<1>();
+        test_new_and_encrypt::<2>();
+        test_new_and_encrypt::<3>();
+        test_new_and_encrypt::<4>();
+        test_new_and_encrypt::<5>();
+        test_new_and_encrypt::<6>();
+    }
 }

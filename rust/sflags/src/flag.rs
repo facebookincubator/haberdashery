@@ -92,4 +92,7 @@ impl<T: Parse + Sync + Send> SetFlag for Flag<T> {
         }
         self.get().is_some()
     }
+    fn needs_value(&self) -> bool {
+        T::NEEDS_VALUE
+    }
 }

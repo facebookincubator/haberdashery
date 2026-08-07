@@ -40,8 +40,8 @@ fn main() {
         }
     }
     let global_events: Vec<Event> = event_values
-        .into_iter()
-        .filter_map(|(_, event)| event)
+        .into_values()
+        .filter_map(|event| event)
         .collect();
     for events in arch_events {
         let name = &events.arch.name;

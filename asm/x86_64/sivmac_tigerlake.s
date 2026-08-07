@@ -491,13 +491,79 @@ haberdashery_sivmac_tigerlake_init:
 	.size	haberdashery_sivmac_tigerlake_init, .Lfunc_end0-haberdashery_sivmac_tigerlake_init
 	.cfi_endproc
 
+	.section	.text.haberdashery_sivmac_tigerlake_is_supported,"ax",@progbits
+	.globl	haberdashery_sivmac_tigerlake_is_supported
+	.p2align	4
+	.type	haberdashery_sivmac_tigerlake_is_supported,@function
+haberdashery_sivmac_tigerlake_is_supported:
+	.cfi_startproc
+	pushq	%rbx
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbx, -16
+	xorl	%esi, %esi
+	movl	$1, %eax
+	xorl	%ecx, %ecx
+	#APP
+
+	movq	%rbx, %rdi
+	cpuid
+	xchgq	%rbx, %rdi
+
+	#NO_APP
+	movl	%ecx, %r9d
+	movl	%edx, %r10d
+	notl	%r10d
+	notl	%r9d
+	movl	$7, %eax
+	xorl	%ecx, %ecx
+	#APP
+
+	movq	%rbx, %r11
+	cpuid
+	xchgq	%rbx, %r11
+
+	#NO_APP
+	movl	%edx, %edi
+	movl	%ecx, %r8d
+	movl	$7, %eax
+	movl	$1, %ecx
+	#APP
+
+	movq	%rbx, %rbx
+	cpuid
+	xchgq	%rbx, %rbx
+
+	#NO_APP
+	andl	$920130051, %r9d
+	andl	$125829120, %r10d
+	orl	%r9d, %r10d
+	jne	.LBB1_2
+	notl	%r8d
+	notl	%r11d
+	andl	$-240451287, %r11d
+	andl	$415260490, %r8d
+	orl	%r11d, %r8d
+	sete	%al
+	shrl	$8, %edi
+	andl	$1, %edi
+	andb	%al, %dil
+	movzbl	%dil, %esi
+.LBB1_2:
+	movl	%esi, %eax
+	popq	%rbx
+	.cfi_def_cfa_offset 8
+	retq
+.Lfunc_end1:
+	.size	haberdashery_sivmac_tigerlake_is_supported, .Lfunc_end1-haberdashery_sivmac_tigerlake_is_supported
+	.cfi_endproc
+
 	.section	.rodata.cst8,"aM",@progbits,8
 	.p2align	3, 0x0
-.LCPI1_0:
+.LCPI2_0:
 	.quad	-4467570830351532032
 	.section	.rodata.cst16,"aM",@progbits,16
 	.p2align	4, 0x0
-.LCPI1_1:
+.LCPI2_1:
 	.quad	-1
 	.quad	9223372036854775807
 	.section	.text.haberdashery_sivmac_tigerlake_sign,"ax",@progbits
@@ -513,295 +579,6 @@ haberdashery_sivmac_tigerlake_sign:
 	seta	%r9b
 	xorl	%eax, %eax
 	orb	%r8b, %r9b
-	jne	.LBB1_10
-	vmovdqa	240(%rdi), %xmm0
-	vpxor	%xmm1, %xmm1, %xmm1
-	cmpq	$256, %rdx
-	jb	.LBB1_2
-	vbroadcasti128	256(%rdi), %ymm2
-	vbroadcasti128	272(%rdi), %ymm3
-	vbroadcasti128	288(%rdi), %ymm4
-	vbroadcasti128	304(%rdi), %ymm5
-	vbroadcasti128	320(%rdi), %ymm6
-	vbroadcasti128	336(%rdi), %ymm7
-	vinserti128	$1, %xmm0, %ymm0, %ymm8
-	vbroadcasti128	352(%rdi), %ymm9
-	vpbroadcastq	.LCPI1_0(%rip), %ymm10
-	movq	%rdx, %rax
-	.p2align	4
-.LBB1_17:
-	vmovdqu	32(%rsi), %ymm11
-	vmovdqu	64(%rsi), %ymm12
-	vmovdqu	96(%rsi), %ymm13
-	vmovdqu	128(%rsi), %ymm14
-	vmovdqu	160(%rsi), %ymm15
-	vmovdqu64	192(%rsi), %ymm16
-	vmovdqu64	224(%rsi), %ymm17
-	vpxor	(%rsi), %ymm1, %ymm1
-	addq	$256, %rsi
-	addq	$-256, %rax
-	vpunpcklqdq	%ymm17, %ymm8, %ymm18
-	vpunpckhqdq	%ymm17, %ymm8, %ymm19
-	vpxorq	%ymm18, %ymm19, %ymm18
-	vpclmulqdq	$0, %ymm17, %ymm8, %ymm19
-	vpclmulqdq	$1, %ymm18, %ymm18, %ymm18
-	vpclmulqdq	$17, %ymm17, %ymm8, %ymm17
-	vpunpcklqdq	%ymm16, %ymm2, %ymm20
-	vpunpckhqdq	%ymm16, %ymm2, %ymm21
-	vpxorq	%ymm20, %ymm21, %ymm20
-	vpclmulqdq	$0, %ymm16, %ymm2, %ymm21
-	vpxorq	%ymm19, %ymm21, %ymm19
-	vpclmulqdq	$1, %ymm20, %ymm20, %ymm20
-	vpxorq	%ymm18, %ymm20, %ymm18
-	vpclmulqdq	$17, %ymm16, %ymm2, %ymm16
-	vpxorq	%ymm17, %ymm16, %ymm16
-	vpunpcklqdq	%ymm15, %ymm3, %ymm17
-	vpunpckhqdq	%ymm15, %ymm3, %ymm20
-	vpxorq	%ymm17, %ymm20, %ymm17
-	vpclmulqdq	$0, %ymm15, %ymm3, %ymm20
-	vpclmulqdq	$1, %ymm17, %ymm17, %ymm17
-	vpclmulqdq	$17, %ymm15, %ymm3, %ymm15
-	vpunpcklqdq	%ymm14, %ymm4, %ymm21
-	vpunpckhqdq	%ymm14, %ymm4, %ymm22
-	vpxorq	%ymm21, %ymm22, %ymm21
-	vpclmulqdq	$0, %ymm14, %ymm4, %ymm22
-	vpternlogq	$150, %ymm20, %ymm19, %ymm22
-	vpclmulqdq	$1, %ymm21, %ymm21, %ymm19
-	vpternlogq	$150, %ymm17, %ymm18, %ymm19
-	vpclmulqdq	$17, %ymm14, %ymm4, %ymm14
-	vpternlogq	$150, %ymm15, %ymm16, %ymm14
-	vpunpcklqdq	%ymm13, %ymm5, %ymm15
-	vpunpckhqdq	%ymm13, %ymm5, %ymm16
-	vpxorq	%ymm15, %ymm16, %ymm15
-	vpclmulqdq	$0, %ymm13, %ymm5, %ymm16
-	vpclmulqdq	$1, %ymm15, %ymm15, %ymm15
-	vpclmulqdq	$17, %ymm13, %ymm5, %ymm13
-	vpunpcklqdq	%ymm12, %ymm6, %ymm17
-	vpunpckhqdq	%ymm12, %ymm6, %ymm18
-	vpxorq	%ymm17, %ymm18, %ymm17
-	vpclmulqdq	$0, %ymm12, %ymm6, %ymm18
-	vpternlogq	$150, %ymm16, %ymm22, %ymm18
-	vpclmulqdq	$1, %ymm17, %ymm17, %ymm16
-	vpternlogq	$150, %ymm15, %ymm19, %ymm16
-	vpclmulqdq	$17, %ymm12, %ymm6, %ymm12
-	vpternlogq	$150, %ymm13, %ymm14, %ymm12
-	vpunpcklqdq	%ymm11, %ymm7, %ymm13
-	vpunpckhqdq	%ymm11, %ymm7, %ymm14
-	vpxor	%ymm13, %ymm14, %ymm13
-	vpclmulqdq	$0, %ymm11, %ymm7, %ymm14
-	vpclmulqdq	$1, %ymm13, %ymm13, %ymm13
-	vpclmulqdq	$17, %ymm11, %ymm7, %ymm11
-	vpunpcklqdq	%ymm1, %ymm9, %ymm15
-	vpunpckhqdq	%ymm1, %ymm9, %ymm17
-	vpxorq	%ymm15, %ymm17, %ymm15
-	vpclmulqdq	$0, %ymm1, %ymm9, %ymm17
-	vpternlogq	$150, %ymm14, %ymm18, %ymm17
-	vpclmulqdq	$1, %ymm15, %ymm15, %ymm14
-	vpternlogq	$150, %ymm13, %ymm16, %ymm14
-	vpclmulqdq	$17, %ymm1, %ymm9, %ymm13
-	vpternlogq	$150, %ymm11, %ymm12, %ymm13
-	vpternlogq	$150, %ymm17, %ymm13, %ymm14
-	vpslldq	$8, %ymm14, %ymm1
-	vpxorq	%ymm1, %ymm17, %ymm1
-	vpsrldq	$8, %ymm14, %ymm11
-	vpclmulqdq	$16, %ymm10, %ymm1, %ymm12
-	vpshufd	$78, %ymm1, %ymm1
-	vpxor	%ymm1, %ymm12, %ymm1
-	vpclmulqdq	$16, %ymm10, %ymm1, %ymm12
-	vpxor	%ymm11, %ymm12, %ymm11
-	vpshufd	$78, %ymm1, %ymm1
-	vpternlogq	$150, %ymm11, %ymm13, %ymm1
-	cmpq	$255, %rax
-	ja	.LBB1_17
-	cmpq	$32, %rax
-	jae	.LBB1_11
-	jmp	.LBB1_4
-.LBB1_2:
-	movq	%rdx, %rax
-	cmpq	$32, %rax
-	jb	.LBB1_4
-.LBB1_11:
-	vinserti128	$1, %xmm0, %ymm0, %ymm2
-	leaq	-32(%rax), %r8
-	testb	$32, %r8b
-	je	.LBB1_12
-	cmpq	$32, %r8
-	jae	.LBB1_14
-.LBB1_5:
-	vmovdqa	368(%rdi), %xmm2
-	testq	%r8, %r8
-	jne	.LBB1_6
-	jmp	.LBB1_9
-.LBB1_12:
-	vpxor	(%rsi), %ymm1, %ymm1
-	addq	$32, %rsi
-	vpunpcklqdq	%ymm1, %ymm2, %ymm3
-	vpunpckhqdq	%ymm1, %ymm2, %ymm4
-	vpxor	%ymm3, %ymm4, %ymm3
-	vpclmulqdq	$0, %ymm1, %ymm2, %ymm4
-	vpclmulqdq	$1, %ymm3, %ymm3, %ymm3
-	vpclmulqdq	$17, %ymm1, %ymm2, %ymm5
-	vpternlogq	$150, %ymm4, %ymm5, %ymm3
-	vpslldq	$8, %ymm3, %ymm1
-	vpxor	%ymm1, %ymm4, %ymm1
-	vpsrldq	$8, %ymm3, %ymm3
-	vpbroadcastq	.LCPI1_0(%rip), %ymm4
-	vpclmulqdq	$16, %ymm4, %ymm1, %ymm6
-	vpshufd	$78, %ymm1, %ymm1
-	vpxor	%ymm1, %ymm6, %ymm1
-	vpclmulqdq	$16, %ymm4, %ymm1, %ymm4
-	vpxor	%ymm3, %ymm4, %ymm3
-	vpshufd	$78, %ymm1, %ymm1
-	vpternlogq	$150, %ymm3, %ymm5, %ymm1
-	movq	%r8, %rax
-	cmpq	$32, %r8
-	jb	.LBB1_5
-.LBB1_14:
-	vpbroadcastq	.LCPI1_0(%rip), %ymm3
-	.p2align	4
-.LBB1_15:
-	vpxor	(%rsi), %ymm1, %ymm1
-	vpunpcklqdq	%ymm1, %ymm2, %ymm4
-	vpunpckhqdq	%ymm1, %ymm2, %ymm5
-	vpxor	%ymm4, %ymm5, %ymm4
-	vpclmulqdq	$0, %ymm1, %ymm2, %ymm5
-	vpclmulqdq	$1, %ymm4, %ymm4, %ymm4
-	vpclmulqdq	$17, %ymm1, %ymm2, %ymm1
-	vpternlogq	$150, %ymm5, %ymm1, %ymm4
-	vpslldq	$8, %ymm4, %ymm6
-	vpxor	%ymm6, %ymm5, %ymm5
-	vpsrldq	$8, %ymm4, %ymm4
-	vpclmulqdq	$16, %ymm3, %ymm5, %ymm6
-	vpshufd	$78, %ymm5, %ymm5
-	vpxor	%ymm5, %ymm6, %ymm5
-	vpclmulqdq	$16, %ymm3, %ymm5, %ymm6
-	vpshufd	$78, %ymm5, %ymm5
-	vpternlogq	$150, %ymm4, %ymm6, %ymm5
-	addq	$-64, %rax
-	vpternlogq	$150, 32(%rsi), %ymm1, %ymm5
-	addq	$64, %rsi
-	vpunpcklqdq	%ymm5, %ymm2, %ymm1
-	vpunpckhqdq	%ymm5, %ymm2, %ymm4
-	vpxor	%ymm1, %ymm4, %ymm1
-	vpclmulqdq	$0, %ymm5, %ymm2, %ymm4
-	vpclmulqdq	$1, %ymm1, %ymm1, %ymm1
-	vpclmulqdq	$17, %ymm5, %ymm2, %ymm5
-	vpternlogq	$150, %ymm4, %ymm5, %ymm1
-	vpslldq	$8, %ymm1, %ymm6
-	vpxor	%ymm6, %ymm4, %ymm4
-	vpsrldq	$8, %ymm1, %ymm1
-	vpclmulqdq	$16, %ymm3, %ymm4, %ymm6
-	vpshufd	$78, %ymm4, %ymm4
-	vpxor	%ymm4, %ymm6, %ymm4
-	vpclmulqdq	$16, %ymm3, %ymm4, %ymm6
-	vpxor	%ymm1, %ymm6, %ymm6
-	vpshufd	$78, %ymm4, %ymm1
-	vpternlogq	$150, %ymm6, %ymm5, %ymm1
-	cmpq	$31, %rax
-	ja	.LBB1_15
-.LBB1_4:
-	movq	%rax, %r8
-	vmovdqa	368(%rdi), %xmm2
-	testq	%r8, %r8
-	je	.LBB1_9
-.LBB1_6:
-	movl	$-1, %eax
-	bzhil	%r8d, %eax, %eax
-	kmovd	%eax, %k1
-	vmovdqu8	(%rsi), %ymm3 {%k1} {z}
-	vpxor	%ymm3, %ymm1, %ymm1
-	cmpq	$17, %r8
-	jae	.LBB1_8
-	vmovdqa	%xmm2, %xmm0
-.LBB1_8:
-	vinserti128	$1, %xmm0, %ymm0, %ymm0
-	vpunpcklqdq	%ymm1, %ymm0, %ymm3
-	vpunpckhqdq	%ymm1, %ymm0, %ymm4
-	vpxor	%ymm3, %ymm4, %ymm3
-	vpclmulqdq	$0, %ymm1, %ymm0, %ymm4
-	vpclmulqdq	$1, %ymm3, %ymm3, %ymm3
-	vpclmulqdq	$17, %ymm1, %ymm0, %ymm0
-	vpternlogq	$150, %ymm4, %ymm0, %ymm3
-	vpslldq	$8, %ymm3, %ymm1
-	vpxor	%ymm1, %ymm4, %ymm1
-	vpsrldq	$8, %ymm3, %ymm3
-	vpbroadcastq	.LCPI1_0(%rip), %ymm4
-	vpclmulqdq	$16, %ymm4, %ymm1, %ymm5
-	vpshufd	$78, %ymm1, %ymm1
-	vpxor	%ymm1, %ymm5, %ymm1
-	vpclmulqdq	$16, %ymm4, %ymm1, %ymm4
-	vpxor	%ymm3, %ymm4, %ymm3
-	vpshufd	$78, %ymm1, %ymm1
-	vpternlogq	$150, %ymm3, %ymm0, %ymm1
-.LBB1_9:
-	vmovq	%rdx, %xmm0
-	vpsllq	$3, %xmm0, %xmm0
-	vmovq	%xmm0, %xmm0
-	vextracti128	$1, %ymm1, %xmm3
-	vpxor	%xmm0, %xmm1, %xmm0
-	vpclmulqdq	$0, %xmm0, %xmm2, %xmm1
-	vpclmulqdq	$1, %xmm0, %xmm2, %xmm4
-	vpclmulqdq	$16, %xmm0, %xmm2, %xmm5
-	vpxor	%xmm4, %xmm5, %xmm4
-	vpclmulqdq	$17, %xmm0, %xmm2, %xmm0
-	vpslldq	$8, %xmm4, %xmm2
-	vpxor	%xmm2, %xmm1, %xmm1
-	vpsrldq	$8, %xmm4, %xmm2
-	vpbroadcastq	.LCPI1_0(%rip), %xmm4
-	vpclmulqdq	$16, %xmm4, %xmm1, %xmm5
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm5, %xmm1
-	vpclmulqdq	$16, %xmm4, %xmm1, %xmm4
-	vpternlogq	$150, %xmm3, %xmm0, %xmm4
-	vpshufd	$78, %xmm1, %xmm0
-	vpternlogq	$150, %xmm2, %xmm4, %xmm0
-	vmovdqa	(%rdi), %xmm1
-	vpternlogq	$120, .LCPI1_1(%rip), %xmm0, %xmm1
-	vaesenc	16(%rdi), %xmm1, %xmm0
-	vaesenc	32(%rdi), %xmm0, %xmm0
-	vaesenc	48(%rdi), %xmm0, %xmm0
-	vaesenc	64(%rdi), %xmm0, %xmm0
-	vaesenc	80(%rdi), %xmm0, %xmm0
-	vaesenc	96(%rdi), %xmm0, %xmm0
-	vaesenc	112(%rdi), %xmm0, %xmm0
-	vaesenc	128(%rdi), %xmm0, %xmm0
-	vaesenc	144(%rdi), %xmm0, %xmm0
-	vaesenc	160(%rdi), %xmm0, %xmm0
-	vaesenc	176(%rdi), %xmm0, %xmm0
-	vaesenc	192(%rdi), %xmm0, %xmm0
-	vaesenc	208(%rdi), %xmm0, %xmm0
-	vaesenclast	224(%rdi), %xmm0, %xmm0
-	vmovdqu	%xmm0, (%rcx)
-	movl	$1, %eax
-.LBB1_10:
-	vzeroupper
-	retq
-.Lfunc_end1:
-	.size	haberdashery_sivmac_tigerlake_sign, .Lfunc_end1-haberdashery_sivmac_tigerlake_sign
-	.cfi_endproc
-
-	.section	.rodata.cst8,"aM",@progbits,8
-	.p2align	3, 0x0
-.LCPI2_0:
-	.quad	-4467570830351532032
-	.section	.rodata.cst16,"aM",@progbits,16
-	.p2align	4, 0x0
-.LCPI2_1:
-	.quad	-1
-	.quad	9223372036854775807
-	.section	.text.haberdashery_sivmac_tigerlake_verify,"ax",@progbits
-	.globl	haberdashery_sivmac_tigerlake_verify
-	.p2align	4
-	.type	haberdashery_sivmac_tigerlake_verify,@function
-haberdashery_sivmac_tigerlake_verify:
-	.cfi_startproc
-	movabsq	$68719476736, %rax
-	cmpq	%rax, %rdx
-	seta	%r9b
-	cmpq	$16, %r8
-	setb	%r8b
-	xorl	%eax, %eax
-	orb	%r9b, %r8b
 	jne	.LBB2_10
 	vmovdqa	240(%rdi), %xmm0
 	vpxor	%xmm1, %xmm1, %xmm1
@@ -917,8 +694,7 @@ haberdashery_sivmac_tigerlake_verify:
 	cmpq	$32, %r8
 	jae	.LBB2_14
 .LBB2_5:
-	vmovdqu	(%rcx), %xmm2
-	vmovdqa	368(%rdi), %xmm3
+	vmovdqa	368(%rdi), %xmm2
 	testq	%r8, %r8
 	jne	.LBB2_6
 	jmp	.LBB2_9
@@ -991,61 +767,59 @@ haberdashery_sivmac_tigerlake_verify:
 	ja	.LBB2_15
 .LBB2_4:
 	movq	%rax, %r8
-	vmovdqu	(%rcx), %xmm2
-	vmovdqa	368(%rdi), %xmm3
+	vmovdqa	368(%rdi), %xmm2
 	testq	%r8, %r8
 	je	.LBB2_9
 .LBB2_6:
 	movl	$-1, %eax
 	bzhil	%r8d, %eax, %eax
 	kmovd	%eax, %k1
-	vmovdqu8	(%rsi), %ymm4 {%k1} {z}
-	vpxor	%ymm4, %ymm1, %ymm1
+	vmovdqu8	(%rsi), %ymm3 {%k1} {z}
+	vpxor	%ymm3, %ymm1, %ymm1
 	cmpq	$17, %r8
 	jae	.LBB2_8
-	vmovdqa	%xmm3, %xmm0
+	vmovdqa	%xmm2, %xmm0
 .LBB2_8:
 	vinserti128	$1, %xmm0, %ymm0, %ymm0
-	vpunpcklqdq	%ymm1, %ymm0, %ymm4
-	vpunpckhqdq	%ymm1, %ymm0, %ymm5
-	vpxor	%ymm4, %ymm5, %ymm4
-	vpclmulqdq	$0, %ymm1, %ymm0, %ymm5
-	vpclmulqdq	$1, %ymm4, %ymm4, %ymm4
+	vpunpcklqdq	%ymm1, %ymm0, %ymm3
+	vpunpckhqdq	%ymm1, %ymm0, %ymm4
+	vpxor	%ymm3, %ymm4, %ymm3
+	vpclmulqdq	$0, %ymm1, %ymm0, %ymm4
+	vpclmulqdq	$1, %ymm3, %ymm3, %ymm3
 	vpclmulqdq	$17, %ymm1, %ymm0, %ymm0
-	vpternlogq	$150, %ymm5, %ymm0, %ymm4
-	vpslldq	$8, %ymm4, %ymm1
+	vpternlogq	$150, %ymm4, %ymm0, %ymm3
+	vpslldq	$8, %ymm3, %ymm1
+	vpxor	%ymm1, %ymm4, %ymm1
+	vpsrldq	$8, %ymm3, %ymm3
+	vpbroadcastq	.LCPI2_0(%rip), %ymm4
+	vpclmulqdq	$16, %ymm4, %ymm1, %ymm5
+	vpshufd	$78, %ymm1, %ymm1
 	vpxor	%ymm1, %ymm5, %ymm1
-	vpsrldq	$8, %ymm4, %ymm4
-	vpbroadcastq	.LCPI2_0(%rip), %ymm5
-	vpclmulqdq	$16, %ymm5, %ymm1, %ymm6
+	vpclmulqdq	$16, %ymm4, %ymm1, %ymm4
+	vpxor	%ymm3, %ymm4, %ymm3
 	vpshufd	$78, %ymm1, %ymm1
-	vpxor	%ymm1, %ymm6, %ymm1
-	vpclmulqdq	$16, %ymm5, %ymm1, %ymm5
-	vpxor	%ymm4, %ymm5, %ymm4
-	vpshufd	$78, %ymm1, %ymm1
-	vpternlogq	$150, %ymm4, %ymm0, %ymm1
+	vpternlogq	$150, %ymm3, %ymm0, %ymm1
 .LBB2_9:
 	vmovq	%rdx, %xmm0
 	vpsllq	$3, %xmm0, %xmm0
-	vmovq	%xmm0, %xmm0
-	vextracti128	$1, %ymm1, %xmm4
+	vextracti128	$1, %ymm1, %xmm3
 	vpxor	%xmm0, %xmm1, %xmm0
-	vpclmulqdq	$0, %xmm0, %xmm3, %xmm1
-	vpclmulqdq	$1, %xmm0, %xmm3, %xmm5
-	vpclmulqdq	$16, %xmm0, %xmm3, %xmm6
-	vpxor	%xmm5, %xmm6, %xmm5
-	vpclmulqdq	$17, %xmm0, %xmm3, %xmm0
-	vpslldq	$8, %xmm5, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpsrldq	$8, %xmm5, %xmm3
-	vpbroadcastq	.LCPI2_0(%rip), %xmm5
-	vpclmulqdq	$16, %xmm5, %xmm1, %xmm6
+	vpclmulqdq	$0, %xmm0, %xmm2, %xmm1
+	vpclmulqdq	$1, %xmm0, %xmm2, %xmm4
+	vpclmulqdq	$16, %xmm0, %xmm2, %xmm5
+	vpxor	%xmm4, %xmm5, %xmm4
+	vpclmulqdq	$17, %xmm0, %xmm2, %xmm0
+	vpslldq	$8, %xmm4, %xmm2
+	vpxor	%xmm2, %xmm1, %xmm1
+	vpsrldq	$8, %xmm4, %xmm2
+	vpbroadcastq	.LCPI2_0(%rip), %xmm4
+	vpclmulqdq	$16, %xmm4, %xmm1, %xmm5
 	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm6, %xmm1
-	vpclmulqdq	$16, %xmm5, %xmm1, %xmm5
-	vpternlogq	$150, %xmm4, %xmm0, %xmm5
+	vpxor	%xmm1, %xmm5, %xmm1
+	vpclmulqdq	$16, %xmm4, %xmm1, %xmm4
+	vpternlogq	$150, %xmm3, %xmm0, %xmm4
 	vpshufd	$78, %xmm1, %xmm0
-	vpternlogq	$150, %xmm3, %xmm5, %xmm0
+	vpternlogq	$150, %xmm2, %xmm4, %xmm0
 	vmovdqa	(%rdi), %xmm1
 	vpternlogq	$120, .LCPI2_1(%rip), %xmm0, %xmm1
 	vaesenc	16(%rdi), %xmm1, %xmm0
@@ -1062,82 +836,309 @@ haberdashery_sivmac_tigerlake_verify:
 	vaesenc	192(%rdi), %xmm0, %xmm0
 	vaesenc	208(%rdi), %xmm0, %xmm0
 	vaesenclast	224(%rdi), %xmm0, %xmm0
-	vpxor	%xmm2, %xmm0, %xmm0
-	xorl	%eax, %eax
-	vptest	%xmm0, %xmm0
-	sete	%al
+	vmovdqu	%xmm0, (%rcx)
+	movl	$1, %eax
 .LBB2_10:
 	vzeroupper
 	retq
 .Lfunc_end2:
-	.size	haberdashery_sivmac_tigerlake_verify, .Lfunc_end2-haberdashery_sivmac_tigerlake_verify
+	.size	haberdashery_sivmac_tigerlake_sign, .Lfunc_end2-haberdashery_sivmac_tigerlake_sign
 	.cfi_endproc
 
-	.section	.text.haberdashery_sivmac_tigerlake_is_supported,"ax",@progbits
-	.globl	haberdashery_sivmac_tigerlake_is_supported
+	.section	.rodata.cst8,"aM",@progbits,8
+	.p2align	3, 0x0
+.LCPI3_0:
+	.quad	-4467570830351532032
+	.section	.rodata.cst16,"aM",@progbits,16
+	.p2align	4, 0x0
+.LCPI3_1:
+	.quad	-1
+	.quad	9223372036854775807
+	.section	.text.haberdashery_sivmac_tigerlake_verify,"ax",@progbits
+	.globl	haberdashery_sivmac_tigerlake_verify
 	.p2align	4
-	.type	haberdashery_sivmac_tigerlake_is_supported,@function
-haberdashery_sivmac_tigerlake_is_supported:
+	.type	haberdashery_sivmac_tigerlake_verify,@function
+haberdashery_sivmac_tigerlake_verify:
 	.cfi_startproc
-	pushq	%rbx
-	.cfi_def_cfa_offset 16
-	.cfi_offset %rbx, -16
-	xorl	%esi, %esi
-	movl	$1, %eax
-	xorl	%ecx, %ecx
-	#APP
-
-	movq	%rbx, %rdi
-	cpuid
-	xchgq	%rbx, %rdi
-
-	#NO_APP
-	movl	%ecx, %r9d
-	movl	%edx, %r10d
-	notl	%r10d
-	notl	%r9d
-	movl	$7, %eax
-	xorl	%ecx, %ecx
-	#APP
-
-	movq	%rbx, %r11
-	cpuid
-	xchgq	%rbx, %r11
-
-	#NO_APP
-	movl	%edx, %edi
-	movl	%ecx, %r8d
-	movl	$7, %eax
-	movl	$1, %ecx
-	#APP
-
-	movq	%rbx, %rbx
-	cpuid
-	xchgq	%rbx, %rbx
-
-	#NO_APP
-	andl	$1993871875, %r9d
-	andl	$125829120, %r10d
-	orl	%r9d, %r10d
-	jne	.LBB3_2
-	notl	%r8d
-	notl	%r11d
-	andl	$-240189143, %r11d
-	andl	$415260490, %r8d
-	orl	%r11d, %r8d
-	sete	%al
-	shrl	$8, %edi
-	andl	$1, %edi
-	andb	%al, %dil
-	movzbl	%dil, %esi
+	movabsq	$68719476736, %rax
+	cmpq	%rax, %rdx
+	seta	%r9b
+	cmpq	$16, %r8
+	setb	%r8b
+	xorl	%eax, %eax
+	orb	%r9b, %r8b
+	jne	.LBB3_10
+	vmovdqa	240(%rdi), %xmm0
+	vpxor	%xmm1, %xmm1, %xmm1
+	cmpq	$256, %rdx
+	jb	.LBB3_2
+	vbroadcasti128	256(%rdi), %ymm2
+	vbroadcasti128	272(%rdi), %ymm3
+	vbroadcasti128	288(%rdi), %ymm4
+	vbroadcasti128	304(%rdi), %ymm5
+	vbroadcasti128	320(%rdi), %ymm6
+	vbroadcasti128	336(%rdi), %ymm7
+	vinserti128	$1, %xmm0, %ymm0, %ymm8
+	vbroadcasti128	352(%rdi), %ymm9
+	vpbroadcastq	.LCPI3_0(%rip), %ymm10
+	movq	%rdx, %rax
+	.p2align	4
+.LBB3_17:
+	vmovdqu	32(%rsi), %ymm11
+	vmovdqu	64(%rsi), %ymm12
+	vmovdqu	96(%rsi), %ymm13
+	vmovdqu	128(%rsi), %ymm14
+	vmovdqu	160(%rsi), %ymm15
+	vmovdqu64	192(%rsi), %ymm16
+	vmovdqu64	224(%rsi), %ymm17
+	vpxor	(%rsi), %ymm1, %ymm1
+	addq	$256, %rsi
+	addq	$-256, %rax
+	vpunpcklqdq	%ymm17, %ymm8, %ymm18
+	vpunpckhqdq	%ymm17, %ymm8, %ymm19
+	vpxorq	%ymm18, %ymm19, %ymm18
+	vpclmulqdq	$0, %ymm17, %ymm8, %ymm19
+	vpclmulqdq	$1, %ymm18, %ymm18, %ymm18
+	vpclmulqdq	$17, %ymm17, %ymm8, %ymm17
+	vpunpcklqdq	%ymm16, %ymm2, %ymm20
+	vpunpckhqdq	%ymm16, %ymm2, %ymm21
+	vpxorq	%ymm20, %ymm21, %ymm20
+	vpclmulqdq	$0, %ymm16, %ymm2, %ymm21
+	vpxorq	%ymm19, %ymm21, %ymm19
+	vpclmulqdq	$1, %ymm20, %ymm20, %ymm20
+	vpxorq	%ymm18, %ymm20, %ymm18
+	vpclmulqdq	$17, %ymm16, %ymm2, %ymm16
+	vpxorq	%ymm17, %ymm16, %ymm16
+	vpunpcklqdq	%ymm15, %ymm3, %ymm17
+	vpunpckhqdq	%ymm15, %ymm3, %ymm20
+	vpxorq	%ymm17, %ymm20, %ymm17
+	vpclmulqdq	$0, %ymm15, %ymm3, %ymm20
+	vpclmulqdq	$1, %ymm17, %ymm17, %ymm17
+	vpclmulqdq	$17, %ymm15, %ymm3, %ymm15
+	vpunpcklqdq	%ymm14, %ymm4, %ymm21
+	vpunpckhqdq	%ymm14, %ymm4, %ymm22
+	vpxorq	%ymm21, %ymm22, %ymm21
+	vpclmulqdq	$0, %ymm14, %ymm4, %ymm22
+	vpternlogq	$150, %ymm20, %ymm19, %ymm22
+	vpclmulqdq	$1, %ymm21, %ymm21, %ymm19
+	vpternlogq	$150, %ymm17, %ymm18, %ymm19
+	vpclmulqdq	$17, %ymm14, %ymm4, %ymm14
+	vpternlogq	$150, %ymm15, %ymm16, %ymm14
+	vpunpcklqdq	%ymm13, %ymm5, %ymm15
+	vpunpckhqdq	%ymm13, %ymm5, %ymm16
+	vpxorq	%ymm15, %ymm16, %ymm15
+	vpclmulqdq	$0, %ymm13, %ymm5, %ymm16
+	vpclmulqdq	$1, %ymm15, %ymm15, %ymm15
+	vpclmulqdq	$17, %ymm13, %ymm5, %ymm13
+	vpunpcklqdq	%ymm12, %ymm6, %ymm17
+	vpunpckhqdq	%ymm12, %ymm6, %ymm18
+	vpxorq	%ymm17, %ymm18, %ymm17
+	vpclmulqdq	$0, %ymm12, %ymm6, %ymm18
+	vpternlogq	$150, %ymm16, %ymm22, %ymm18
+	vpclmulqdq	$1, %ymm17, %ymm17, %ymm16
+	vpternlogq	$150, %ymm15, %ymm19, %ymm16
+	vpclmulqdq	$17, %ymm12, %ymm6, %ymm12
+	vpternlogq	$150, %ymm13, %ymm14, %ymm12
+	vpunpcklqdq	%ymm11, %ymm7, %ymm13
+	vpunpckhqdq	%ymm11, %ymm7, %ymm14
+	vpxor	%ymm13, %ymm14, %ymm13
+	vpclmulqdq	$0, %ymm11, %ymm7, %ymm14
+	vpclmulqdq	$1, %ymm13, %ymm13, %ymm13
+	vpclmulqdq	$17, %ymm11, %ymm7, %ymm11
+	vpunpcklqdq	%ymm1, %ymm9, %ymm15
+	vpunpckhqdq	%ymm1, %ymm9, %ymm17
+	vpxorq	%ymm15, %ymm17, %ymm15
+	vpclmulqdq	$0, %ymm1, %ymm9, %ymm17
+	vpternlogq	$150, %ymm14, %ymm18, %ymm17
+	vpclmulqdq	$1, %ymm15, %ymm15, %ymm14
+	vpternlogq	$150, %ymm13, %ymm16, %ymm14
+	vpclmulqdq	$17, %ymm1, %ymm9, %ymm13
+	vpternlogq	$150, %ymm11, %ymm12, %ymm13
+	vpternlogq	$150, %ymm17, %ymm13, %ymm14
+	vpslldq	$8, %ymm14, %ymm1
+	vpxorq	%ymm1, %ymm17, %ymm1
+	vpsrldq	$8, %ymm14, %ymm11
+	vpclmulqdq	$16, %ymm10, %ymm1, %ymm12
+	vpshufd	$78, %ymm1, %ymm1
+	vpxor	%ymm1, %ymm12, %ymm1
+	vpclmulqdq	$16, %ymm10, %ymm1, %ymm12
+	vpxor	%ymm11, %ymm12, %ymm11
+	vpshufd	$78, %ymm1, %ymm1
+	vpternlogq	$150, %ymm11, %ymm13, %ymm1
+	cmpq	$255, %rax
+	ja	.LBB3_17
+	cmpq	$32, %rax
+	jae	.LBB3_11
+	jmp	.LBB3_4
 .LBB3_2:
-	movl	%esi, %eax
-	popq	%rbx
-	.cfi_def_cfa_offset 8
+	movq	%rdx, %rax
+	cmpq	$32, %rax
+	jb	.LBB3_4
+.LBB3_11:
+	vinserti128	$1, %xmm0, %ymm0, %ymm2
+	leaq	-32(%rax), %r8
+	testb	$32, %r8b
+	je	.LBB3_12
+	cmpq	$32, %r8
+	jae	.LBB3_14
+.LBB3_5:
+	vmovdqu	(%rcx), %xmm2
+	vmovdqa	368(%rdi), %xmm3
+	testq	%r8, %r8
+	jne	.LBB3_6
+	jmp	.LBB3_9
+.LBB3_12:
+	vpxor	(%rsi), %ymm1, %ymm1
+	addq	$32, %rsi
+	vpunpcklqdq	%ymm1, %ymm2, %ymm3
+	vpunpckhqdq	%ymm1, %ymm2, %ymm4
+	vpxor	%ymm3, %ymm4, %ymm3
+	vpclmulqdq	$0, %ymm1, %ymm2, %ymm4
+	vpclmulqdq	$1, %ymm3, %ymm3, %ymm3
+	vpclmulqdq	$17, %ymm1, %ymm2, %ymm5
+	vpternlogq	$150, %ymm4, %ymm5, %ymm3
+	vpslldq	$8, %ymm3, %ymm1
+	vpxor	%ymm1, %ymm4, %ymm1
+	vpsrldq	$8, %ymm3, %ymm3
+	vpbroadcastq	.LCPI3_0(%rip), %ymm4
+	vpclmulqdq	$16, %ymm4, %ymm1, %ymm6
+	vpshufd	$78, %ymm1, %ymm1
+	vpxor	%ymm1, %ymm6, %ymm1
+	vpclmulqdq	$16, %ymm4, %ymm1, %ymm4
+	vpxor	%ymm3, %ymm4, %ymm3
+	vpshufd	$78, %ymm1, %ymm1
+	vpternlogq	$150, %ymm3, %ymm5, %ymm1
+	movq	%r8, %rax
+	cmpq	$32, %r8
+	jb	.LBB3_5
+.LBB3_14:
+	vpbroadcastq	.LCPI3_0(%rip), %ymm3
+	.p2align	4
+.LBB3_15:
+	vpxor	(%rsi), %ymm1, %ymm1
+	vpunpcklqdq	%ymm1, %ymm2, %ymm4
+	vpunpckhqdq	%ymm1, %ymm2, %ymm5
+	vpxor	%ymm4, %ymm5, %ymm4
+	vpclmulqdq	$0, %ymm1, %ymm2, %ymm5
+	vpclmulqdq	$1, %ymm4, %ymm4, %ymm4
+	vpclmulqdq	$17, %ymm1, %ymm2, %ymm1
+	vpternlogq	$150, %ymm5, %ymm1, %ymm4
+	vpslldq	$8, %ymm4, %ymm6
+	vpxor	%ymm6, %ymm5, %ymm5
+	vpsrldq	$8, %ymm4, %ymm4
+	vpclmulqdq	$16, %ymm3, %ymm5, %ymm6
+	vpshufd	$78, %ymm5, %ymm5
+	vpxor	%ymm5, %ymm6, %ymm5
+	vpclmulqdq	$16, %ymm3, %ymm5, %ymm6
+	vpshufd	$78, %ymm5, %ymm5
+	vpternlogq	$150, %ymm4, %ymm6, %ymm5
+	addq	$-64, %rax
+	vpternlogq	$150, 32(%rsi), %ymm1, %ymm5
+	addq	$64, %rsi
+	vpunpcklqdq	%ymm5, %ymm2, %ymm1
+	vpunpckhqdq	%ymm5, %ymm2, %ymm4
+	vpxor	%ymm1, %ymm4, %ymm1
+	vpclmulqdq	$0, %ymm5, %ymm2, %ymm4
+	vpclmulqdq	$1, %ymm1, %ymm1, %ymm1
+	vpclmulqdq	$17, %ymm5, %ymm2, %ymm5
+	vpternlogq	$150, %ymm4, %ymm5, %ymm1
+	vpslldq	$8, %ymm1, %ymm6
+	vpxor	%ymm6, %ymm4, %ymm4
+	vpsrldq	$8, %ymm1, %ymm1
+	vpclmulqdq	$16, %ymm3, %ymm4, %ymm6
+	vpshufd	$78, %ymm4, %ymm4
+	vpxor	%ymm4, %ymm6, %ymm4
+	vpclmulqdq	$16, %ymm3, %ymm4, %ymm6
+	vpxor	%ymm1, %ymm6, %ymm6
+	vpshufd	$78, %ymm4, %ymm1
+	vpternlogq	$150, %ymm6, %ymm5, %ymm1
+	cmpq	$31, %rax
+	ja	.LBB3_15
+.LBB3_4:
+	movq	%rax, %r8
+	vmovdqu	(%rcx), %xmm2
+	vmovdqa	368(%rdi), %xmm3
+	testq	%r8, %r8
+	je	.LBB3_9
+.LBB3_6:
+	movl	$-1, %eax
+	bzhil	%r8d, %eax, %eax
+	kmovd	%eax, %k1
+	vmovdqu8	(%rsi), %ymm4 {%k1} {z}
+	vpxor	%ymm4, %ymm1, %ymm1
+	cmpq	$17, %r8
+	jae	.LBB3_8
+	vmovdqa	%xmm3, %xmm0
+.LBB3_8:
+	vinserti128	$1, %xmm0, %ymm0, %ymm0
+	vpunpcklqdq	%ymm1, %ymm0, %ymm4
+	vpunpckhqdq	%ymm1, %ymm0, %ymm5
+	vpxor	%ymm4, %ymm5, %ymm4
+	vpclmulqdq	$0, %ymm1, %ymm0, %ymm5
+	vpclmulqdq	$1, %ymm4, %ymm4, %ymm4
+	vpclmulqdq	$17, %ymm1, %ymm0, %ymm0
+	vpternlogq	$150, %ymm5, %ymm0, %ymm4
+	vpslldq	$8, %ymm4, %ymm1
+	vpxor	%ymm1, %ymm5, %ymm1
+	vpsrldq	$8, %ymm4, %ymm4
+	vpbroadcastq	.LCPI3_0(%rip), %ymm5
+	vpclmulqdq	$16, %ymm5, %ymm1, %ymm6
+	vpshufd	$78, %ymm1, %ymm1
+	vpxor	%ymm1, %ymm6, %ymm1
+	vpclmulqdq	$16, %ymm5, %ymm1, %ymm5
+	vpxor	%ymm4, %ymm5, %ymm4
+	vpshufd	$78, %ymm1, %ymm1
+	vpternlogq	$150, %ymm4, %ymm0, %ymm1
+.LBB3_9:
+	vmovq	%rdx, %xmm0
+	vpsllq	$3, %xmm0, %xmm0
+	vextracti128	$1, %ymm1, %xmm4
+	vpxor	%xmm0, %xmm1, %xmm0
+	vpclmulqdq	$0, %xmm0, %xmm3, %xmm1
+	vpclmulqdq	$1, %xmm0, %xmm3, %xmm5
+	vpclmulqdq	$16, %xmm0, %xmm3, %xmm6
+	vpxor	%xmm5, %xmm6, %xmm5
+	vpclmulqdq	$17, %xmm0, %xmm3, %xmm0
+	vpslldq	$8, %xmm5, %xmm3
+	vpxor	%xmm3, %xmm1, %xmm1
+	vpbroadcastq	.LCPI3_0(%rip), %xmm3
+	vpsrldq	$8, %xmm5, %xmm5
+	vpclmulqdq	$16, %xmm3, %xmm1, %xmm6
+	vpshufd	$78, %xmm1, %xmm1
+	vpxor	%xmm1, %xmm6, %xmm1
+	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
+	vpternlogq	$150, %xmm4, %xmm0, %xmm3
+	vpshufd	$78, %xmm1, %xmm0
+	vpternlogq	$150, %xmm5, %xmm3, %xmm0
+	vmovdqa	(%rdi), %xmm1
+	vpternlogq	$120, .LCPI3_1(%rip), %xmm0, %xmm1
+	vaesenc	16(%rdi), %xmm1, %xmm0
+	vaesenc	32(%rdi), %xmm0, %xmm0
+	vaesenc	48(%rdi), %xmm0, %xmm0
+	vaesenc	64(%rdi), %xmm0, %xmm0
+	vaesenc	80(%rdi), %xmm0, %xmm0
+	vaesenc	96(%rdi), %xmm0, %xmm0
+	vaesenc	112(%rdi), %xmm0, %xmm0
+	vaesenc	128(%rdi), %xmm0, %xmm0
+	vaesenc	144(%rdi), %xmm0, %xmm0
+	vaesenc	160(%rdi), %xmm0, %xmm0
+	vaesenc	176(%rdi), %xmm0, %xmm0
+	vaesenc	192(%rdi), %xmm0, %xmm0
+	vaesenc	208(%rdi), %xmm0, %xmm0
+	vaesenclast	224(%rdi), %xmm0, %xmm0
+	vpxor	%xmm2, %xmm0, %xmm0
+	vpshufd	$238, %xmm0, %xmm1
+	vpor	%xmm1, %xmm0, %xmm0
+	vmovq	%xmm0, %rcx
+	xorl	%eax, %eax
+	testq	%rcx, %rcx
+	sete	%al
+.LBB3_10:
+	vzeroupper
 	retq
 .Lfunc_end3:
-	.size	haberdashery_sivmac_tigerlake_is_supported, .Lfunc_end3-haberdashery_sivmac_tigerlake_is_supported
+	.size	haberdashery_sivmac_tigerlake_verify, .Lfunc_end3-haberdashery_sivmac_tigerlake_verify
 	.cfi_endproc
 
-	.ident	"rustc version 1.90.0-nightly (adcb3d3b4 2025-07-31)"
+	.ident	"rustc version 1.97.0-nightly (e96c36b6f 2026-05-21)"
 	.section	".note.GNU-stack","",@progbits

@@ -518,13 +518,63 @@ haberdashery_sivmac_skylakex_init:
 	.size	haberdashery_sivmac_skylakex_init, .Lfunc_end0-haberdashery_sivmac_skylakex_init
 	.cfi_endproc
 
+	.section	.text.haberdashery_sivmac_skylakex_is_supported,"ax",@progbits
+	.globl	haberdashery_sivmac_skylakex_is_supported
+	.p2align	4
+	.type	haberdashery_sivmac_skylakex_is_supported,@function
+haberdashery_sivmac_skylakex_is_supported:
+	.cfi_startproc
+	movl	$1, %eax
+	xorl	%ecx, %ecx
+	#APP
+
+	movq	%rbx, %rsi
+	cpuid
+	xchgq	%rbx, %rsi
+
+	#NO_APP
+	movl	%ecx, %esi
+	movl	%edx, %edi
+	notl	%edi
+	notl	%esi
+	xorl	%ecx, %ecx
+	movl	$7, %eax
+	#APP
+
+	movq	%rbx, %r8
+	cpuid
+	xchgq	%rbx, %r8
+
+	#NO_APP
+	movl	$1, %ecx
+	movl	$7, %eax
+	#APP
+
+	movq	%rbx, %r9
+	cpuid
+	xchgq	%rbx, %r9
+
+	#NO_APP
+	andl	$920130051, %esi
+	andl	$125829120, %edi
+	orl	%esi, %edi
+	notl	%r8d
+	andl	$-779419351, %r8d
+	xorl	%eax, %eax
+	orl	%edi, %r8d
+	sete	%al
+	retq
+.Lfunc_end1:
+	.size	haberdashery_sivmac_skylakex_is_supported, .Lfunc_end1-haberdashery_sivmac_skylakex_is_supported
+	.cfi_endproc
+
 	.section	.rodata.cst8,"aM",@progbits,8
 	.p2align	3, 0x0
-.LCPI1_0:
+.LCPI2_0:
 	.quad	-4467570830351532032
 	.section	.rodata.cst16,"aM",@progbits,16
 	.p2align	4, 0x0
-.LCPI1_1:
+.LCPI2_1:
 	.quad	-1
 	.quad	9223372036854775807
 	.section	.text.haberdashery_sivmac_skylakex_sign,"ax",@progbits
@@ -540,10 +590,10 @@ haberdashery_sivmac_skylakex_sign:
 	seta	%r9b
 	xorl	%eax, %eax
 	orb	%r8b, %r9b
-	jne	.LBB1_28
+	jne	.LBB2_29
 	vpxor	%xmm0, %xmm0, %xmm0
 	cmpq	$128, %rdx
-	jb	.LBB1_2
+	jb	.LBB2_2
 	vmovdqa64	(%rdi), %xmm16
 	vmovdqa64	16(%rdi), %xmm17
 	vmovdqa64	32(%rdi), %xmm18
@@ -552,10 +602,10 @@ haberdashery_sivmac_skylakex_sign:
 	vmovdqa64	80(%rdi), %xmm21
 	vmovdqa	96(%rdi), %xmm7
 	vmovdqa	112(%rdi), %xmm8
-	vpbroadcastq	.LCPI1_0(%rip), %xmm22
+	vpbroadcastq	.LCPI2_0(%rip), %xmm22
 	movq	%rdx, %rax
 	.p2align	4
-.LBB1_4:
+.LBB2_15:
 	vmovdqu	16(%rsi), %xmm10
 	vmovdqu	32(%rsi), %xmm11
 	vmovdqu	80(%rsi), %xmm12
@@ -630,12 +680,12 @@ haberdashery_sivmac_skylakex_sign:
 	addq	$-128, %rax
 	vpternlogq	$150, %xmm1, %xmm2, %xmm0
 	cmpq	$127, %rax
-	ja	.LBB1_4
+	ja	.LBB2_15
 	shlq	$3, %rdx
 	movq	%rax, %r8
 	andq	$15, %r8
-	je	.LBB1_25
-.LBB1_6:
+	je	.LBB2_16
+.LBB2_4:
 	movl	%eax, %r10d
 	andl	$112, %r10d
 	movl	$-1, %r9d
@@ -643,7 +693,7 @@ haberdashery_sivmac_skylakex_sign:
 	kmovd	%r8d, %k1
 	vmovdqu8	(%rsi,%r10), %xmm1 {%k1} {z}
 	testq	%r10, %r10
-	je	.LBB1_15
+	je	.LBB2_13
 	leaq	-16(%r10), %r9
 	movq	%r9, %r11
 	shrq	$4, %r11
@@ -660,9 +710,9 @@ haberdashery_sivmac_skylakex_sign:
 	vpxor	%xmm3, %xmm5, %xmm3
 	vpclmulqdq	$17, %xmm0, %xmm4, %xmm0
 	testq	%r9, %r9
-	je	.LBB1_13
+	je	.LBB2_11
 	testb	$16, %al
-	jne	.LBB1_10
+	jne	.LBB2_8
 	addq	$-32, %r10
 	vmovdqu	16(%rsi), %xmm4
 	addq	$16, %rsi
@@ -678,17 +728,17 @@ haberdashery_sivmac_skylakex_sign:
 	vpternlogq	$150, %xmm8, %xmm7, %xmm3
 	vpxor	%xmm0, %xmm4, %xmm0
 	movq	%r10, %r9
-.LBB1_10:
+.LBB2_8:
 	andl	$112, %eax
 	cmpl	$32, %eax
-	je	.LBB1_13
+	je	.LBB2_11
 	movq	%r8, %rax
 	shlq	$4, %rax
 	addq	%rdi, %rax
 	addq	$-16, %rax
 	xorl	%r10d, %r10d
 	.p2align	4
-.LBB1_12:
+.LBB2_10:
 	vmovdqa	-16(%rax), %xmm4
 	vmovdqa	(%rax), %xmm5
 	vmovdqu	16(%rsi,%r10), %xmm6
@@ -709,10 +759,10 @@ haberdashery_sivmac_skylakex_sign:
 	addq	$-32, %rax
 	addq	$32, %r10
 	cmpq	%r10, %r9
-	jne	.LBB1_12
-.LBB1_13:
+	jne	.LBB2_10
+.LBB2_11:
 	testq	%r8, %r8
-	je	.LBB1_14
+	je	.LBB2_12
 	vmovdqa	(%rdi), %xmm4
 	vmovdqa	16(%rdi), %xmm5
 	vpclmulqdq	$0, %xmm1, %xmm5, %xmm6
@@ -728,7 +778,7 @@ haberdashery_sivmac_skylakex_sign:
 	vpxor	%xmm6, %xmm9, %xmm5
 	vpternlogq	$150, %xmm4, %xmm5, %xmm2
 	vpsrldq	$8, %xmm3, %xmm3
-	vpbroadcastq	.LCPI1_0(%rip), %xmm4
+	vpbroadcastq	.LCPI2_0(%rip), %xmm4
 	vpclmulqdq	$16, %xmm4, %xmm2, %xmm5
 	vpshufd	$78, %xmm2, %xmm2
 	vpxor	%xmm2, %xmm5, %xmm2
@@ -736,16 +786,16 @@ haberdashery_sivmac_skylakex_sign:
 	vpshufd	$78, %xmm2, %xmm2
 	vpternlogq	$150, %xmm3, %xmm1, %xmm4
 	vpternlogq	$150, %xmm2, %xmm4, %xmm0
-	jmp	.LBB1_27
-.LBB1_2:
+	jmp	.LBB2_28
+.LBB2_2:
 	movq	%rdx, %rax
 	shlq	$3, %rdx
 	movq	%rax, %r8
 	andq	$15, %r8
-	jne	.LBB1_6
-.LBB1_25:
+	jne	.LBB2_4
+.LBB2_16:
 	cmpq	$15, %rax
-	jbe	.LBB1_26
+	jbe	.LBB2_17
 	vmovdqa	(%rdi,%rax), %xmm3
 	vpxor	(%rsi), %xmm0, %xmm0
 	vpclmulqdq	$0, %xmm0, %xmm3, %xmm1
@@ -753,13 +803,12 @@ haberdashery_sivmac_skylakex_sign:
 	vpclmulqdq	$16, %xmm0, %xmm3, %xmm4
 	vpxor	%xmm2, %xmm4, %xmm2
 	vpclmulqdq	$17, %xmm0, %xmm3, %xmm0
-	leaq	-16(%rax), %r8
-	cmpq	$16, %r8
-	jb	.LBB1_23
+	cmpq	$32, %rax
+	jb	.LBB2_25
 	movq	%rax, %r9
 	shrq	$4, %r9
 	testb	$16, %al
-	jne	.LBB1_20
+	jne	.LBB2_20
 	vmovdqu	16(%rsi), %xmm3
 	addq	$16, %rsi
 	decq	%r9
@@ -774,15 +823,66 @@ haberdashery_sivmac_skylakex_sign:
 	vpternlogq	$150, %xmm7, %xmm6, %xmm2
 	vpxor	%xmm0, %xmm3, %xmm0
 	leaq	-32(%rax), %r8
-.LBB1_20:
+	jmp	.LBB2_22
+.LBB2_17:
+	vmovdqa	(%rdi), %xmm1
+	vmovq	%rdx, %xmm2
+	vpxor	%xmm2, %xmm0, %xmm0
+	vpclmulqdq	$0, %xmm0, %xmm1, %xmm2
+	vpclmulqdq	$1, %xmm0, %xmm1, %xmm3
+	vpclmulqdq	$16, %xmm0, %xmm1, %xmm4
+	vpxor	%xmm3, %xmm4, %xmm3
+	vpclmulqdq	$17, %xmm0, %xmm1, %xmm0
+	vpslldq	$8, %xmm3, %xmm1
+	vpxor	%xmm1, %xmm2, %xmm1
+	vpsrldq	$8, %xmm3, %xmm2
+	vpbroadcastq	.LCPI2_0(%rip), %xmm3
+	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
+	vpshufd	$78, %xmm1, %xmm1
+	vpxor	%xmm1, %xmm4, %xmm1
+	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
+	vpshufd	$78, %xmm1, %xmm1
+	vpxor	%xmm0, %xmm3, %xmm0
+	vpternlogq	$150, %xmm2, %xmm1, %xmm0
+	jmp	.LBB2_28
+.LBB2_12:
+	vpslldq	$8, %xmm3, %xmm4
+	vpxor	%xmm4, %xmm2, %xmm2
+	vpsrldq	$8, %xmm3, %xmm3
+	vpbroadcastq	.LCPI2_0(%rip), %xmm4
+	vpclmulqdq	$16, %xmm4, %xmm2, %xmm5
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm2, %xmm5, %xmm2
+	vpclmulqdq	$16, %xmm4, %xmm2, %xmm4
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm3, %xmm4, %xmm3
+	vpternlogq	$150, %xmm2, %xmm3, %xmm0
+.LBB2_13:
+	vmovdqa	(%rdi), %xmm2
+	vmovdqa	16(%rdi), %xmm3
+	vpxor	%xmm1, %xmm0, %xmm0
+	vpclmulqdq	$0, %xmm0, %xmm3, %xmm1
+	vpclmulqdq	$1, %xmm0, %xmm3, %xmm4
+	vpclmulqdq	$16, %xmm0, %xmm3, %xmm5
+	vpclmulqdq	$17, %xmm0, %xmm3, %xmm0
+	vmovq	%rdx, %xmm3
+	vpclmulqdq	$0, %xmm3, %xmm2, %xmm6
+	vpclmulqdq	$1, %xmm3, %xmm2, %xmm2
+	vpternlogq	$150, %xmm4, %xmm5, %xmm2
+	vpslldq	$8, %xmm2, %xmm3
+	vpternlogq	$150, %xmm1, %xmm6, %xmm3
+	jmp	.LBB2_26
+.LBB2_20:
+	leaq	-16(%rax), %r8
+.LBB2_22:
 	cmpq	$32, %rax
-	je	.LBB1_23
+	je	.LBB2_25
+	addq	$32, %rsi
 	shlq	$4, %r9
 	leaq	(%r9,%rdi), %rax
 	addq	$-16, %rax
-	addq	$32, %rsi
 	.p2align	4
-.LBB1_22:
+.LBB2_24:
 	vmovdqa	-16(%rax), %xmm3
 	vmovdqa	(%rax), %xmm4
 	vmovdqu	-16(%rsi), %xmm5
@@ -800,11 +900,11 @@ haberdashery_sivmac_skylakex_sign:
 	vpternlogq	$150, %xmm9, %xmm8, %xmm2
 	vpternlogq	$150, %xmm3, %xmm4, %xmm0
 	addq	$-32, %r8
-	addq	$-32, %rax
 	addq	$32, %rsi
+	addq	$-32, %rax
 	cmpq	$15, %r8
-	ja	.LBB1_22
-.LBB1_23:
+	ja	.LBB2_24
+.LBB2_25:
 	vmovdqa	(%rdi), %xmm3
 	vmovq	%rdx, %xmm4
 	vpclmulqdq	$0, %xmm4, %xmm3, %xmm5
@@ -812,57 +912,9 @@ haberdashery_sivmac_skylakex_sign:
 	vpxor	%xmm2, %xmm3, %xmm2
 	vpslldq	$8, %xmm2, %xmm3
 	vpternlogq	$150, %xmm1, %xmm5, %xmm3
-	jmp	.LBB1_24
-.LBB1_26:
-	vmovdqa	(%rdi), %xmm1
-	vmovq	%rdx, %xmm2
-	vpxor	%xmm2, %xmm0, %xmm0
-	vpclmulqdq	$0, %xmm0, %xmm1, %xmm2
-	vpclmulqdq	$1, %xmm0, %xmm1, %xmm3
-	vpclmulqdq	$16, %xmm0, %xmm1, %xmm4
-	vpxor	%xmm3, %xmm4, %xmm3
-	vpclmulqdq	$17, %xmm0, %xmm1, %xmm0
-	vpslldq	$8, %xmm3, %xmm1
-	vpxor	%xmm1, %xmm2, %xmm1
-	vpsrldq	$8, %xmm3, %xmm2
-	vpbroadcastq	.LCPI1_0(%rip), %xmm3
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm4
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm1, %xmm4, %xmm1
-	vpclmulqdq	$16, %xmm3, %xmm1, %xmm3
-	vpshufd	$78, %xmm1, %xmm1
-	vpxor	%xmm0, %xmm3, %xmm0
-	vpternlogq	$150, %xmm2, %xmm1, %xmm0
-	jmp	.LBB1_27
-.LBB1_14:
-	vpslldq	$8, %xmm3, %xmm4
-	vpxor	%xmm4, %xmm2, %xmm2
-	vpsrldq	$8, %xmm3, %xmm3
-	vpbroadcastq	.LCPI1_0(%rip), %xmm4
-	vpclmulqdq	$16, %xmm4, %xmm2, %xmm5
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm5, %xmm2
-	vpclmulqdq	$16, %xmm4, %xmm2, %xmm4
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm3, %xmm4, %xmm3
-	vpternlogq	$150, %xmm2, %xmm3, %xmm0
-.LBB1_15:
-	vmovdqa	(%rdi), %xmm2
-	vmovdqa	16(%rdi), %xmm3
-	vpxor	%xmm1, %xmm0, %xmm0
-	vpclmulqdq	$0, %xmm0, %xmm3, %xmm1
-	vpclmulqdq	$1, %xmm0, %xmm3, %xmm4
-	vpclmulqdq	$16, %xmm0, %xmm3, %xmm5
-	vpclmulqdq	$17, %xmm0, %xmm3, %xmm0
-	vmovq	%rdx, %xmm3
-	vpclmulqdq	$0, %xmm3, %xmm2, %xmm6
-	vpclmulqdq	$1, %xmm3, %xmm2, %xmm2
-	vpternlogq	$150, %xmm4, %xmm5, %xmm2
-	vpslldq	$8, %xmm2, %xmm3
-	vpternlogq	$150, %xmm1, %xmm6, %xmm3
-.LBB1_24:
+.LBB2_26:
 	vpsrldq	$8, %xmm2, %xmm1
-	vpbroadcastq	.LCPI1_0(%rip), %xmm2
+	vpbroadcastq	.LCPI2_0(%rip), %xmm2
 	vpclmulqdq	$16, %xmm2, %xmm3, %xmm4
 	vpshufd	$78, %xmm3, %xmm3
 	vpxor	%xmm3, %xmm4, %xmm3
@@ -870,9 +922,9 @@ haberdashery_sivmac_skylakex_sign:
 	vpshufd	$78, %xmm3, %xmm3
 	vpxor	%xmm0, %xmm2, %xmm0
 	vpternlogq	$150, %xmm1, %xmm3, %xmm0
-.LBB1_27:
+.LBB2_28:
 	vmovdqa	128(%rdi), %xmm1
-	vpternlogq	$120, .LCPI1_1(%rip), %xmm0, %xmm1
+	vpternlogq	$120, .LCPI2_1(%rip), %xmm0, %xmm1
 	vaesenc	144(%rdi), %xmm1, %xmm0
 	vaesenc	160(%rdi), %xmm0, %xmm0
 	vaesenc	176(%rdi), %xmm0, %xmm0
@@ -889,19 +941,19 @@ haberdashery_sivmac_skylakex_sign:
 	vaesenclast	352(%rdi), %xmm0, %xmm0
 	vmovdqu	%xmm0, (%rcx)
 	movl	$1, %eax
-.LBB1_28:
+.LBB2_29:
 	retq
-.Lfunc_end1:
-	.size	haberdashery_sivmac_skylakex_sign, .Lfunc_end1-haberdashery_sivmac_skylakex_sign
+.Lfunc_end2:
+	.size	haberdashery_sivmac_skylakex_sign, .Lfunc_end2-haberdashery_sivmac_skylakex_sign
 	.cfi_endproc
 
 	.section	.rodata.cst8,"aM",@progbits,8
 	.p2align	3, 0x0
-.LCPI2_0:
+.LCPI3_0:
 	.quad	-4467570830351532032
 	.section	.rodata.cst16,"aM",@progbits,16
 	.p2align	4, 0x0
-.LCPI2_1:
+.LCPI3_1:
 	.quad	-1
 	.quad	9223372036854775807
 	.section	.text.haberdashery_sivmac_skylakex_verify,"ax",@progbits
@@ -917,10 +969,10 @@ haberdashery_sivmac_skylakex_verify:
 	setb	%r8b
 	xorl	%eax, %eax
 	orb	%r9b, %r8b
-	jne	.LBB2_28
+	jne	.LBB3_29
 	vpxor	%xmm1, %xmm1, %xmm1
 	cmpq	$128, %rdx
-	jb	.LBB2_2
+	jb	.LBB3_2
 	vmovdqa64	(%rdi), %xmm16
 	vmovdqa64	16(%rdi), %xmm17
 	vmovdqa64	32(%rdi), %xmm18
@@ -929,10 +981,10 @@ haberdashery_sivmac_skylakex_verify:
 	vmovdqa64	80(%rdi), %xmm21
 	vmovdqa	96(%rdi), %xmm7
 	vmovdqa	112(%rdi), %xmm8
-	vpbroadcastq	.LCPI2_0(%rip), %xmm22
+	vpbroadcastq	.LCPI3_0(%rip), %xmm22
 	movq	%rdx, %rax
 	.p2align	4
-.LBB2_4:
+.LBB3_15:
 	vmovdqu	16(%rsi), %xmm10
 	vmovdqu	32(%rsi), %xmm11
 	vmovdqu	80(%rsi), %xmm12
@@ -1007,16 +1059,16 @@ haberdashery_sivmac_skylakex_verify:
 	addq	$-128, %rax
 	vpternlogq	$150, %xmm0, %xmm2, %xmm1
 	cmpq	$127, %rax
-	ja	.LBB2_4
-	jmp	.LBB2_5
-.LBB2_2:
+	ja	.LBB3_15
+	jmp	.LBB3_3
+.LBB3_2:
 	movq	%rdx, %rax
-.LBB2_5:
+.LBB3_3:
 	vmovdqu	(%rcx), %xmm0
 	shlq	$3, %rdx
 	movq	%rax, %rcx
 	andq	$15, %rcx
-	je	.LBB2_25
+	je	.LBB3_16
 	movl	%eax, %r9d
 	andl	$112, %r9d
 	movl	$-1, %r8d
@@ -1024,7 +1076,7 @@ haberdashery_sivmac_skylakex_verify:
 	kmovd	%ecx, %k1
 	vmovdqu8	(%rsi,%r9), %xmm2 {%k1} {z}
 	testq	%r9, %r9
-	je	.LBB2_15
+	je	.LBB3_13
 	leaq	-16(%r9), %r8
 	movq	%r8, %r10
 	shrq	$4, %r10
@@ -1041,9 +1093,9 @@ haberdashery_sivmac_skylakex_verify:
 	vpxor	%xmm4, %xmm6, %xmm4
 	vpclmulqdq	$17, %xmm1, %xmm5, %xmm1
 	testq	%r8, %r8
-	je	.LBB2_13
+	je	.LBB3_11
 	testb	$16, %al
-	jne	.LBB2_10
+	jne	.LBB3_8
 	addq	$-32, %r9
 	vmovdqu	16(%rsi), %xmm5
 	addq	$16, %rsi
@@ -1059,17 +1111,17 @@ haberdashery_sivmac_skylakex_verify:
 	vpternlogq	$150, %xmm9, %xmm8, %xmm4
 	vpxor	%xmm1, %xmm5, %xmm1
 	movq	%r9, %r8
-.LBB2_10:
+.LBB3_8:
 	andl	$112, %eax
 	cmpl	$32, %eax
-	je	.LBB2_13
+	je	.LBB3_11
 	movq	%rcx, %rax
 	shlq	$4, %rax
 	addq	%rdi, %rax
 	addq	$-16, %rax
 	xorl	%r9d, %r9d
 	.p2align	4
-.LBB2_12:
+.LBB3_10:
 	vmovdqa	-16(%rax), %xmm5
 	vmovdqa	(%rax), %xmm6
 	vmovdqu	16(%rsi,%r9), %xmm7
@@ -1090,10 +1142,10 @@ haberdashery_sivmac_skylakex_verify:
 	addq	$-32, %rax
 	addq	$32, %r9
 	cmpq	%r9, %r8
-	jne	.LBB2_12
-.LBB2_13:
+	jne	.LBB3_10
+.LBB3_11:
 	testq	%rcx, %rcx
-	je	.LBB2_14
+	je	.LBB3_12
 	vmovdqa	(%rdi), %xmm5
 	vmovdqa	16(%rdi), %xmm6
 	vpclmulqdq	$0, %xmm2, %xmm6, %xmm7
@@ -1109,7 +1161,7 @@ haberdashery_sivmac_skylakex_verify:
 	vpxor	%xmm7, %xmm10, %xmm6
 	vpternlogq	$150, %xmm5, %xmm6, %xmm3
 	vpsrldq	$8, %xmm4, %xmm4
-	vpbroadcastq	.LCPI2_0(%rip), %xmm5
+	vpbroadcastq	.LCPI3_0(%rip), %xmm5
 	vpclmulqdq	$16, %xmm5, %xmm3, %xmm6
 	vpshufd	$78, %xmm3, %xmm3
 	vpxor	%xmm3, %xmm6, %xmm3
@@ -1117,10 +1169,10 @@ haberdashery_sivmac_skylakex_verify:
 	vpshufd	$78, %xmm3, %xmm3
 	vpternlogq	$150, %xmm4, %xmm2, %xmm5
 	vpternlogq	$150, %xmm3, %xmm5, %xmm1
-	jmp	.LBB2_27
-.LBB2_25:
+	jmp	.LBB3_28
+.LBB3_16:
 	cmpq	$15, %rax
-	jbe	.LBB2_26
+	jbe	.LBB3_17
 	vmovdqa	(%rdi,%rax), %xmm4
 	vpxor	(%rsi), %xmm1, %xmm1
 	vpclmulqdq	$0, %xmm1, %xmm4, %xmm2
@@ -1128,13 +1180,12 @@ haberdashery_sivmac_skylakex_verify:
 	vpclmulqdq	$16, %xmm1, %xmm4, %xmm5
 	vpxor	%xmm3, %xmm5, %xmm3
 	vpclmulqdq	$17, %xmm1, %xmm4, %xmm1
-	leaq	-16(%rax), %rcx
-	cmpq	$16, %rcx
-	jb	.LBB2_23
+	cmpq	$32, %rax
+	jb	.LBB3_25
 	movq	%rax, %r8
 	shrq	$4, %r8
 	testb	$16, %al
-	jne	.LBB2_20
+	jne	.LBB3_20
 	vmovdqu	16(%rsi), %xmm4
 	addq	$16, %rsi
 	decq	%r8
@@ -1149,15 +1200,66 @@ haberdashery_sivmac_skylakex_verify:
 	vpternlogq	$150, %xmm8, %xmm7, %xmm3
 	vpxor	%xmm1, %xmm4, %xmm1
 	leaq	-32(%rax), %rcx
-.LBB2_20:
+	jmp	.LBB3_22
+.LBB3_17:
+	vmovdqa	(%rdi), %xmm2
+	vmovq	%rdx, %xmm3
+	vpxor	%xmm3, %xmm1, %xmm1
+	vpclmulqdq	$0, %xmm1, %xmm2, %xmm3
+	vpclmulqdq	$1, %xmm1, %xmm2, %xmm4
+	vpclmulqdq	$16, %xmm1, %xmm2, %xmm5
+	vpxor	%xmm4, %xmm5, %xmm4
+	vpclmulqdq	$17, %xmm1, %xmm2, %xmm1
+	vpslldq	$8, %xmm4, %xmm2
+	vpxor	%xmm2, %xmm3, %xmm2
+	vpsrldq	$8, %xmm4, %xmm3
+	vpbroadcastq	.LCPI3_0(%rip), %xmm4
+	vpclmulqdq	$16, %xmm4, %xmm2, %xmm5
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm2, %xmm5, %xmm2
+	vpclmulqdq	$16, %xmm4, %xmm2, %xmm4
+	vpshufd	$78, %xmm2, %xmm2
+	vpxor	%xmm1, %xmm4, %xmm1
+	vpternlogq	$150, %xmm3, %xmm2, %xmm1
+	jmp	.LBB3_28
+.LBB3_12:
+	vpslldq	$8, %xmm4, %xmm5
+	vpxor	%xmm5, %xmm3, %xmm3
+	vpsrldq	$8, %xmm4, %xmm4
+	vpbroadcastq	.LCPI3_0(%rip), %xmm5
+	vpclmulqdq	$16, %xmm5, %xmm3, %xmm6
+	vpshufd	$78, %xmm3, %xmm3
+	vpxor	%xmm3, %xmm6, %xmm3
+	vpclmulqdq	$16, %xmm5, %xmm3, %xmm5
+	vpshufd	$78, %xmm3, %xmm3
+	vpxor	%xmm4, %xmm5, %xmm4
+	vpternlogq	$150, %xmm3, %xmm4, %xmm1
+.LBB3_13:
+	vmovdqa	(%rdi), %xmm3
+	vmovdqa	16(%rdi), %xmm4
+	vpxor	%xmm2, %xmm1, %xmm1
+	vpclmulqdq	$0, %xmm1, %xmm4, %xmm2
+	vpclmulqdq	$1, %xmm1, %xmm4, %xmm5
+	vpclmulqdq	$16, %xmm1, %xmm4, %xmm6
+	vpclmulqdq	$17, %xmm1, %xmm4, %xmm1
+	vmovq	%rdx, %xmm4
+	vpclmulqdq	$0, %xmm4, %xmm3, %xmm7
+	vpclmulqdq	$1, %xmm4, %xmm3, %xmm3
+	vpternlogq	$150, %xmm5, %xmm6, %xmm3
+	vpslldq	$8, %xmm3, %xmm4
+	vpternlogq	$150, %xmm2, %xmm7, %xmm4
+	jmp	.LBB3_26
+.LBB3_20:
+	leaq	-16(%rax), %rcx
+.LBB3_22:
 	cmpq	$32, %rax
-	je	.LBB2_23
+	je	.LBB3_25
+	addq	$32, %rsi
 	shlq	$4, %r8
 	leaq	(%r8,%rdi), %rax
 	addq	$-16, %rax
-	addq	$32, %rsi
 	.p2align	4
-.LBB2_22:
+.LBB3_24:
 	vmovdqa	-16(%rax), %xmm4
 	vmovdqa	(%rax), %xmm5
 	vmovdqu	-16(%rsi), %xmm6
@@ -1175,11 +1277,11 @@ haberdashery_sivmac_skylakex_verify:
 	vpternlogq	$150, %xmm10, %xmm9, %xmm3
 	vpternlogq	$150, %xmm4, %xmm5, %xmm1
 	addq	$-32, %rcx
-	addq	$-32, %rax
 	addq	$32, %rsi
+	addq	$-32, %rax
 	cmpq	$15, %rcx
-	ja	.LBB2_22
-.LBB2_23:
+	ja	.LBB3_24
+.LBB3_25:
 	vmovdqa	(%rdi), %xmm4
 	vmovq	%rdx, %xmm5
 	vpclmulqdq	$0, %xmm5, %xmm4, %xmm6
@@ -1187,57 +1289,9 @@ haberdashery_sivmac_skylakex_verify:
 	vpxor	%xmm3, %xmm4, %xmm3
 	vpslldq	$8, %xmm3, %xmm4
 	vpternlogq	$150, %xmm2, %xmm6, %xmm4
-	jmp	.LBB2_24
-.LBB2_26:
-	vmovdqa	(%rdi), %xmm2
-	vmovq	%rdx, %xmm3
-	vpxor	%xmm3, %xmm1, %xmm1
-	vpclmulqdq	$0, %xmm1, %xmm2, %xmm3
-	vpclmulqdq	$1, %xmm1, %xmm2, %xmm4
-	vpclmulqdq	$16, %xmm1, %xmm2, %xmm5
-	vpxor	%xmm4, %xmm5, %xmm4
-	vpclmulqdq	$17, %xmm1, %xmm2, %xmm1
-	vpslldq	$8, %xmm4, %xmm2
-	vpxor	%xmm2, %xmm3, %xmm2
-	vpsrldq	$8, %xmm4, %xmm3
-	vpbroadcastq	.LCPI2_0(%rip), %xmm4
-	vpclmulqdq	$16, %xmm4, %xmm2, %xmm5
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm5, %xmm2
-	vpclmulqdq	$16, %xmm4, %xmm2, %xmm4
-	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm1, %xmm4, %xmm1
-	vpternlogq	$150, %xmm3, %xmm2, %xmm1
-	jmp	.LBB2_27
-.LBB2_14:
-	vpslldq	$8, %xmm4, %xmm5
-	vpxor	%xmm5, %xmm3, %xmm3
-	vpsrldq	$8, %xmm4, %xmm4
-	vpbroadcastq	.LCPI2_0(%rip), %xmm5
-	vpclmulqdq	$16, %xmm5, %xmm3, %xmm6
-	vpshufd	$78, %xmm3, %xmm3
-	vpxor	%xmm3, %xmm6, %xmm3
-	vpclmulqdq	$16, %xmm5, %xmm3, %xmm5
-	vpshufd	$78, %xmm3, %xmm3
-	vpxor	%xmm4, %xmm5, %xmm4
-	vpternlogq	$150, %xmm3, %xmm4, %xmm1
-.LBB2_15:
-	vmovdqa	(%rdi), %xmm3
-	vmovdqa	16(%rdi), %xmm4
-	vpxor	%xmm2, %xmm1, %xmm1
-	vpclmulqdq	$0, %xmm1, %xmm4, %xmm2
-	vpclmulqdq	$1, %xmm1, %xmm4, %xmm5
-	vpclmulqdq	$16, %xmm1, %xmm4, %xmm6
-	vpclmulqdq	$17, %xmm1, %xmm4, %xmm1
-	vmovq	%rdx, %xmm4
-	vpclmulqdq	$0, %xmm4, %xmm3, %xmm7
-	vpclmulqdq	$1, %xmm4, %xmm3, %xmm3
-	vpternlogq	$150, %xmm5, %xmm6, %xmm3
-	vpslldq	$8, %xmm3, %xmm4
-	vpternlogq	$150, %xmm2, %xmm7, %xmm4
-.LBB2_24:
+.LBB3_26:
 	vpsrldq	$8, %xmm3, %xmm2
-	vpbroadcastq	.LCPI2_0(%rip), %xmm3
+	vpbroadcastq	.LCPI3_0(%rip), %xmm3
 	vpclmulqdq	$16, %xmm3, %xmm4, %xmm5
 	vpshufd	$78, %xmm4, %xmm4
 	vpxor	%xmm4, %xmm5, %xmm4
@@ -1245,9 +1299,9 @@ haberdashery_sivmac_skylakex_verify:
 	vpshufd	$78, %xmm4, %xmm4
 	vpxor	%xmm1, %xmm3, %xmm1
 	vpternlogq	$150, %xmm2, %xmm4, %xmm1
-.LBB2_27:
+.LBB3_28:
 	vmovdqa	128(%rdi), %xmm2
-	vpternlogq	$120, .LCPI2_1(%rip), %xmm1, %xmm2
+	vpternlogq	$120, .LCPI3_1(%rip), %xmm1, %xmm2
 	vaesenc	144(%rdi), %xmm2, %xmm1
 	vaesenc	160(%rdi), %xmm1, %xmm1
 	vaesenc	176(%rdi), %xmm1, %xmm1
@@ -1263,64 +1317,17 @@ haberdashery_sivmac_skylakex_verify:
 	vaesenc	336(%rdi), %xmm1, %xmm1
 	vaesenclast	352(%rdi), %xmm1, %xmm1
 	vpxor	%xmm0, %xmm1, %xmm0
+	vpshufd	$238, %xmm0, %xmm1
+	vpor	%xmm1, %xmm0, %xmm0
+	vmovq	%xmm0, %rcx
 	xorl	%eax, %eax
-	vptest	%xmm0, %xmm0
+	testq	%rcx, %rcx
 	sete	%al
-.LBB2_28:
-	retq
-.Lfunc_end2:
-	.size	haberdashery_sivmac_skylakex_verify, .Lfunc_end2-haberdashery_sivmac_skylakex_verify
-	.cfi_endproc
-
-	.section	.text.haberdashery_sivmac_skylakex_is_supported,"ax",@progbits
-	.globl	haberdashery_sivmac_skylakex_is_supported
-	.p2align	4
-	.type	haberdashery_sivmac_skylakex_is_supported,@function
-haberdashery_sivmac_skylakex_is_supported:
-	.cfi_startproc
-	movl	$1, %eax
-	xorl	%ecx, %ecx
-	#APP
-
-	movq	%rbx, %rsi
-	cpuid
-	xchgq	%rbx, %rsi
-
-	#NO_APP
-	movl	%ecx, %esi
-	movl	%edx, %edi
-	notl	%edi
-	notl	%esi
-	xorl	%ecx, %ecx
-	movl	$7, %eax
-	#APP
-
-	movq	%rbx, %r8
-	cpuid
-	xchgq	%rbx, %r8
-
-	#NO_APP
-	movl	$1, %ecx
-	movl	$7, %eax
-	#APP
-
-	movq	%rbx, %r9
-	cpuid
-	xchgq	%rbx, %r9
-
-	#NO_APP
-	andl	$1993871875, %esi
-	andl	$125829120, %edi
-	orl	%esi, %edi
-	notl	%r8d
-	andl	$-779157207, %r8d
-	xorl	%eax, %eax
-	orl	%edi, %r8d
-	sete	%al
+.LBB3_29:
 	retq
 .Lfunc_end3:
-	.size	haberdashery_sivmac_skylakex_is_supported, .Lfunc_end3-haberdashery_sivmac_skylakex_is_supported
+	.size	haberdashery_sivmac_skylakex_verify, .Lfunc_end3-haberdashery_sivmac_skylakex_verify
 	.cfi_endproc
 
-	.ident	"rustc version 1.90.0-nightly (adcb3d3b4 2025-07-31)"
+	.ident	"rustc version 1.97.0-nightly (e96c36b6f 2026-05-21)"
 	.section	".note.GNU-stack","",@progbits

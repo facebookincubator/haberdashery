@@ -6,6 +6,7 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use core::marker::PhantomData;
+use core::ptr::copy_nonoverlapping;
 
 use crate::ffi::pod::Pod;
 
@@ -47,6 +48,13 @@ impl<'a> Writer<'a> {
             unsafe { data.store(ptr) };
             T::SIZE
         }
+    }
+    #[inline]
+    pub fn write_bytes(&mut self, data: &[u8]) -> usize {
+        let len = self.len.min(data.len());
+        let ptr = unsafe { self.advance(len) };
+        unsafe { copy_nonoverlapping(data.as_ptr(), ptr, len) };
+        len
     }
     #[inline]
     pub fn split(&self, len: usize) -> (Self, Self) {

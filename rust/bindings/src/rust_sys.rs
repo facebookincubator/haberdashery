@@ -138,7 +138,7 @@ pub fn write_lib_rs(lib_path: &Path, descriptors: &Descriptors) {
 const SYS_CARGO_TOML_HEADER: &str = r#"[package]
 name = "haberdashery-sys"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [lib]
 doctest = false
@@ -146,7 +146,7 @@ doctest = false
 
 pub(crate) const UNIT_CARGO_TOML: &str = r#"[package]
 name = "{name}"
-edition = "2021"
+edition = "2024"
 
 [features]
 asm-path = []

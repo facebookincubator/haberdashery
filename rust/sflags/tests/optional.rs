@@ -20,6 +20,13 @@ fn set() {
     cmd.assert().success().stdout("banana");
 }
 #[test]
+fn set_space() {
+    let mut cmd = test_helper::command(std::file!());
+    cmd.arg("--flag");
+    cmd.arg("banana");
+    cmd.assert().success().stdout("banana");
+}
+#[test]
 fn extra_args() {
     let mut cmd = test_helper::command(std::file!());
     cmd.arg("--undefined-flag");

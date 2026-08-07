@@ -64,7 +64,7 @@ pub mod {name};
 pub const CARGO_TOML_HEADER: &str = r#"[package]
 name = "haberdashery-lib"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [lib]
 doctest = false
