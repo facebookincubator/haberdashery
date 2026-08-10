@@ -90,6 +90,13 @@ pub fn tigerlake() -> FeatureSet {
         | KL
 }
 #[inline(always)]
+pub fn raptorlake() -> FeatureSet {
+    // Raptor Lake adds VAES and VPCLMULQDQ to the Skylake-era baseline.
+    skylake()
+        | VAES
+        | VPCLMULQDQ
+}
+#[inline(always)]
 pub fn sapphirerapids() -> FeatureSet {
     // GCC's sapphirerapids extensions minus xsavec, xsaves, lzcnt, pwrite, wbnoinvd,
     // pconfig, enqcmd, uintr, amx-bf16, amx-tile, amx-int8

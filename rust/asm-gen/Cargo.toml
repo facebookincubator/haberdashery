@@ -27,6 +27,7 @@ sapphirerapids = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw", "vpclmulq
 skylake = ["asm_gen", "aes"]
 skylakex = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw"]
 tigerlake = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw", "vpclmulqdq", "shani"]
+raptorlake = ["asm_gen", "aes"]
 zen4 = ["asm_gen", "aes", "avx512f", "avx512vl", "avx512bw", "vpclmulqdq", "shani"]
 
 # aarch64 microarchs

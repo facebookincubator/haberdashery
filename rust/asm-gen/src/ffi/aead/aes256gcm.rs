@@ -53,6 +53,43 @@ mod x86_64 {
 #[bindings_proc::bindings(
     algorithm: aes256gcm,
     prefix: haberdashery,
+    arch: x86_64,
+    profile: raptorlake,
+)]
+mod x86_64_raptorlake {
+    use super::*;
+    use crate::is_supported::is_supported;
+
+    #[repr(C)]
+    pub struct Aes256Gcm(BaseKey<8>);
+    impl Aead for Aes256Gcm {
+        const KEY_LEN: usize = 32;
+        const NONCE_LEN: usize = 12;
+        const TAG_LEN: usize = 16;
+        const STRUCT_SIZE: usize = 368;
+        const STRUCT_ALIGNMENT: usize = 16;
+        #[inline(always)]
+        fn init(&mut self, key: &[u8]) -> bool {
+            self.0.init(key)
+        }
+        #[inline(always)]
+        fn encrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Writer) -> bool {
+            self.0.encrypt(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn decrypt(&self, nonce: &[u8], aad: Reader, data: ReaderWriter, tag: Reader) -> bool {
+            self.0.decrypt(nonce, aad, data, tag)
+        }
+        #[inline(always)]
+        fn is_supported() -> bool {
+            is_supported()
+        }
+    }
+}
+
+#[bindings_proc::bindings(
+    algorithm: aes256gcm,
+    prefix: haberdashery,
     arch: aarch64,
     profile: neoversev2,
 )]

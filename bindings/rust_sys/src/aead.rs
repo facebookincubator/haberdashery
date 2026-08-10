@@ -16,6 +16,8 @@ pub mod aes192gcm_tigerlake;
 pub mod aes256gcm_broadwell;
 #[cfg(all(feature = "aes256gcm_neoversev2", target_arch = "aarch64"))]
 pub mod aes256gcm_neoversev2;
+#[cfg(all(feature = "aes256gcm_raptorlake", target_arch = "x86_64"))]
+pub mod aes256gcm_raptorlake;
 #[cfg(all(feature = "aes256gcm_skylakex", target_arch = "x86_64"))]
 pub mod aes256gcm_skylakex;
 #[cfg(all(feature = "aes256gcm_tigerlake", target_arch = "x86_64"))]
@@ -24,6 +26,8 @@ pub mod aes256gcm_tigerlake;
 pub mod aes256gcmdndk_broadwell;
 #[cfg(all(feature = "aes256gcmdndk_neoversev2", target_arch = "aarch64"))]
 pub mod aes256gcmdndk_neoversev2;
+#[cfg(all(feature = "aes256gcmdndk_raptorlake", target_arch = "x86_64"))]
+pub mod aes256gcmdndk_raptorlake;
 #[cfg(all(feature = "aes256gcmdndk_skylakex", target_arch = "x86_64"))]
 pub mod aes256gcmdndk_skylakex;
 #[cfg(all(feature = "aes256gcmdndk_tigerlake", target_arch = "x86_64"))]
@@ -48,6 +52,8 @@ pub mod aes256gcmdndkv2kc_tigerlake;
 pub mod aes256gcmsiv_broadwell;
 #[cfg(all(feature = "aes256gcmsiv_neoversev2", target_arch = "aarch64"))]
 pub mod aes256gcmsiv_neoversev2;
+#[cfg(all(feature = "aes256gcmsiv_raptorlake", target_arch = "x86_64"))]
+pub mod aes256gcmsiv_raptorlake;
 #[cfg(all(feature = "aes256gcmsiv_sapphirerapids", target_arch = "x86_64"))]
 pub mod aes256gcmsiv_sapphirerapids;
 #[cfg(all(feature = "aes256gcmsiv_skylakex", target_arch = "x86_64"))]

@@ -82,6 +82,8 @@ fn default() -> Vec<&'static str> {
             "0x0800", // FPU pipe 3
         ]
         .into()
+    } else if cpuid::processor().model == cpuid::processor::Model::IntelRaptorlake {
+        INSTRUCTIONS.into()
     } else if cpuid::processor().model == cpuid::processor::Model::IntelSapphireRapids {
         [
             "cycles",

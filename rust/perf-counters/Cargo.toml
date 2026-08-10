@@ -22,6 +22,7 @@ perf-event-open-sys = "4.0.0"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 perf-events = { path = "../perf-events" }
+cpuid = { path = "../cpuid" }
 
 [dev-dependencies]
 sflags = { path = "../sflags" }

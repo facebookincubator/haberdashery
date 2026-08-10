@@ -18,6 +18,7 @@ use crate::ffi::writer::Writer;
     profile: broadwell,
     profile: skylakex,
     profile: tigerlake,
+    profile: raptorlake,
 )]
 mod x86_64 {
     use super::*;

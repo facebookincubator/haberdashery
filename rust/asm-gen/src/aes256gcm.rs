@@ -7,6 +7,8 @@
 
 use crate::aes::aes256::Aes256;
 use crate::block::Block128;
+#[cfg(target_arch = "x86_64")]
+use crate::block::Block256;
 use crate::clmul::clmul128foil::*;
 use crate::counter128::CounterBe128;
 use crate::ffi::reader::Reader;
@@ -27,6 +29,31 @@ const LANES: usize = 6;
 
 const MAX_AAD_BYTES: usize = (1 << 61) - 1; // 2^64 - 1 bits >= 2^61 - 1 bytes
 const MAX_CRYPT_BYTES: usize = (1 << 36) - 32; // 2^39 - 256 bits = 2^36 - 32 bytes
+
+#[cfg(all(target_arch = "x86_64", feature = "raptorlake"))]
+fn pack_blocks_256(blocks: [Block128; 8]) -> [Block256; 4] {
+    [
+        Block256::from([blocks[0], blocks[1]]),
+        Block256::from([blocks[2], blocks[3]]),
+        Block256::from([blocks[4], blocks[5]]),
+        Block256::from([blocks[6], blocks[7]]),
+    ]
+}
+
+#[cfg(all(target_arch = "x86_64", feature = "raptorlake"))]
+fn unpack_blocks_256(blocks: [Block256; 4]) -> [Block128; 8] {
+    let [b0, b1] = blocks[0].into();
+    let [b2, b3] = blocks[1].into();
+    let [b4, b5] = blocks[2].into();
+    let [b6, b7] = blocks[3].into();
+    [b0, b1, b2, b3, b4, b5, b6, b7]
+}
+
+#[cfg(all(target_arch = "x86_64", feature = "raptorlake"))]
+fn ghash_reduce_256(hash: Block256) -> Block128 {
+    let [lo, hi]: [Block128; 2] = hash.into();
+    lo ^ hi
+}
 
 #[repr(C)]
 #[derive(Default)]
@@ -273,24 +300,126 @@ impl<const N: usize> Aes256GcmState<N> {
         // Constructor performs first round of AES and auth
         let mut state =
             crate::aesgcm::RoundState::new(key.aes, counters, auth, key.polyval.keys(), self.ghash);
-        // 13 rounds of aes + 6 rounds of auth
-        state.crypt();
-        state.crypt_cmul();
-        state.crypt();
-        state.crypt_cmul();
-        state.crypt();
-        state.crypt_cmul();
-        state.crypt();
-        state.crypt_cmul();
-        state.crypt();
-        state.crypt_cmul();
-        state.crypt();
-        state.crypt_cmul();
-        state.crypt();
+        match N {
+            // 13 rounds of aes + 6 rounds of auth
+            6 => {
+                state.crypt();
+                state.crypt_cmul();
+                state.crypt();
+                state.crypt_cmul();
+                state.crypt();
+                state.crypt_cmul();
+                state.crypt();
+                state.crypt_cmul();
+                state.crypt();
+                state.crypt_cmul();
+                state.crypt();
+                state.crypt_cmul();
+                state.crypt();
+            }
+            // 13 rounds of aes + 8 rounds of auth
+            8 => {
+                state.crypt_cmul();
+                state.crypt_cmul();
+                state.crypt();
+                state.crypt_cmul();
+                state.crypt();
+                state.crypt_cmul();
+                state.crypt();
+                state.crypt_cmul();
+                state.crypt_cmul();
+                state.crypt();
+                state.crypt_cmul();
+                state.crypt();
+                state.crypt_cmul();
+            }
+            _ => unimplemented!("{N} lanes not supported"),
+        }
         // Performs last round of AES
         let (pads, ghash) = state.finish();
         self.ghash = ghash;
         plaintext.ops() ^ pads
+    }
+    #[inline]
+    #[cfg(all(target_arch = "x86_64", feature = "raptorlake"))]
+    pub fn iteration_asm_256(
+        &mut self,
+        key: &Aes256GcmKey<N>,
+        auth: [Block128; N],
+        counters: [Block128; N],
+        plaintext: [Block128; N],
+    ) -> [Block128; N] {
+        use crate::aesgcm::aesclmul256::Aes256ClMul256KaratsubaState;
+
+        debug_assert_eq!(N, 8);
+        let auth = [
+            auth[0], auth[1], auth[2], auth[3], auth[4], auth[5], auth[6], auth[7],
+        ];
+        let counters = [
+            counters[0],
+            counters[1],
+            counters[2],
+            counters[3],
+            counters[4],
+            counters[5],
+            counters[6],
+            counters[7],
+        ];
+        let plaintext = [
+            plaintext[0],
+            plaintext[1],
+            plaintext[2],
+            plaintext[3],
+            plaintext[4],
+            plaintext[5],
+            plaintext[6],
+            plaintext[7],
+        ];
+        let auth = auth.map(Block128::byte_reverse);
+        let auth = pack_blocks_256(auth);
+        let counters = pack_blocks_256(counters);
+        let plaintext = pack_blocks_256(plaintext);
+        let auth_keys = [
+            Block256::from([key.polyval[1], key.polyval[0]]),
+            Block256::from([key.polyval[3], key.polyval[2]]),
+            Block256::from([key.polyval[5], key.polyval[4]]),
+            Block256::from([key.polyval[7], key.polyval[6]]),
+        ];
+        let mut state = Aes256ClMul256KaratsubaState::new(
+            key.aes,
+            counters,
+            Block256::from([self.ghash, Block128::ZERO]),
+            auth,
+            auth_keys,
+        );
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+        state.round();
+
+        self.ghash = ghash_reduce_256(state.clmul_state());
+        let result = unpack_blocks_256(plaintext.ops() ^ state.aes_data());
+        let mut out = [Block128::ZERO; N];
+        out[0] = result[0];
+        out[1] = result[1];
+        out[2] = result[2];
+        out[3] = result[3];
+        out[4] = result[4];
+        out[5] = result[5];
+        out[6] = result[6];
+        out[7] = result[7];
+        out
     }
     #[inline]
     pub fn encrypt_update(&mut self, key: &Aes256GcmKey<N>, mut data: ReaderWriter) -> usize {
@@ -350,6 +479,8 @@ impl<const N: usize> Aes256GcmState<N> {
                     }
                     #[cfg(target_arch = "x86_64")]
                     6 => self.iteration_asm(key, last_block, ctr, block),
+                    #[cfg(feature = "raptorlake")]
+                    8 => self.iteration_asm_256(key, last_block, ctr, block),
                     _ => {
                         {
                             let mut block = last_block.map(Block128::byte_reverse);
@@ -437,6 +568,8 @@ impl<const N: usize> Aes256GcmState<N> {
                 }
                 #[cfg(target_arch = "x86_64")]
                 6 => self.iteration_asm(key, block, ctr, block),
+                #[cfg(feature = "raptorlake")]
+                8 => self.iteration_asm_256(key, block, ctr, block),
                 _ => {
                     {
                         let mut block = block.map(Block128::byte_reverse);

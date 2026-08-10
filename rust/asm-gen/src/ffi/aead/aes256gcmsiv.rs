@@ -57,6 +57,7 @@ mod x86_64 {
     prefix: haberdashery,
     arch: x86_64,
     profile: tigerlake,
+    profile: raptorlake,
 )]
 mod tigerlake {
     use super::*;

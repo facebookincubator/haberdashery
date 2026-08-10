@@ -36,8 +36,18 @@ impl Counter {
     #[inline(always)]
     #[cfg(all(target_arch = "x86_64", feature = "rdpmc"))]
     pub fn read(&self) -> u64 {
+        if cpuid::processor().model == cpuid::processor::Model::IntelRaptorlake {
+            return self.read_file();
+        }
         match self.page.event_index() {
-            Some(index) => crate::perf_event::rdpmc::rdpmc(index),
+            Some(index) => {
+                let rdpmc = crate::perf_event::rdpmc::rdpmc(index);
+                if rdpmc == 0 {
+                    self.read_file()
+                } else {
+                    rdpmc
+                }
+            }
             None => self.read_file(),
         }
     }
