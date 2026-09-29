@@ -13,6 +13,20 @@ readonly PROJECT_DIR
 
 filter_exclusions() {
   local -r FILE="${1}"; shift
+  # crates that only build on aarch64
+  local -r AARCH64_ONLY=(
+    neoversev2
+    rust/intrinsics-aarch64
+    rust/target-support/aarch64
+  )
+  if [[ "$(uname -m)" != aarch64 ]]; then
+    for path in "${AARCH64_ONLY[@]}"; do
+      if [[ ${FILE#./} == "${path}" || ${FILE#./} == "${path}"/* ]]; then
+        true
+        return
+      fi
+    done
+  fi
   local -r EXCLUSIONS=(
     bindings/rust_sys/units # tested indirectly by rust_sys
     # benchmarks that are slow to compile

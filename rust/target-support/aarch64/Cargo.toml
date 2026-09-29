@@ -1,0 +1,10 @@
+[package]
+name = "target-support-aarch64"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+neoversev2 = []
+
+[dependencies]

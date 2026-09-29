@@ -50,9 +50,86 @@ maybe_update_hash() {
   fi
 }
 
+gen_skylakex_aes128gcm() {
+  local -r SOURCE_DIR="${PROJECT_DIR}/skylakex/aes128gcm"
+  local -r FILENAME="aes128gcm_skylakex"
+
+  "${SOURCE_DIR}/asm.sh" release
+  mkdir -p "${PROJECT_DIR}/asm/x86_64/sha256"
+  mkdir -p "${PROJECT_DIR}/descriptors/aead"
+  cp "${SOURCE_DIR}/src/aes128gcm.s" \
+    "${PROJECT_DIR}/asm/x86_64/${FILENAME}.s"
+  cp "${SOURCE_DIR}/descriptor.txt" \
+    "${PROJECT_DIR}/descriptors/aead/${FILENAME}.txt"
+  maybe_update_hash "${FILENAME}" x86_64
+}
+
+gen_zen4_aes128gcm() {
+  local -r SOURCE_DIR="${PROJECT_DIR}/zen4/aes128gcm"
+  local -r FILENAME="aes128gcm_zen4"
+
+  "${SOURCE_DIR}/asm.sh" release
+  mkdir -p "${PROJECT_DIR}/asm/x86_64/sha256"
+  mkdir -p "${PROJECT_DIR}/descriptors/aead"
+  cp "${SOURCE_DIR}/src/aes128gcm.s" \
+    "${PROJECT_DIR}/asm/x86_64/${FILENAME}.s"
+  cp "${SOURCE_DIR}/descriptor.txt" \
+    "${PROJECT_DIR}/descriptors/aead/${FILENAME}.txt"
+  maybe_update_hash "${FILENAME}" x86_64
+}
+
+gen_sapphirerapids_aes128gcm() {
+  local -r SOURCE_DIR="${PROJECT_DIR}/sapphirerapids/aes128gcm"
+  local -r FILENAME="aes128gcm_sapphirerapids"
+
+  "${SOURCE_DIR}/asm.sh" release
+  mkdir -p "${PROJECT_DIR}/asm/x86_64/sha256"
+  mkdir -p "${PROJECT_DIR}/descriptors/aead"
+  cp "${SOURCE_DIR}/src/aes128gcm.s" \
+    "${PROJECT_DIR}/asm/x86_64/${FILENAME}.s"
+  cp "${SOURCE_DIR}/descriptor.txt" \
+    "${PROJECT_DIR}/descriptors/aead/${FILENAME}.txt"
+  maybe_update_hash "${FILENAME}" x86_64
+}
+
+gen_neoversev2_aes128gcm() {
+  local -r SOURCE_DIR="${PROJECT_DIR}/neoversev2/aes128gcm"
+  local -r FILENAME="aes128gcm_neoversev2"
+
+  "${SOURCE_DIR}/asm.sh" release
+  mkdir -p "${PROJECT_DIR}/asm/aarch64/sha256"
+  mkdir -p "${PROJECT_DIR}/descriptors/aead"
+  cp "${SOURCE_DIR}/src/aes128gcm.s" \
+    "${PROJECT_DIR}/asm/aarch64/${FILENAME}.s"
+  cp "${SOURCE_DIR}/descriptor.txt" \
+    "${PROJECT_DIR}/descriptors/aead/${FILENAME}.txt"
+  maybe_update_hash "${FILENAME}" aarch64
+}
+
 gen_single() {
   local -r ALG=$1; shift
   local -r PROFILE=$1; shift
+
+  if [[ "${ALG}" == "aes128gcm" && "${PROFILE}" == "skylakex" ]]; then
+    gen_skylakex_aes128gcm
+    return
+  fi
+
+  if [[ "${ALG}" == "aes128gcm" && "${PROFILE}" == "zen4" ]]; then
+    gen_zen4_aes128gcm
+    return
+  fi
+
+  if [[ "${ALG}" == "aes128gcm" && "${PROFILE}" == "sapphirerapids" ]]; then
+    gen_sapphirerapids_aes128gcm
+    return
+  fi
+
+  if [[ "${ALG}" == "aes128gcm" && "${PROFILE}" == "neoversev2" ]]; then
+    gen_neoversev2_aes128gcm
+    return
+  fi
+
   local -r ASM_GEN_DIR="${PROJECT_DIR}/rust/asm-gen"
 
   cd "${ASM_GEN_DIR}"
@@ -114,6 +191,8 @@ main() {
   case "${DEFAULT_ARCH}" in
     "x86_64")
       gen_alg aes128gcm "$@"
+      gen_single aes128gcm zen4 "$@"
+      gen_single aes128gcm sapphirerapids "$@"
       gen_alg aes128gcm_streaming "$@"
       gen_alg aes192gcm "$@"
       gen_alg aes256gcm "$@"
@@ -127,6 +206,7 @@ main() {
       gen_single aes256gcmsiv zen4 "$@"
       ;;
     "aarch64")
+      gen_single aes128gcm neoversev2
       gen_single aes256gcm neoversev2
       gen_single aes256gcmdndk neoversev2
       gen_single aes256gcmdndkv2 neoversev2

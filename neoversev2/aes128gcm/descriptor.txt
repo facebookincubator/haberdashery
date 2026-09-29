@@ -1,0 +1,11 @@
+# @generated
+algorithm=aes128gcm
+arch=aarch64
+key_len=16
+nonce_len=12
+prefix=haberdashery
+primitive=aead
+profile=neoversev2
+struct_alignment=16
+struct_size=304
+tag_len=16

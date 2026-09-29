@@ -8,6 +8,7 @@
 use core::arch::x86_64::CpuidResult;
 
 use crate::feature::*;
+use crate::xcr0::XCR0;
 pub struct Processor {
     pub model: Model,
     pub raw_model: RawModel,
@@ -21,6 +22,12 @@ impl Default for Processor {
         let leaf1 = core::arch::x86_64::__cpuid(1);
         let leaf7 = core::arch::x86_64::__cpuid(7);
         let leaf7_1 = core::arch::x86_64::__cpuid_count(7, 1);
+        Self::from_cpuid(leaf1, leaf7, leaf7_1)
+    }
+}
+impl Processor {
+    #[inline(always)]
+    fn from_cpuid(leaf1: CpuidResult, leaf7: CpuidResult, leaf7_1: CpuidResult) -> Self {
         let raw_model = RawModel {
             family: shift_and_mask_byte(leaf1.eax, 8, 0xf),
             extended_family: shift_and_mask_u16(leaf1.eax, 20, 0xff),
@@ -90,9 +97,33 @@ impl Processor {
     }
     #[inline(always)]
     pub fn is_supported(&self, features: FeatureSet) -> bool {
-        features.leaf1.is_cpuid_supported(self.leaf1)
-            && features.leaf7.is_cpuid_supported(self.leaf7)
-            && features.leaf7_1.is_cpuid_supported(self.leaf7_1)
+        self.is_supported_with_xcr0(features, || {
+            // SAFETY: `is_supported_with_xcr0` invokes this callback only after
+            // all CPUID requirements, including OSXSAVE, have passed.
+            unsafe { XCR0::get_unchecked() }
+        })
+    }
+
+    #[inline(always)]
+    fn is_supported_with_xcr0<F>(&self, features: FeatureSet, read_xcr0: F) -> bool
+    where
+        F: FnOnce() -> XCR0,
+    {
+        if !features.leaf1.is_cpuid_supported(self.leaf1)
+            || !features.leaf7.is_cpuid_supported(self.leaf7)
+            || !features.leaf7_1.is_cpuid_supported(self.leaf7_1)
+        {
+            return false;
+        }
+
+        let required_xcr0 = features.required_xcr0();
+        if required_xcr0.is_empty() {
+            return true;
+        }
+        if !OSXSAVE.is_cpuid_supported(self.leaf1) {
+            return false;
+        }
+        read_xcr0().contains(required_xcr0)
     }
 }
 #[derive(Debug, PartialEq)]
@@ -182,5 +213,94 @@ impl core::fmt::Display for RawModel {
             model = self.model,
             extended_model = self.extended_model
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use core::cell::Cell;
+
+    use super::*;
+    use crate::arch::haswell;
+    use crate::arch::skylakex;
+    use crate::xcr0::AVX_STATE;
+    use crate::xcr0::AVX512_STATE;
+    use crate::xcr0::HI16_ZMM;
+    use crate::xcr0::OPMASK;
+    use crate::xcr0::XMM;
+    use crate::xcr0::YMM;
+    use crate::xcr0::ZMM_HI256;
+
+    fn all_features_processor() -> Processor {
+        let all = CpuidResult {
+            eax: u32::MAX,
+            ebx: u32::MAX,
+            ecx: u32::MAX,
+            edx: u32::MAX,
+        };
+        Processor::from_cpuid(all, all, all)
+    }
+
+    #[test]
+    fn missing_cpuid_feature_does_not_read_xcr0() {
+        let mut processor = all_features_processor();
+        processor.leaf7.ebx &= !(1 << 5);
+        let called = Cell::new(false);
+        assert!(!processor.is_supported_with_xcr0(haswell(), || {
+            called.set(true);
+            AVX_STATE
+        }));
+        assert!(!called.get());
+    }
+
+    #[test]
+    fn missing_osxsave_does_not_read_xcr0() {
+        let mut processor = all_features_processor();
+        processor.leaf1.ecx &= !(1 << 27);
+        let called = Cell::new(false);
+        assert!(!processor.is_supported_with_xcr0(haswell(), || {
+            called.set(true);
+            AVX_STATE
+        }));
+        assert!(!called.get());
+    }
+
+    #[test]
+    fn avx_requires_xmm_and_ymm_state() {
+        let processor = all_features_processor();
+        for state in [XCR0::default(), XMM, YMM] {
+            assert!(!processor.is_supported_with_xcr0(haswell(), || state));
+        }
+        assert!(processor.is_supported_with_xcr0(haswell(), || AVX_STATE));
+    }
+
+    #[test]
+    fn avx512_requires_all_extended_state() {
+        let processor = all_features_processor();
+        let missing_states = [
+            YMM | OPMASK | ZMM_HI256 | HI16_ZMM,
+            XMM | OPMASK | ZMM_HI256 | HI16_ZMM,
+            XMM | YMM | ZMM_HI256 | HI16_ZMM,
+            XMM | YMM | OPMASK | HI16_ZMM,
+            XMM | YMM | OPMASK | ZMM_HI256,
+        ];
+        for state in missing_states {
+            assert!(!processor.is_supported_with_xcr0(skylakex(), || state));
+        }
+        assert!(processor.is_supported_with_xcr0(skylakex(), || AVX512_STATE));
+    }
+
+    #[test]
+    fn sse_only_features_do_not_read_xcr0() {
+        let mut processor = all_features_processor();
+        processor.leaf1.ecx &= !(1 << 27);
+        assert!(processor.is_supported_with_xcr0(SSE2.into(), || {
+            panic!("SSE-only checks must not read XCR0")
+        }));
+
+        processor.leaf1.edx &= !(1 << 26);
+        assert!(!processor.is_supported_with_xcr0(SSE2.into(), || {
+            panic!("failed CPUID checks must not read XCR0")
+        }));
     }
 }

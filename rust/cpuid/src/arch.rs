@@ -6,6 +6,8 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
 use crate::feature::*;
+use crate::xcr0::AVX_STATE;
+use crate::xcr0::AVX512_STATE;
 
 // ISA extension mappings are taking with modifications from GCC:
 // https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
@@ -14,7 +16,7 @@ use crate::feature::*;
 #[inline(always)]
 pub fn haswell() -> FeatureSet {
     // GCC's haswell extensions plus AES minus rdrand
-    MOVBE
+    (MOVBE
         | MMX
         | SSE
         | SSE2
@@ -33,7 +35,8 @@ pub fn haswell() -> FeatureSet {
         | BMI1
         | BMI2
         | FMA
-        | AES
+        | AES)
+        .with_xcr0(AVX_STATE)
 }
 #[inline(always)]
 pub fn broadwell() -> FeatureSet {
@@ -50,13 +53,14 @@ pub fn skylake() -> FeatureSet {
 #[inline(always)]
 pub fn skylakex() -> FeatureSet {
     // GCC's skylake-avx512 extensions minus xsavec, xsaves, lzcnt
-    skylake() // line break
+    (skylake() // line break
         | AVX512F
         | CLWB
         | AVX512VL
         | AVX512BW
         | AVX512DQ
-        | AVX512CD
+        | AVX512CD)
+        .with_xcr0(AVX512_STATE)
 }
 #[inline(always)]
 pub fn cannonlake() -> FeatureSet {
@@ -108,7 +112,7 @@ pub fn sapphirerapids() -> FeatureSet {
 #[inline(always)]
 pub fn zen3() -> FeatureSet {
     // GCC's znver3 minus xsavec, xsaves, wbnoinvd, rdseed
-    MOVBE
+    (MOVBE
         | MMX
         | SSE
         | SSE2
@@ -135,12 +139,13 @@ pub fn zen3() -> FeatureSet {
         | SHA_NI
         | VAES
         | VPCLMULQDQ
-        | RDPID
+        | RDPID)
+        .with_xcr0(AVX_STATE)
 }
 #[inline(always)]
 pub fn zen4() -> FeatureSet {
     // GCC's znver4 minus xsavec, xsaves, wbnoinvd, rdseed
-    zen3() // line break
+    (zen3() // line break
         | RDPID
         | AVX512F
         | AVX512DQ
@@ -154,5 +159,6 @@ pub fn zen4() -> FeatureSet {
         | AVX512_VNNI
         | AVX512_BITALG
         | AVX512_VPOPCNTDQ
-        | GFNI
+        | GFNI)
+        .with_xcr0(AVX512_STATE)
 }

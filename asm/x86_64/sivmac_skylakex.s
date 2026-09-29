@@ -524,30 +524,20 @@ haberdashery_sivmac_skylakex_init:
 	.type	haberdashery_sivmac_skylakex_is_supported,@function
 haberdashery_sivmac_skylakex_is_supported:
 	.cfi_startproc
+	xorl	%esi, %esi
 	movl	$1, %eax
 	xorl	%ecx, %ecx
 	#APP
 
-	movq	%rbx, %rsi
+	movq	%rbx, %rdi
 	cpuid
-	xchgq	%rbx, %rsi
+	xchgq	%rbx, %rdi
 
 	#NO_APP
-	movl	%ecx, %esi
 	movl	%edx, %edi
-	notl	%edi
-	notl	%esi
+	movl	%ecx, %r8d
+	movl	$7, %eax
 	xorl	%ecx, %ecx
-	movl	$7, %eax
-	#APP
-
-	movq	%rbx, %r8
-	cpuid
-	xchgq	%rbx, %r8
-
-	#NO_APP
-	movl	$1, %ecx
-	movl	$7, %eax
 	#APP
 
 	movq	%rbx, %r9
@@ -555,14 +545,32 @@ haberdashery_sivmac_skylakex_is_supported:
 	xchgq	%rbx, %r9
 
 	#NO_APP
-	andl	$920130051, %esi
-	andl	$125829120, %edi
-	orl	%esi, %edi
+	movl	$7, %eax
+	movl	$1, %ecx
+	#APP
+
+	movq	%rbx, %r10
+	cpuid
+	xchgq	%rbx, %r10
+
+	#NO_APP
 	notl	%r8d
-	andl	$-779419351, %r8d
-	xorl	%eax, %eax
-	orl	%edi, %r8d
-	sete	%al
+	testl	$1054347779, %r8d
+	jne	.LBB1_4
+	andl	$125829120, %edi
+	cmpl	$125829120, %edi
+	jne	.LBB1_4
+	andl	$-779419351, %r9d
+	cmpl	$-779419351, %r9d
+	jne	.LBB1_4
+	xorl	%ecx, %ecx
+	xgetbv
+	notl	%eax
+	xorl	%esi, %esi
+	testb	$-26, %al
+	sete	%sil
+.LBB1_4:
+	movl	%esi, %eax
 	retq
 .Lfunc_end1:
 	.size	haberdashery_sivmac_skylakex_is_supported, .Lfunc_end1-haberdashery_sivmac_skylakex_is_supported
@@ -1329,5 +1337,5 @@ haberdashery_sivmac_skylakex_verify:
 	.size	haberdashery_sivmac_skylakex_verify, .Lfunc_end3-haberdashery_sivmac_skylakex_verify
 	.cfi_endproc
 
-	.ident	"rustc version 1.97.0-nightly (e96c36b6f 2026-05-21)"
+	.ident	"rustc version 1.98.0-nightly (c397dae80 2026-07-02)"
 	.section	".note.GNU-stack","",@progbits

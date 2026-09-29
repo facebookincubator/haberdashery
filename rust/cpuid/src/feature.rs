@@ -8,6 +8,8 @@
 use core::arch::x86_64::CpuidResult;
 use core::ops::BitOr;
 
+use crate::xcr0::XCR0;
+
 #[derive(Copy, Clone, Default)]
 pub struct FeatureLeaf<const L: u32> {
     eax: u32,
@@ -93,11 +95,24 @@ pub struct FeatureSet {
     pub(crate) leaf1: FeatureLeaf<1>,
     pub(crate) leaf7: FeatureLeaf<7>,
     pub(crate) leaf7_1: FeatureLeaf<107>,
+    required_xcr0: XCR0,
 }
 impl FeatureSet {
     #[inline(always)]
     pub fn is_supported(self) -> bool {
         crate::processor().is_supported(self)
+    }
+
+    #[inline(always)]
+    pub(crate) fn with_xcr0(mut self, required_xcr0: XCR0) -> Self {
+        self.leaf1 = self.leaf1 | OSXSAVE;
+        self.required_xcr0 = self.required_xcr0 | required_xcr0;
+        self
+    }
+
+    #[inline(always)]
+    pub(crate) fn required_xcr0(self) -> XCR0 {
+        self.required_xcr0
     }
 }
 impl<const N: u32> From<FeatureLeaf<N>> for FeatureSet {
@@ -155,6 +170,7 @@ impl<T: Into<FeatureSet>> BitOr<T> for FeatureSet {
             leaf1: self.leaf1 | rhs.leaf1,
             leaf7: self.leaf7 | rhs.leaf7,
             leaf7_1: self.leaf7_1 | rhs.leaf7_1,
+            required_xcr0: self.required_xcr0 | rhs.required_xcr0,
         }
     }
 }

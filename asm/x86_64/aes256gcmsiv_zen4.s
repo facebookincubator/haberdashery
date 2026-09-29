@@ -261,14 +261,14 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	movq	1792(%rsp), %r10
 	xorl	%eax, %eax
 	cmpq	1824(%rsp), %r10
-	jne	.LBB0_54
+	jne	.LBB0_50
 	cmpq	$12, %rdx
-	jne	.LBB0_54
+	jne	.LBB0_50
 	movabsq	$68719476737, %rdx
 	cmpq	%rdx, %r8
-	jae	.LBB0_54
+	jae	.LBB0_50
 	cmpq	%rdx, %r10
-	jae	.LBB0_54
+	jae	.LBB0_50
 	vmovsd	4(%rsi), %xmm0
 	vmovss	(%rsi), %xmm1
 	cmpq	$16, 1808(%rsp)
@@ -405,7 +405,7 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vaesenclast	%xmm6, %xmm1, %xmm1
 	vaesenclast	%xmm6, %xmm15, %xmm15
 	#NO_APP
-	jb	.LBB0_54
+	jb	.LBB0_50
 	vmovlhps	%xmm4, %xmm2, %xmm28
 	vmovlhps	%xmm5, %xmm3, %xmm22
 	vxorps	%xmm2, %xmm2, %xmm2
@@ -524,7 +524,7 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpclmulqdq	$16, %xmm10, %xmm19, %xmm4
 	vpclmulqdq	$0, %xmm10, %xmm19, %xmm3
 	vpclmulqdq	$17, %xmm10, %xmm19, %xmm5
-	vmovdqu64	%zmm10, 368(%rsp)
+	vmovdqu64	%zmm10, 304(%rsp)
 	vpxor	%xmm7, %xmm4, %xmm4
 	vpslldq	$8, %xmm4, %xmm7
 	vpsrldq	$8, %xmm4, %xmm4
@@ -542,7 +542,7 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpclmulqdq	$1, %xmm20, %xmm19, %xmm4
 	vpclmulqdq	$16, %xmm20, %xmm19, %xmm5
 	vpclmulqdq	$0, %xmm20, %xmm19, %xmm3
-	vmovdqu64	%zmm20, 304(%rsp)
+	vmovdqu64	%zmm20, 240(%rsp)
 	vpxor	%xmm4, %xmm5, %xmm4
 	vpternlogq	$150, %xmm6, %xmm13, %xmm26
 	vpclmulqdq	$17, %xmm20, %xmm19, %xmm5
@@ -564,7 +564,7 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpclmulqdq	$0, %xmm21, %xmm19, %xmm3
 	vpternlogq	$150, %xmm5, %xmm4, %xmm7
 	vpshufb	%xmm0, %xmm26, %xmm4
-	vmovdqu64	%zmm21, 240(%rsp)
+	vmovdqu64	%zmm21, 176(%rsp)
 	vpxor	%xmm6, %xmm8, %xmm6
 	vpclmulqdq	$17, %xmm21, %xmm19, %xmm8
 	vpslldq	$8, %xmm6, %xmm9
@@ -581,7 +581,7 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpclmulqdq	$1, %xmm23, %xmm19, %xmm5
 	vpclmulqdq	$16, %xmm23, %xmm19, %xmm8
 	vpclmulqdq	$0, %xmm23, %xmm19, %xmm3
-	vmovdqu64	%zmm23, 176(%rsp)
+	vmovdqu64	%zmm23, 112(%rsp)
 	vpxor	%xmm5, %xmm8, %xmm5
 	vpclmulqdq	$17, %xmm23, %xmm19, %xmm8
 	vpslldq	$8, %xmm5, %xmm9
@@ -951,7 +951,7 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpslldq	$8, %xmm24, %xmm5
 	vpslldq	$12, %xmm24, %xmm3
 	cmpq	$16, %rax
-	jb	.LBB0_24
+	jb	.LBB0_23
 	leaq	-16(%rax), %rdi
 	movl	%edi, %r11d
 	notl	%r11d
@@ -985,9 +985,9 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	jne	.LBB0_21
 .LBB0_22:
 	cmpq	$48, %rdi
-	jb	.LBB0_24
+	jb	.LBB0_23
 	.p2align	4
-.LBB0_23:
+.LBB0_53:
 	vpxor	(%rcx), %xmm2, %xmm2
 	addq	$-64, %rax
 	vpclmulqdq	$1, %xmm2, %xmm28, %xmm9
@@ -1052,13 +1052,14 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpshufd	$78, %xmm8, %xmm2
 	vpternlogq	$150, %xmm9, %xmm10, %xmm2
 	cmpq	$15, %rax
-	ja	.LBB0_23
-.LBB0_24:
+	ja	.LBB0_53
+.LBB0_23:
 	vmovdqu	(%rdx), %xmm9
 	vaesenclast	%xmm7, %xmm6, %xmm10
 	vpternlogq	$150, %xmm5, %xmm4, %xmm3
+	vmovdqa64	%zmm0, %zmm21
 	testq	%rax, %rax
-	je	.LBB0_26
+	je	.LBB0_25
 	movl	$-1, %edx
 	bzhil	%eax, %edx, %eax
 	kmovd	%eax, %k1
@@ -1079,19 +1080,21 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpxor	%xmm2, %xmm6, %xmm6
 	vpshufd	$78, %xmm4, %xmm2
 	vpternlogq	$150, %xmm5, %xmm6, %xmm2
-.LBB0_26:
+.LBB0_25:
 	vmovd	8(%rsi), %xmm8
 	vmovq	(%rsi), %xmm20
-	vporq	.LCPI0_14(%rip), %xmm9, %xmm21
+	vpor	.LCPI0_14(%rip), %xmm9, %xmm0
 	movq	1816(%rsp), %rax
 	vmovq	%r10, %xmm4
 	vmovq	%r8, %xmm5
 	vpternlogq	$150, %xmm3, %xmm24, %xmm10
 	vmovdqa64	%xmm2, %xmm23
 	cmpq	$1087, %r10
-	jbe	.LBB0_30
-	vbroadcasti32x4	.LCPI0_15(%rip), %zmm11
-	vshufi64x2	$0, %zmm21, %zmm21, %zmm2
+	jbe	.LBB0_26
+	vmovdqa64	%xmm20, -80(%rsp)
+	vbroadcasti32x4	.LCPI0_15(%rip), %zmm20
+	vshufi64x2	$0, %zmm0, %zmm0, %zmm2
+	vpaddd	.LCPI0_19(%rip), %zmm2, %zmm6
 	vmovdqa	%xmm5, -112(%rsp)
 	vmovdqa	%xmm4, -96(%rsp)
 	vmovdqa	%xmm8, -64(%rsp)
@@ -1099,14 +1102,14 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpaddd	.LCPI0_16(%rip), %zmm2, %zmm3
 	vpaddd	.LCPI0_17(%rip), %zmm2, %zmm4
 	vpaddd	.LCPI0_18(%rip), %zmm2, %zmm5
-	vpaddd	.LCPI0_19(%rip), %zmm2, %zmm6
 	vpaddd	.LCPI0_20(%rip), %zmm2, %zmm7
 	vpaddd	.LCPI0_21(%rip), %zmm2, %zmm8
 	vpaddd	.LCPI0_22(%rip), %zmm2, %zmm9
 	vpaddd	.LCPI0_23(%rip), %zmm2, %zmm2
-	vmovdqu64	%zmm0, 1584(%rsp)
-	vshufi64x2	$0, %zmm22, %zmm22, %zmm0
-	vmovdqu64	%zmm10, 48(%rsp)
+	vmovdqu64	%zmm21, 1584(%rsp)
+	vmovdqa64	%zmm10, %zmm21
+	vinserti32x4	$1, %xmm25, %ymm0, %ymm10
+	vshufi64x2	$0, %zmm22, %zmm22, %zmm11
 	vmovups	%zmm27, 816(%rsp)
 	vmovaps	%xmm28, -48(%rsp)
 	vshufi64x2	$0, %zmm30, %zmm30, %zmm28
@@ -1114,168 +1117,163 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vmovups	%zmm30, 688(%rsp)
 	vshufi64x2	$0, %zmm16, %zmm16, %zmm30
 	vmovups	%zmm31, 624(%rsp)
-	vmovdqa64	%xmm20, -80(%rsp)
-	vshufi64x2	$0, %zmm13, %zmm13, %zmm20
 	vshufi64x2	$0, %zmm14, %zmm14, %zmm22
 	vshufi64x2	$0, %zmm24, %zmm24, %zmm24
 	vmovaps	%xmm25, -32(%rsp)
 	vmovups	%zmm16, 1648(%rsp)
-	vpaddd	.LCPI0_24(%rip), %xmm21, %xmm21
+	vpaddd	.LCPI0_24(%rip), %xmm0, %xmm0
 	leaq	512(%r9), %rcx
 	leaq	512(%rax), %rdx
 	addq	$-512, %r10
-	vinserti32x4	$1, %xmm25, %ymm0, %ymm10
-	vmovdqu64	%zmm0, 1456(%rsp)
+	vmovdqu64	%zmm21, 368(%rsp)
 	vinserti32x4	$0, %xmm25, %zmm10, %zmm10
-	vpermi2q	%zmm15, %zmm1, %zmm11
-	vpxord	%zmm0, %zmm3, %zmm3
-	vpxord	%zmm0, %zmm4, %zmm4
-	vpxord	%zmm0, %zmm5, %zmm5
-	vpxord	%zmm0, %zmm6, %zmm6
-	vpxord	%zmm0, %zmm7, %zmm7
-	vpxord	%zmm0, %zmm8, %zmm8
-	vpxord	%zmm0, %zmm9, %zmm9
-	vpxord	%zmm0, %zmm2, %zmm2
+	vmovdqu64	%zmm11, 1456(%rsp)
+	vpermi2q	%zmm15, %zmm1, %zmm20
+	vpxord	%zmm11, %zmm6, %zmm6
+	vpxord	%zmm11, %zmm3, %zmm3
+	vpxord	%zmm11, %zmm4, %zmm4
+	vpxord	%zmm11, %zmm5, %zmm5
+	vpxord	%zmm11, %zmm7, %zmm7
+	vpxord	%zmm11, %zmm8, %zmm8
+	vpxord	%zmm11, %zmm9, %zmm9
+	vpxord	%zmm11, %zmm2, %zmm2
+	vmovdqa64	%zmm19, %zmm11
+	vshufi64x2	$0, %zmm12, %zmm12, %zmm19
+	vshufi64x2	$0, %zmm21, %zmm21, %zmm15
+	vshufi64x2	$228, %zmm20, %zmm10, %zmm1
+	vshufi64x2	$0, %zmm13, %zmm13, %zmm20
+	vmovdqa64	%zmm17, %zmm10
+	vshufi64x2	$0, %zmm26, %zmm26, %zmm17
+	vshufi64x2	$0, %zmm10, %zmm10, %zmm25
+	vaesenc	%zmm1, %zmm6, %zmm6
+	vaesenc	%zmm1, %zmm3, %zmm3
+	vaesenc	%zmm1, %zmm4, %zmm4
+	vaesenc	%zmm1, %zmm5, %zmm5
+	vaesenc	%zmm1, %zmm7, %zmm7
+	vaesenc	%zmm1, %zmm8, %zmm8
+	vaesenc	%zmm1, %zmm9, %zmm9
+	vmovdqu64	%zmm1, 1264(%rsp)
+	vaesenc	%zmm1, %zmm2, %zmm2
 	vshufi64x2	$0, %zmm27, %zmm27, %zmm1
 	vshufi64x2	$0, %zmm29, %zmm29, %zmm27
 	vshufi64x2	$0, %zmm31, %zmm31, %zmm29
 	vshufi64x2	$0, %zmm18, %zmm18, %zmm31
-	vshufi64x2	$228, %zmm11, %zmm10, %zmm0
-	vmovdqa64	%zmm19, %zmm11
-	vshufi64x2	$0, %zmm12, %zmm12, %zmm19
-	vmovdqa64	%zmm17, %zmm10
-	vshufi64x2	$0, %zmm26, %zmm26, %zmm17
-	vshufi64x2	$0, %zmm10, %zmm10, %zmm25
-	vaesenc	%zmm0, %zmm6, %zmm6
-	vaesenc	%zmm0, %zmm5, %zmm5
-	vaesenc	%zmm0, %zmm3, %zmm3
-	vaesenc	%zmm0, %zmm4, %zmm4
-	vaesenc	%zmm0, %zmm7, %zmm7
-	vaesenc	%zmm0, %zmm8, %zmm8
-	vaesenc	%zmm0, %zmm9, %zmm9
-	vaesenc	%zmm0, %zmm2, %zmm2
-	vmovdqu64	%zmm0, 1264(%rsp)
-	vmovdqu64	48(%rsp), %zmm0
 	vaesenc	%zmm1, %zmm6, %zmm6
+	vaesenc	%zmm1, %zmm7, %zmm7
+	vaesenc	%zmm1, %zmm2, %zmm2
 	vaesenc	%zmm1, %zmm5, %zmm5
 	vaesenc	%zmm1, %zmm3, %zmm3
 	vaesenc	%zmm1, %zmm4, %zmm4
-	vaesenc	%zmm1, %zmm7, %zmm7
 	vaesenc	%zmm1, %zmm8, %zmm8
 	vaesenc	%zmm1, %zmm9, %zmm9
-	vaesenc	%zmm1, %zmm2, %zmm2
 	vaesenc	%zmm27, %zmm6, %zmm6
+	vaesenc	%zmm27, %zmm7, %zmm7
+	vaesenc	%zmm27, %zmm2, %zmm2
 	vaesenc	%zmm27, %zmm5, %zmm5
 	vaesenc	%zmm27, %zmm3, %zmm3
 	vaesenc	%zmm27, %zmm4, %zmm4
-	vaesenc	%zmm27, %zmm7, %zmm7
 	vaesenc	%zmm27, %zmm8, %zmm8
 	vaesenc	%zmm27, %zmm9, %zmm9
-	vaesenc	%zmm27, %zmm2, %zmm2
-	vshufi64x2	$0, %zmm0, %zmm0, %zmm15
-	vshufi64x2	$0, %zmm11, %zmm11, %zmm0
-	vmovdqu64	%zmm0, 1328(%rsp)
-	vmovdqu64	368(%rsp), %zmm0
 	vaesenc	%zmm28, %zmm6, %zmm6
+	vaesenc	%zmm28, %zmm7, %zmm7
+	vaesenc	%zmm28, %zmm2, %zmm2
 	vaesenc	%zmm28, %zmm5, %zmm5
 	vaesenc	%zmm28, %zmm3, %zmm3
 	vaesenc	%zmm28, %zmm4, %zmm4
-	vaesenc	%zmm28, %zmm7, %zmm7
 	vaesenc	%zmm28, %zmm8, %zmm8
 	vaesenc	%zmm28, %zmm9, %zmm9
-	vaesenc	%zmm28, %zmm2, %zmm2
 	vaesenc	%zmm29, %zmm6, %zmm6
+	vaesenc	%zmm29, %zmm7, %zmm7
+	vaesenc	%zmm29, %zmm2, %zmm2
 	vaesenc	%zmm29, %zmm5, %zmm5
 	vaesenc	%zmm29, %zmm3, %zmm3
 	vaesenc	%zmm29, %zmm4, %zmm4
-	vaesenc	%zmm29, %zmm7, %zmm7
 	vaesenc	%zmm29, %zmm8, %zmm8
 	vaesenc	%zmm29, %zmm9, %zmm9
-	vaesenc	%zmm29, %zmm2, %zmm2
-	vshufi64x2	$0, %zmm0, %zmm0, %zmm0
 	vaesenc	%zmm30, %zmm6, %zmm6
+	vaesenc	%zmm30, %zmm7, %zmm7
+	vaesenc	%zmm30, %zmm2, %zmm2
 	vaesenc	%zmm30, %zmm5, %zmm5
 	vaesenc	%zmm30, %zmm3, %zmm3
 	vaesenc	%zmm30, %zmm4, %zmm4
-	vaesenc	%zmm30, %zmm7, %zmm7
 	vaesenc	%zmm30, %zmm8, %zmm8
 	vaesenc	%zmm30, %zmm9, %zmm9
-	vaesenc	%zmm30, %zmm2, %zmm2
-	vmovdqu64	%zmm0, 112(%rsp)
-	vmovdqu64	240(%rsp), %zmm0
 	vaesenc	%zmm31, %zmm6, %zmm6
+	vaesenc	%zmm31, %zmm7, %zmm7
+	vaesenc	%zmm31, %zmm2, %zmm2
 	vaesenc	%zmm31, %zmm5, %zmm5
 	vaesenc	%zmm31, %zmm3, %zmm3
 	vaesenc	%zmm31, %zmm4, %zmm4
-	vaesenc	%zmm31, %zmm7, %zmm7
 	vaesenc	%zmm31, %zmm8, %zmm8
 	vaesenc	%zmm31, %zmm9, %zmm9
-	vaesenc	%zmm31, %zmm2, %zmm2
 	vaesenc	%zmm19, %zmm6, %zmm6
+	vaesenc	%zmm19, %zmm7, %zmm7
+	vaesenc	%zmm19, %zmm2, %zmm2
 	vaesenc	%zmm19, %zmm5, %zmm5
 	vaesenc	%zmm19, %zmm3, %zmm3
 	vaesenc	%zmm19, %zmm4, %zmm4
-	vaesenc	%zmm19, %zmm7, %zmm7
 	vaesenc	%zmm19, %zmm8, %zmm8
 	vaesenc	%zmm19, %zmm9, %zmm9
-	vaesenc	%zmm19, %zmm2, %zmm2
 	vaesenc	%zmm20, %zmm6, %zmm6
+	vaesenc	%zmm20, %zmm7, %zmm7
+	vaesenc	%zmm20, %zmm2, %zmm2
 	vaesenc	%zmm20, %zmm5, %zmm5
 	vaesenc	%zmm20, %zmm3, %zmm3
 	vaesenc	%zmm20, %zmm4, %zmm4
-	vaesenc	%zmm20, %zmm7, %zmm7
 	vaesenc	%zmm20, %zmm8, %zmm8
 	vaesenc	%zmm20, %zmm9, %zmm9
-	vaesenc	%zmm20, %zmm2, %zmm2
 	vaesenc	%zmm22, %zmm6, %zmm6
+	vaesenc	%zmm22, %zmm7, %zmm7
+	vaesenc	%zmm22, %zmm2, %zmm2
 	vaesenc	%zmm22, %zmm5, %zmm5
 	vaesenc	%zmm22, %zmm3, %zmm3
 	vaesenc	%zmm22, %zmm4, %zmm4
-	vaesenc	%zmm22, %zmm7, %zmm7
 	vaesenc	%zmm22, %zmm8, %zmm8
 	vaesenc	%zmm22, %zmm9, %zmm9
-	vaesenc	%zmm22, %zmm2, %zmm2
 	vaesenc	%zmm17, %zmm6, %zmm6
+	vaesenc	%zmm17, %zmm7, %zmm7
+	vaesenc	%zmm17, %zmm2, %zmm2
 	vaesenc	%zmm17, %zmm5, %zmm5
 	vaesenc	%zmm17, %zmm3, %zmm3
 	vaesenc	%zmm17, %zmm4, %zmm4
-	vaesenc	%zmm17, %zmm7, %zmm7
 	vaesenc	%zmm17, %zmm8, %zmm8
 	vaesenc	%zmm17, %zmm9, %zmm9
-	vaesenc	%zmm17, %zmm2, %zmm2
 	vaesenc	%zmm24, %zmm6, %zmm6
+	vaesenc	%zmm24, %zmm7, %zmm7
+	vaesenc	%zmm24, %zmm2, %zmm2
 	vaesenc	%zmm24, %zmm5, %zmm5
 	vaesenc	%zmm24, %zmm3, %zmm3
 	vaesenc	%zmm24, %zmm4, %zmm4
-	vaesenc	%zmm24, %zmm7, %zmm7
 	vaesenc	%zmm24, %zmm8, %zmm8
 	vaesenc	%zmm24, %zmm9, %zmm9
-	vaesenc	%zmm24, %zmm2, %zmm2
 	vaesenc	%zmm25, %zmm6, %zmm6
+	vaesenc	%zmm25, %zmm7, %zmm7
+	vaesenc	%zmm25, %zmm2, %zmm2
 	vaesenc	%zmm25, %zmm5, %zmm5
 	vaesenc	%zmm25, %zmm3, %zmm3
 	vaesenc	%zmm25, %zmm4, %zmm4
-	vaesenc	%zmm25, %zmm7, %zmm7
 	vaesenc	%zmm25, %zmm8, %zmm8
 	vaesenc	%zmm25, %zmm9, %zmm9
-	vaesenc	%zmm25, %zmm2, %zmm2
 	vaesenclast	%zmm15, %zmm6, %zmm6
 	vpxorq	192(%r9), %zmm6, %zmm16
 	vmovdqu64	304(%rsp), %zmm6
+	vaesenclast	%zmm15, %zmm7, %zmm7
+	vaesenclast	%zmm15, %zmm2, %zmm10
+	vpxorq	256(%r9), %zmm7, %zmm2
+	vshufi64x2	$0, %zmm11, %zmm11, %zmm7
 	vaesenclast	%zmm15, %zmm5, %zmm5
 	vpxorq	128(%r9), %zmm5, %zmm18
 	vaesenclast	%zmm15, %zmm3, %zmm3
 	vaesenclast	%zmm15, %zmm4, %zmm4
 	vaesenclast	%zmm15, %zmm8, %zmm8
-	vaesenclast	%zmm15, %zmm7, %zmm7
-	vaesenclast	%zmm15, %zmm2, %zmm10
 	vpxorq	64(%r9), %zmm4, %zmm13
 	vaesenclast	%zmm15, %zmm9, %zmm9
 	vpxorq	(%r9), %zmm3, %zmm14
-	vpxorq	256(%r9), %zmm7, %zmm2
 	vpxorq	320(%r9), %zmm8, %zmm12
 	vpxorq	384(%r9), %zmm9, %zmm3
 	vpxorq	448(%r9), %zmm10, %zmm4
+	vmovdqu64	%zmm7, 1328(%rsp)
+	vmovdqu64	240(%rsp), %zmm7
 	vshufi64x2	$0, %zmm6, %zmm6, %zmm5
 	vmovdqu64	176(%rsp), %zmm6
 	vmovdqu64	%zmm14, (%rax)
@@ -1286,26 +1284,29 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vmovdqu64	%zmm12, 320(%rax)
 	vmovdqu64	%zmm3, 384(%rax)
 	vmovdqu64	%zmm4, 448(%rax)
+	vmovdqu64	%zmm5, 48(%rsp)
+	vshufi64x2	$0, %zmm7, %zmm7, %zmm5
+	vmovdqu64	112(%rsp), %zmm7
 	vmovdqu64	%zmm5, 1392(%rsp)
-	vshufi64x2	$0, %zmm0, %zmm0, %zmm5
-	vmovdqu64	1584(%rsp), %zmm0
-	vmovdqu64	%zmm5, 1520(%rsp)
 	vshufi64x2	$0, %zmm6, %zmm6, %zmm5
-	vmovdqu64	-16(%rsp), %zmm6
-	vshufi64x2	$0, %zmm0, %zmm0, %zmm0
+	vmovdqu64	1584(%rsp), %zmm6
+	vmovdqu64	%zmm5, 1520(%rsp)
+	vshufi64x2	$0, %zmm7, %zmm7, %zmm5
+	vmovdqu64	-16(%rsp), %zmm7
+	vmovdqu64	%zmm5, 112(%rsp)
+	vshufi64x2	$0, %zmm6, %zmm6, %zmm5
+	vmovdqu64	1712(%rsp), %zmm6
 	vmovdqu64	%zmm5, 176(%rsp)
-	vmovdqu64	%zmm0, 240(%rsp)
-	vmovdqu64	1712(%rsp), %zmm0
+	vshufi64x2	$0, %zmm7, %zmm7, %zmm5
+	vmovdqu64	%zmm5, 240(%rsp)
 	vshufi64x2	$0, %zmm6, %zmm6, %zmm5
 	vmovdqu64	%zmm5, 304(%rsp)
-	vshufi64x2	$0, %zmm0, %zmm0, %zmm5
-	vmovdqu64	%zmm5, 368(%rsp)
 	.p2align	4
-.LBB0_28:
-	vmovdqu64	1328(%rsp), %zmm0
-	vmovdqu64	112(%rsp), %zmm10
+.LBB0_52:
+	vmovdqu64	1328(%rsp), %zmm9
+	vmovdqu64	48(%rsp), %zmm10
 	vmovdqa64	%zmm14, %zmm11
-	vmovdqa64	%zmm21, %zmm14
+	vmovdqa64	%zmm0, %zmm14
 	vmovdqa64	%zmm15, %zmm21
 	vmovdqa64	%zmm25, %zmm15
 	vmovdqa64	%zmm24, %zmm25
@@ -1318,35 +1319,30 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vmovdqa64	%zmm29, %zmm30
 	vmovdqa64	%zmm28, %zmm29
 	vmovdqa64	%zmm27, %zmm28
+	vmovdqu64	1392(%rsp), %zmm0
 	vmovdqu64	1520(%rsp), %zmm27
 	addq	$-512, %r10
-	vpclmulqdq	$0, %zmm4, %zmm0, %zmm5
-	vpclmulqdq	$17, %zmm4, %zmm0, %zmm6
-	vpunpcklqdq	%zmm4, %zmm0, %zmm8
-	vpunpckhqdq	%zmm4, %zmm0, %zmm4
-	vmovdqu64	1392(%rsp), %zmm0
+	vpclmulqdq	$0, %zmm4, %zmm9, %zmm5
+	vpclmulqdq	$17, %zmm4, %zmm9, %zmm6
+	vpunpcklqdq	%zmm4, %zmm9, %zmm8
+	vpunpckhqdq	%zmm4, %zmm9, %zmm4
 	vpclmulqdq	$0, %zmm3, %zmm10, %zmm7
 	vpclmulqdq	$17, %zmm3, %zmm10, %zmm26
+	vpclmulqdq	$0, %zmm12, %zmm0, %zmm9
 	vpxorq	%zmm8, %zmm4, %zmm4
 	vpunpcklqdq	%zmm3, %zmm10, %zmm8
 	vpunpckhqdq	%zmm3, %zmm10, %zmm3
 	vpclmulqdq	$0, %zmm2, %zmm27, %zmm10
 	vpxorq	%zmm8, %zmm3, %zmm3
 	vpclmulqdq	$1, %zmm4, %zmm4, %zmm4
+	vpunpcklqdq	%zmm2, %zmm27, %zmm8
 	vpclmulqdq	$1, %zmm3, %zmm3, %zmm3
 	vpxorq	%zmm5, %zmm7, %zmm5
-	vpxorq	%zmm4, %zmm3, %zmm3
-	vpunpckhqdq	%zmm2, %zmm27, %zmm4
-	vpclmulqdq	$0, %zmm12, %zmm0, %zmm9
-	vpunpcklqdq	%zmm12, %zmm0, %zmm8
 	vpunpckhqdq	%zmm12, %zmm0, %zmm7
 	vpternlogq	$150, %zmm9, %zmm5, %zmm10
-	vpxorq	%zmm8, %zmm7, %zmm5
-	vpclmulqdq	$17, %zmm12, %zmm0, %zmm7
-	vpunpcklqdq	%zmm2, %zmm27, %zmm8
+	vpunpckhqdq	%zmm2, %zmm27, %zmm9
+	vpunpcklqdq	%zmm12, %zmm0, %zmm5
 	vpclmulqdq	$17, %zmm2, %zmm27, %zmm2
-	vpxorq	%zmm6, %zmm26, %zmm0
-	vmovdqu64	368(%rsp), %zmm12
 	vmovdqa64	%zmm28, %zmm27
 	vmovdqa64	%zmm29, %zmm28
 	vmovdqa64	%zmm30, %zmm29
@@ -1359,22 +1355,27 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vmovdqa64	%zmm25, %zmm24
 	vmovdqa64	%zmm15, %zmm25
 	vmovdqa64	%zmm21, %zmm15
-	vmovdqa64	%zmm14, %zmm21
-	vpaddd	.LCPI0_24(%rip), %xmm21, %xmm21
-	vpxorq	%zmm8, %zmm4, %zmm4
-	vmovdqu64	240(%rsp), %zmm8
+	vpxorq	%zmm5, %zmm7, %zmm5
+	vpclmulqdq	$17, %zmm12, %zmm0, %zmm7
+	vmovdqu64	304(%rsp), %zmm12
+	vmovdqa64	%zmm14, %zmm0
+	vpaddd	.LCPI0_24(%rip), %xmm0, %xmm0
+	vpxorq	%zmm4, %zmm3, %zmm3
+	vpxorq	%zmm8, %zmm9, %zmm4
+	vmovdqu64	112(%rsp), %zmm9
+	vmovdqu64	176(%rsp), %zmm8
 	vpclmulqdq	$1, %zmm5, %zmm5, %zmm5
 	vpclmulqdq	$1, %zmm4, %zmm4, %zmm4
-	vpternlogq	$150, %zmm7, %zmm0, %zmm2
-	vmovdqu64	176(%rsp), %zmm0
 	vpternlogq	$150, %zmm5, %zmm3, %zmm4
+	vpxorq	%zmm6, %zmm26, %zmm5
+	vpternlogq	$150, %zmm7, %zmm5, %zmm2
+	vpclmulqdq	$0, %zmm16, %zmm9, %zmm3
 	vpclmulqdq	$0, %zmm18, %zmm8, %zmm5
-	vpclmulqdq	$0, %zmm16, %zmm0, %zmm3
-	vpclmulqdq	$17, %zmm16, %zmm0, %zmm6
-	vpunpckhqdq	%zmm16, %zmm0, %zmm7
+	vpclmulqdq	$17, %zmm16, %zmm9, %zmm6
+	vpunpckhqdq	%zmm16, %zmm9, %zmm7
 	vpternlogq	$150, %zmm3, %zmm10, %zmm5
-	vpunpcklqdq	%zmm16, %zmm0, %zmm3
-	vmovdqu64	304(%rsp), %zmm16
+	vpunpcklqdq	%zmm16, %zmm9, %zmm3
+	vmovdqu64	240(%rsp), %zmm16
 	vpxorq	%zmm3, %zmm7, %zmm3
 	vpclmulqdq	$17, %zmm18, %zmm8, %zmm7
 	vpclmulqdq	$1, %zmm3, %zmm3, %zmm3
@@ -1383,172 +1384,172 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpunpckhqdq	%zmm18, %zmm8, %zmm8
 	vpxorq	%zmm2, %zmm8, %zmm2
 	vpxorq	%zmm23, %zmm11, %zmm8
-	vpclmulqdq	$0, %zmm8, %zmm12, %zmm9
 	vpclmulqdq	$1, %zmm2, %zmm2, %zmm2
-	vpunpckhqdq	%zmm8, %zmm12, %zmm0
+	vpclmulqdq	$0, %zmm8, %zmm12, %zmm9
+	vpunpckhqdq	%zmm8, %zmm12, %zmm11
 	vpclmulqdq	$0, %zmm13, %zmm16, %zmm6
-	vpunpckhqdq	%zmm13, %zmm16, %zmm11
 	vpternlogq	$150, %zmm3, %zmm4, %zmm2
-	vpunpcklqdq	%zmm13, %zmm16, %zmm4
 	vshufi64x2	$0, %zmm14, %zmm14, %zmm3
+	vpunpcklqdq	%zmm13, %zmm16, %zmm4
+	vpunpckhqdq	%zmm13, %zmm16, %zmm14
+	vpclmulqdq	$17, %zmm13, %zmm16, %zmm13
 	vpaddd	.LCPI0_18(%rip), %zmm3, %zmm10
 	vpternlogq	$150, %zmm6, %zmm5, %zmm9
 	vpunpcklqdq	%zmm8, %zmm12, %zmm6
+	vpxorq	%zmm4, %zmm14, %zmm4
 	vpclmulqdq	$17, %zmm8, %zmm12, %zmm8
-	vpxorq	%zmm4, %zmm11, %zmm4
-	vpaddd	.LCPI0_21(%rip), %zmm3, %zmm11
-	vpxorq	%zmm6, %zmm0, %zmm5
-	vpclmulqdq	$17, %zmm13, %zmm16, %zmm0
+	vmovdqu64	1456(%rsp), %zmm12
+	vpxorq	%zmm6, %zmm11, %zmm5
 	vpclmulqdq	$1, %zmm4, %zmm4, %zmm4
+	vpbroadcastq	.LCPI0_13(%rip), %zmm11
 	vpaddd	.LCPI0_16(%rip), %zmm3, %zmm6
 	vpclmulqdq	$1, %zmm5, %zmm5, %zmm5
-	vpternlogq	$150, %zmm0, %zmm7, %zmm8
-	vpbroadcastq	.LCPI0_13(%rip), %zmm0
+	vpternlogq	$150, %zmm13, %zmm7, %zmm8
 	vpternlogq	$150, %zmm4, %zmm2, %zmm5
 	vpaddd	.LCPI0_17(%rip), %zmm3, %zmm2
 	vpternlogq	$150, %zmm9, %zmm8, %zmm5
 	vpslldq	$8, %zmm5, %zmm4
 	vpsrldq	$8, %zmm5, %zmm5
+	vpxord	%zmm12, %zmm6, %zmm6
 	vxorpd	%zmm9, %zmm4, %zmm4
 	vpaddd	.LCPI0_19(%rip), %zmm3, %zmm9
-	vpclmulqdq	$16, %zmm0, %zmm4, %zmm7
+	vpclmulqdq	$16, %zmm11, %zmm4, %zmm7
 	vpshufd	$78, %zmm4, %zmm4
+	vpxord	%zmm12, %zmm2, %zmm2
 	vpxorq	%zmm4, %zmm7, %zmm4
-	vpclmulqdq	$16, %zmm0, %zmm4, %zmm7
-	vmovdqu64	1456(%rsp), %zmm0
+	vpclmulqdq	$16, %zmm11, %zmm4, %zmm7
 	vpshufd	$78, %zmm4, %zmm4
+	vpaddd	.LCPI0_21(%rip), %zmm3, %zmm11
+	vpxord	%zmm12, %zmm9, %zmm9
 	vpxorq	%zmm8, %zmm7, %zmm23
 	vpaddd	.LCPI0_20(%rip), %zmm3, %zmm7
+	vpxord	%zmm12, %zmm10, %zmm8
+	vmovdqu64	1264(%rsp), %zmm10
 	vpternlogd	$150, %zmm4, %zmm5, %zmm23
 	vpaddd	.LCPI0_22(%rip), %zmm3, %zmm5
 	vpaddd	.LCPI0_23(%rip), %zmm3, %zmm3
-	vpxord	%zmm0, %zmm10, %zmm8
-	vmovdqu64	1264(%rsp), %zmm10
-	vpxord	%zmm0, %zmm6, %zmm6
-	vpxord	%zmm0, %zmm2, %zmm2
-	vpxord	%zmm0, %zmm9, %zmm9
-	vpxord	%zmm0, %zmm11, %zmm4
-	vpxord	%zmm0, %zmm7, %zmm7
-	vpxord	%zmm0, %zmm5, %zmm5
-	vpxord	%zmm0, %zmm3, %zmm3
+	vpxord	%zmm12, %zmm11, %zmm4
+	vpxord	%zmm12, %zmm7, %zmm7
 	vaesenc	%zmm10, %zmm6, %zmm6
 	vaesenc	%zmm10, %zmm2, %zmm2
 	vaesenc	%zmm10, %zmm8, %zmm8
 	vaesenc	%zmm10, %zmm9, %zmm9
-	vaesenc	%zmm10, %zmm7, %zmm7
 	vaesenc	%zmm10, %zmm4, %zmm4
+	vpxord	%zmm12, %zmm5, %zmm5
+	vpxord	%zmm12, %zmm3, %zmm3
+	vaesenc	%zmm10, %zmm7, %zmm7
 	vaesenc	%zmm10, %zmm5, %zmm5
 	vaesenc	%zmm10, %zmm3, %zmm3
 	vaesenc	%zmm1, %zmm6, %zmm6
 	vaesenc	%zmm1, %zmm2, %zmm2
 	vaesenc	%zmm1, %zmm8, %zmm8
 	vaesenc	%zmm1, %zmm9, %zmm9
-	vaesenc	%zmm1, %zmm7, %zmm7
 	vaesenc	%zmm1, %zmm4, %zmm4
+	vaesenc	%zmm1, %zmm7, %zmm7
 	vaesenc	%zmm1, %zmm5, %zmm5
 	vaesenc	%zmm1, %zmm3, %zmm3
 	vaesenc	%zmm27, %zmm6, %zmm6
 	vaesenc	%zmm27, %zmm2, %zmm2
 	vaesenc	%zmm27, %zmm8, %zmm8
 	vaesenc	%zmm27, %zmm9, %zmm9
-	vaesenc	%zmm27, %zmm7, %zmm7
 	vaesenc	%zmm27, %zmm4, %zmm4
+	vaesenc	%zmm27, %zmm7, %zmm7
 	vaesenc	%zmm27, %zmm5, %zmm5
 	vaesenc	%zmm27, %zmm3, %zmm3
 	vaesenc	%zmm28, %zmm6, %zmm6
 	vaesenc	%zmm28, %zmm2, %zmm2
 	vaesenc	%zmm28, %zmm8, %zmm8
 	vaesenc	%zmm28, %zmm9, %zmm9
-	vaesenc	%zmm28, %zmm7, %zmm7
 	vaesenc	%zmm28, %zmm4, %zmm4
+	vaesenc	%zmm28, %zmm7, %zmm7
 	vaesenc	%zmm28, %zmm5, %zmm5
 	vaesenc	%zmm28, %zmm3, %zmm3
 	vaesenc	%zmm29, %zmm6, %zmm6
 	vaesenc	%zmm29, %zmm2, %zmm2
 	vaesenc	%zmm29, %zmm8, %zmm8
 	vaesenc	%zmm29, %zmm9, %zmm9
-	vaesenc	%zmm29, %zmm7, %zmm7
 	vaesenc	%zmm29, %zmm4, %zmm4
+	vaesenc	%zmm29, %zmm7, %zmm7
 	vaesenc	%zmm29, %zmm5, %zmm5
 	vaesenc	%zmm29, %zmm3, %zmm3
 	vaesenc	%zmm30, %zmm6, %zmm6
 	vaesenc	%zmm30, %zmm2, %zmm2
 	vaesenc	%zmm30, %zmm8, %zmm8
 	vaesenc	%zmm30, %zmm9, %zmm9
-	vaesenc	%zmm30, %zmm7, %zmm7
 	vaesenc	%zmm30, %zmm4, %zmm4
+	vaesenc	%zmm30, %zmm7, %zmm7
 	vaesenc	%zmm30, %zmm5, %zmm5
 	vaesenc	%zmm30, %zmm3, %zmm3
 	vaesenc	%zmm31, %zmm6, %zmm6
 	vaesenc	%zmm31, %zmm2, %zmm2
 	vaesenc	%zmm31, %zmm8, %zmm8
 	vaesenc	%zmm31, %zmm9, %zmm9
-	vaesenc	%zmm31, %zmm7, %zmm7
 	vaesenc	%zmm31, %zmm4, %zmm4
+	vaesenc	%zmm31, %zmm7, %zmm7
 	vaesenc	%zmm31, %zmm5, %zmm5
 	vaesenc	%zmm31, %zmm3, %zmm3
 	vaesenc	%zmm19, %zmm6, %zmm6
 	vaesenc	%zmm19, %zmm2, %zmm2
 	vaesenc	%zmm19, %zmm8, %zmm8
 	vaesenc	%zmm19, %zmm9, %zmm9
-	vaesenc	%zmm19, %zmm7, %zmm7
 	vaesenc	%zmm19, %zmm4, %zmm4
+	vaesenc	%zmm19, %zmm7, %zmm7
 	vaesenc	%zmm19, %zmm5, %zmm5
 	vaesenc	%zmm19, %zmm3, %zmm3
 	vaesenc	%zmm20, %zmm6, %zmm6
 	vaesenc	%zmm20, %zmm2, %zmm2
 	vaesenc	%zmm20, %zmm8, %zmm8
 	vaesenc	%zmm20, %zmm9, %zmm9
-	vaesenc	%zmm20, %zmm7, %zmm7
 	vaesenc	%zmm20, %zmm4, %zmm4
+	vaesenc	%zmm20, %zmm7, %zmm7
 	vaesenc	%zmm20, %zmm5, %zmm5
 	vaesenc	%zmm20, %zmm3, %zmm3
 	vaesenc	%zmm22, %zmm6, %zmm6
 	vaesenc	%zmm22, %zmm2, %zmm2
 	vaesenc	%zmm22, %zmm8, %zmm8
 	vaesenc	%zmm22, %zmm9, %zmm9
-	vaesenc	%zmm22, %zmm7, %zmm7
 	vaesenc	%zmm22, %zmm4, %zmm4
+	vaesenc	%zmm22, %zmm7, %zmm7
 	vaesenc	%zmm22, %zmm5, %zmm5
 	vaesenc	%zmm22, %zmm3, %zmm3
 	vaesenc	%zmm17, %zmm6, %zmm6
 	vaesenc	%zmm17, %zmm2, %zmm2
 	vaesenc	%zmm17, %zmm8, %zmm8
 	vaesenc	%zmm17, %zmm9, %zmm9
-	vaesenc	%zmm17, %zmm7, %zmm7
 	vaesenc	%zmm17, %zmm4, %zmm4
+	vaesenc	%zmm17, %zmm7, %zmm7
 	vaesenc	%zmm17, %zmm5, %zmm5
 	vaesenc	%zmm17, %zmm3, %zmm3
 	vaesenc	%zmm24, %zmm6, %zmm6
 	vaesenc	%zmm24, %zmm2, %zmm2
 	vaesenc	%zmm24, %zmm8, %zmm8
 	vaesenc	%zmm24, %zmm9, %zmm9
-	vaesenc	%zmm24, %zmm7, %zmm7
 	vaesenc	%zmm24, %zmm4, %zmm4
+	vaesenc	%zmm24, %zmm7, %zmm7
 	vaesenc	%zmm24, %zmm5, %zmm5
 	vaesenc	%zmm24, %zmm3, %zmm3
 	vaesenc	%zmm25, %zmm6, %zmm6
 	vaesenc	%zmm25, %zmm2, %zmm2
 	vaesenc	%zmm25, %zmm8, %zmm8
 	vaesenc	%zmm25, %zmm9, %zmm9
-	vaesenc	%zmm25, %zmm7, %zmm7
 	vaesenc	%zmm25, %zmm4, %zmm4
+	vaesenc	%zmm25, %zmm7, %zmm7
 	vaesenc	%zmm25, %zmm5, %zmm5
 	vaesenc	%zmm25, %zmm3, %zmm3
-	vaesenclast	%zmm15, %zmm6, %zmm6
-	vaesenclast	%zmm15, %zmm2, %zmm2
-	vaesenclast	%zmm15, %zmm8, %zmm8
-	vaesenclast	%zmm15, %zmm9, %zmm9
-	vaesenclast	%zmm15, %zmm4, %zmm4
-	vaesenclast	%zmm15, %zmm7, %zmm7
-	vpxorq	64(%rcx), %zmm2, %zmm13
-	vaesenclast	%zmm15, %zmm5, %zmm5
-	vaesenclast	%zmm15, %zmm3, %zmm10
-	vpxorq	320(%rcx), %zmm4, %zmm12
+	vaesenclast	%zmm21, %zmm6, %zmm6
+	vaesenclast	%zmm21, %zmm2, %zmm2
+	vaesenclast	%zmm21, %zmm8, %zmm8
+	vaesenclast	%zmm21, %zmm9, %zmm9
+	vaesenclast	%zmm21, %zmm4, %zmm4
 	vpxorq	(%rcx), %zmm6, %zmm14
+	vpxorq	64(%rcx), %zmm2, %zmm13
 	vpxorq	128(%rcx), %zmm8, %zmm18
 	vpxorq	192(%rcx), %zmm9, %zmm16
+	vpxorq	320(%rcx), %zmm4, %zmm12
+	vaesenclast	%zmm21, %zmm7, %zmm7
 	vpxorq	256(%rcx), %zmm7, %zmm2
+	vaesenclast	%zmm21, %zmm3, %zmm10
+	vaesenclast	%zmm21, %zmm5, %zmm5
 	vpxorq	384(%rcx), %zmm5, %zmm3
 	vpxorq	448(%rcx), %zmm10, %zmm4
 	leaq	512(%rcx), %rcx
@@ -1562,112 +1563,113 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vmovdqu64	%zmm4, 448(%rdx)
 	addq	$512, %rdx
 	cmpq	$575, %r10
-	ja	.LBB0_28
-	vmovdqu64	1328(%rsp), %zmm0
+	ja	.LBB0_52
+	vmovdqu64	1328(%rsp), %zmm6
+	vmovdqu64	48(%rsp), %zmm10
+	vmovdqu64	1392(%rsp), %zmm9
 	vmovdqu64	%zmm1, -16(%rsp)
 	vmovdqu64	1264(%rsp), %zmm1
 	movq	%rdx, %rax
 	movq	%rcx, %r9
-	vpunpcklqdq	%zmm4, %zmm0, %zmm6
-	vpunpckhqdq	%zmm4, %zmm0, %zmm5
-	vpclmulqdq	$0, %zmm4, %zmm0, %zmm26
-	vpclmulqdq	$17, %zmm4, %zmm0, %zmm7
-	vpxorq	%zmm6, %zmm5, %zmm5
-	vmovdqu64	112(%rsp), %zmm6
-	vpclmulqdq	$1, %zmm5, %zmm5, %zmm8
-	vpclmulqdq	$0, %zmm3, %zmm6, %zmm4
-	vpclmulqdq	$17, %zmm3, %zmm6, %zmm0
-	vpunpcklqdq	%zmm3, %zmm6, %zmm11
-	vpunpckhqdq	%zmm3, %zmm6, %zmm5
-	vmovdqu64	1392(%rsp), %zmm6
-	vpxorq	%zmm11, %zmm5, %zmm5
-	vpclmulqdq	$1, %zmm5, %zmm5, %zmm5
-	vmovdqu64	%zmm0, 112(%rsp)
-	vpxorq	%zmm26, %zmm4, %zmm4
-	vmovdqu64	176(%rsp), %zmm26
-	vpxorq	%zmm8, %zmm5, %zmm5
-	vpunpcklqdq	%zmm12, %zmm6, %zmm10
-	vpunpckhqdq	%zmm12, %zmm6, %zmm3
-	vpclmulqdq	$0, %zmm12, %zmm6, %zmm11
-	vpclmulqdq	$17, %zmm12, %zmm6, %zmm0
+	vpunpcklqdq	%zmm4, %zmm6, %zmm7
+	vpunpckhqdq	%zmm4, %zmm6, %zmm5
+	vpclmulqdq	$0, %zmm4, %zmm6, %zmm26
+	vpunpcklqdq	%zmm3, %zmm10, %zmm11
+	vpclmulqdq	$17, %zmm12, %zmm9, %zmm21
+	vpxorq	%zmm7, %zmm5, %zmm5
+	vpclmulqdq	$17, %zmm4, %zmm6, %zmm7
 	vmovdqu64	1520(%rsp), %zmm6
+	vpclmulqdq	$0, %zmm3, %zmm10, %zmm4
+	vpclmulqdq	$1, %zmm5, %zmm5, %zmm8
+	vpunpckhqdq	%zmm3, %zmm10, %zmm5
+	vpclmulqdq	$17, %zmm3, %zmm10, %zmm3
+	vpunpcklqdq	%zmm12, %zmm9, %zmm10
+	vpxorq	%zmm11, %zmm5, %zmm5
+	vpclmulqdq	$0, %zmm12, %zmm9, %zmm11
+	vpclmulqdq	$1, %zmm5, %zmm5, %zmm5
+	vpxorq	%zmm26, %zmm4, %zmm4
+	vmovdqu64	112(%rsp), %zmm26
+	vmovdqu64	%zmm3, 48(%rsp)
+	vpunpckhqdq	%zmm12, %zmm9, %zmm3
 	vpxorq	%zmm10, %zmm3, %zmm3
 	vpclmulqdq	$1, %zmm3, %zmm3, %zmm3
-	vpunpcklqdq	%zmm16, %zmm26, %zmm8
+	vpxorq	%zmm8, %zmm5, %zmm5
 	vpclmulqdq	$0, %zmm2, %zmm6, %zmm12
 	vpunpcklqdq	%zmm2, %zmm6, %zmm10
 	vpunpckhqdq	%zmm2, %zmm6, %zmm9
 	vpclmulqdq	$17, %zmm2, %zmm6, %zmm2
 	vpxorq	%zmm10, %zmm9, %zmm9
 	vpxorq	%zmm23, %zmm14, %zmm10
+	vpclmulqdq	$1, %zmm9, %zmm9, %zmm9
+	vpternlogq	$150, %zmm11, %zmm4, %zmm12
+	vmovdqu64	176(%rsp), %zmm11
+	vpunpcklqdq	%zmm16, %zmm26, %zmm8
 	vpunpckhqdq	%zmm16, %zmm26, %zmm23
 	vpclmulqdq	$0, %zmm16, %zmm26, %zmm14
-	vpclmulqdq	$1, %zmm9, %zmm9, %zmm9
-	vpxorq	%zmm8, %zmm23, %zmm8
-	vpxorq	112(%rsp), %zmm7, %zmm23
-	vpclmulqdq	$1, %zmm8, %zmm8, %zmm8
-	vpternlogq	$150, %zmm11, %zmm4, %zmm12
-	vmovdqu64	240(%rsp), %zmm11
 	vpclmulqdq	$17, %zmm16, %zmm26, %zmm4
 	vmovupd	1648(%rsp), %zmm16
+	vpxorq	%zmm8, %zmm23, %zmm8
+	vpxorq	48(%rsp), %zmm7, %zmm23
 	vpternlogq	$150, %zmm3, %zmm5, %zmm9
-	vpternlogq	$150, %zmm0, %zmm23, %zmm2
+	vpclmulqdq	$1, %zmm8, %zmm8, %zmm8
 	vpclmulqdq	$0, %zmm18, %zmm11, %zmm5
-	vpclmulqdq	$17, %zmm18, %zmm11, %zmm6
 	vpunpcklqdq	%zmm18, %zmm11, %zmm3
 	vpunpckhqdq	%zmm18, %zmm11, %zmm7
-	vmovdqu64	304(%rsp), %zmm11
+	vpclmulqdq	$17, %zmm18, %zmm11, %zmm6
+	vmovdqu64	240(%rsp), %zmm11
 	vmovupd	944(%rsp), %zmm18
 	vpxorq	%zmm3, %zmm7, %zmm3
+	vpternlogq	$150, %zmm21, %zmm23, %zmm2
 	vpclmulqdq	$1, %zmm3, %zmm3, %zmm3
-	vpternlogq	$150, %zmm4, %zmm2, %zmm6
 	vpternlogq	$150, %zmm14, %zmm12, %zmm5
-	vmovupd	560(%rsp), %zmm12
+	vpternlogq	$150, %zmm4, %zmm2, %zmm6
 	vmovupd	432(%rsp), %zmm14
 	vpternlogq	$150, %zmm8, %zmm9, %zmm3
 	vpunpcklqdq	%zmm13, %zmm11, %zmm7
 	vpunpckhqdq	%zmm13, %zmm11, %zmm9
-	vpclmulqdq	$0, %zmm13, %zmm11, %zmm0
+	vpclmulqdq	$0, %zmm13, %zmm11, %zmm12
 	vpclmulqdq	$17, %zmm13, %zmm11, %zmm2
-	vmovdqu64	368(%rsp), %zmm11
+	vmovdqu64	304(%rsp), %zmm11
 	vmovupd	496(%rsp), %zmm13
 	vpxorq	%zmm7, %zmm9, %zmm7
 	vpclmulqdq	$1, %zmm7, %zmm7, %zmm7
 	vpunpcklqdq	%zmm10, %zmm11, %zmm4
 	vpunpckhqdq	%zmm10, %zmm11, %zmm9
+	vpclmulqdq	$17, %zmm10, %zmm11, %zmm8
 	vpxorq	%zmm4, %zmm9, %zmm4
 	vpclmulqdq	$0, %zmm10, %zmm11, %zmm9
-	vpclmulqdq	$1, %zmm4, %zmm4, %zmm4
-	vpternlogq	$150, %zmm0, %zmm5, %zmm9
-	vpbroadcastq	.LCPI0_13(%rip), %zmm0
-	vpternlogq	$150, %zmm7, %zmm3, %zmm4
-	vpclmulqdq	$17, %zmm10, %zmm11, %zmm7
 	vpbroadcastq	.LCPI0_13(%rip), %xmm11
-	vmovdqu64	48(%rsp), %zmm10
-	vpternlogq	$150, %zmm2, %zmm6, %zmm7
-	vpternlogq	$150, %zmm9, %zmm7, %zmm4
+	vmovdqu64	368(%rsp), %zmm10
+	vpclmulqdq	$1, %zmm4, %zmm4, %zmm4
+	vpternlogq	$150, %zmm2, %zmm6, %zmm8
+	vpternlogq	$150, %zmm12, %zmm5, %zmm9
+	vmovupd	560(%rsp), %zmm12
+	vpternlogq	$150, %zmm7, %zmm3, %zmm4
+	vpbroadcastq	.LCPI0_13(%rip), %zmm7
+	vpternlogq	$150, %zmm9, %zmm8, %zmm4
 	vpslldq	$8, %zmm4, %zmm2
 	vpsrldq	$8, %zmm4, %zmm4
 	vxorpd	%zmm9, %zmm2, %zmm2
 	vmovdqa	-128(%rsp), %xmm9
-	vpclmulqdq	$16, %zmm0, %zmm2, %zmm5
+	vpclmulqdq	$16, %zmm7, %zmm2, %zmm5
 	vpshufd	$78, %zmm2, %zmm2
 	vpxorq	%zmm2, %zmm5, %zmm2
-	vpclmulqdq	$16, %zmm0, %zmm2, %zmm5
-	vmovdqu64	1456(%rsp), %zmm0
+	vpclmulqdq	$16, %zmm7, %zmm2, %zmm5
+	vmovdqu64	1456(%rsp), %zmm7
 	vpshufd	$78, %zmm2, %zmm23
 	vpxorq	%zmm4, %zmm5, %zmm4
-	vpternlogq	$150, %zmm4, %zmm7, %zmm23
-	jmp	.LBB0_32
-.LBB0_30:
+	vpternlogq	$150, %zmm4, %zmm8, %zmm23
+	jmp	.LBB0_29
+.LBB0_26:
 	cmpq	$64, %r10
-	jb	.LBB0_43
+	jb	.LBB0_39
 	vbroadcasti32x4	.LCPI0_15(%rip), %zmm3
-	vshufi64x2	$0, %zmm22, %zmm22, %zmm0
+	vinserti32x4	$1, %xmm25, %ymm0, %ymm2
 	vmovdqa	%xmm4, -96(%rsp)
 	vshufi64x2	$0, %zmm27, %zmm27, %zmm4
 	vmovdqa64	%xmm20, -80(%rsp)
 	vmovaps	%xmm28, -48(%rsp)
+	vshufi64x2	$0, %zmm22, %zmm22, %zmm7
 	vmovups	%zmm27, 816(%rsp)
 	vmovdqa	%xmm5, -112(%rsp)
 	vmovdqa	%xmm8, -64(%rsp)
@@ -1684,37 +1686,37 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vshufi64x2	$0, %zmm13, %zmm13, %zmm20
 	vshufi64x2	$0, %zmm14, %zmm14, %zmm22
 	vshufi64x2	$0, %zmm24, %zmm24, %zmm24
-	vinserti32x4	$1, %xmm25, %ymm0, %ymm2
-	vmovdqu64	%zmm4, -16(%rsp)
 	vinserti32x4	$0, %xmm25, %zmm2, %zmm2
+	vmovdqu64	%zmm4, -16(%rsp)
 	vpermi2q	%zmm15, %zmm1, %zmm3
 	vshufi64x2	$0, %zmm10, %zmm10, %zmm15
 	vshufi64x2	$228, %zmm3, %zmm2, %zmm1
 	vmovdqa64	%zmm17, %zmm3
 	vshufi64x2	$0, %zmm26, %zmm26, %zmm17
 	vshufi64x2	$0, %zmm3, %zmm3, %zmm25
-.LBB0_32:
+.LBB0_29:
 	vmovdqu64	(%r9), %zmm3
 	leaq	64(%r9), %rdi
 	leaq	64(%rax), %rsi
-	leaq	-64(%r10), %rdx
+	leaq	-64(%r10), %rcx
 	cmpq	$128, %r10
-	jb	.LBB0_35
+	jb	.LBB0_30
 	vmovdqu64	880(%rsp), %zmm2
 	vmovdqu64	-16(%rsp), %zmm26
 	vshufi64x2	$0, %zmm2, %zmm2, %zmm2
 	testb	$64, %r10b
-	jne	.LBB0_36
-	vpaddd	.LCPI0_0(%rip), %xmm21, %xmm4
-	vpaddd	.LCPI0_1(%rip), %xmm21, %xmm5
-	vpaddd	.LCPI0_2(%rip), %xmm21, %xmm6
-	leaq	128(%rax), %rcx
-	leaq	-128(%r10), %rdx
-	vinserti32x4	$1, %xmm4, %ymm21, %ymm4
+	jne	.LBB0_32
+	vpaddd	.LCPI0_0(%rip), %xmm0, %xmm4
+	vpaddd	.LCPI0_1(%rip), %xmm0, %xmm5
+	vpaddd	.LCPI0_2(%rip), %xmm0, %xmm6
+	vmovdqa64	%zmm7, %zmm21
+	leaq	128(%rax), %rdx
+	leaq	-128(%r10), %rcx
+	vinserti128	$1, %xmm4, %ymm0, %ymm4
 	vinserti128	$1, %xmm6, %ymm5, %ymm5
-	vpaddd	.LCPI0_3(%rip), %xmm21, %xmm21
+	vpaddd	.LCPI0_3(%rip), %xmm0, %xmm0
 	vinserti64x4	$1, %ymm5, %zmm4, %zmm4
-	vpxorq	%zmm0, %zmm4, %zmm4
+	vpxorq	%zmm7, %zmm4, %zmm4
 	vaesenc	%zmm1, %zmm4, %zmm4
 	vaesenc	%zmm26, %zmm4, %zmm4
 	vaesenc	%zmm27, %zmm4, %zmm4
@@ -1730,20 +1732,20 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vaesenc	%zmm25, %zmm4, %zmm4
 	vaesenclast	%zmm15, %zmm4, %zmm4
 	vpxorq	%zmm3, %zmm4, %zmm3
-	vpxorq	%zmm23, %zmm3, %zmm5
+	vpxorq	%zmm23, %zmm3, %zmm4
 	vpbroadcastq	.LCPI0_13(%rip), %zmm23
-	vpunpcklqdq	%zmm5, %zmm2, %zmm4
-	vpunpckhqdq	%zmm5, %zmm2, %zmm7
-	vpclmulqdq	$0, %zmm5, %zmm2, %zmm6
-	vpclmulqdq	$17, %zmm5, %zmm2, %zmm5
-	vpxorq	%zmm4, %zmm7, %zmm4
-	vpclmulqdq	$1, %zmm4, %zmm4, %zmm7
-	vmovdqu64	64(%r9), %zmm4
+	vpunpcklqdq	%zmm4, %zmm2, %zmm5
+	vpunpckhqdq	%zmm4, %zmm2, %zmm7
+	vpclmulqdq	$0, %zmm4, %zmm2, %zmm6
+	vpclmulqdq	$17, %zmm4, %zmm2, %zmm4
+	vpxorq	%zmm5, %zmm7, %zmm5
+	vpclmulqdq	$1, %zmm5, %zmm5, %zmm7
+	vmovdqu64	64(%r9), %zmm5
 	vmovdqu64	%zmm3, (%rax)
 	subq	$-128, %r9
 	movq	%rsi, %rax
 	movq	%r9, %rdi
-	vpternlogq	$150, %zmm6, %zmm5, %zmm7
+	vpternlogq	$150, %zmm6, %zmm4, %zmm7
 	vpslldq	$8, %zmm7, %zmm3
 	vxorpd	%zmm6, %zmm3, %zmm3
 	vpsrldq	$8, %zmm7, %zmm6
@@ -1752,42 +1754,47 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpxorq	%zmm3, %zmm8, %zmm3
 	vpclmulqdq	$16, %zmm23, %zmm3, %zmm7
 	vpshufd	$78, %zmm3, %zmm3
-	vpxorq	%zmm5, %zmm7, %zmm23
+	vpxorq	%zmm4, %zmm7, %zmm23
+	vmovdqa64	%zmm21, %zmm7
+	vmovdqa	%xmm0, %xmm4
 	vpternlogd	$150, %zmm6, %zmm3, %zmm23
-	vmovdqa64	%zmm4, %zmm3
-	jmp	.LBB0_37
-.LBB0_35:
+	vmovdqa64	%zmm5, %zmm3
+	jmp	.LBB0_34
+.LBB0_30:
 	vmovdqu64	-16(%rsp), %zmm26
-	movq	%rsi, %rcx
+	movq	%rsi, %rdx
 	movq	%rdi, %r9
+	vmovdqa	%xmm0, %xmm4
 	movq	%rax, %rsi
-	jmp	.LBB0_41
-.LBB0_36:
-	movq	%rsi, %rcx
-.LBB0_37:
+	vmovdqa64	%zmm3, %zmm5
+	jmp	.LBB0_38
+.LBB0_32:
+	movq	%rsi, %rdx
+.LBB0_34:
 	andl	$1984, %r10d
 	cmpl	$128, %r10d
-	je	.LBB0_42
+	je	.LBB0_38
 	vmovdqa	%xmm9, -128(%rsp)
+	vmovdqa64	%zmm7, %zmm21
 	vpmovsxbq	.LCPI0_28(%rip), %xmm4
 	vpmovsxbq	.LCPI0_29(%rip), %xmm5
 	vpmovsxbq	.LCPI0_30(%rip), %xmm6
 	vmovdqa64	.LCPI0_17(%rip), %zmm7
 	vpbroadcastq	.LCPI0_13(%rip), %zmm8
 	vpmovsxbq	.LCPI0_31(%rip), %xmm9
-	vmovdqu64	%zmm10, 48(%rsp)
+	vmovdqu64	%zmm10, 368(%rsp)
 	.p2align	4
-.LBB0_39:
-	vpaddd	%xmm4, %xmm21, %xmm10
-	vpaddd	%xmm5, %xmm21, %xmm11
-	vpaddd	%xmm6, %xmm21, %xmm12
-	addq	$-128, %rdx
+.LBB0_36:
+	vpaddd	%xmm4, %xmm0, %xmm10
+	vpaddd	%xmm5, %xmm0, %xmm11
+	vpaddd	%xmm6, %xmm0, %xmm12
+	addq	$-128, %rcx
 	vinserti128	$1, %xmm12, %ymm11, %ymm11
-	vinserti32x4	$1, %xmm10, %ymm21, %ymm10
+	vinserti128	$1, %xmm10, %ymm0, %ymm10
 	vinserti64x4	$1, %ymm11, %zmm10, %zmm10
-	vshufi64x2	$0, %zmm21, %zmm21, %zmm11
-	vpaddd	%xmm9, %xmm21, %xmm21
-	vpxorq	%zmm0, %zmm10, %zmm10
+	vshufi64x2	$0, %zmm0, %zmm0, %zmm11
+	vpaddd	%xmm0, %xmm9, %xmm0
+	vpxorq	%zmm21, %zmm10, %zmm10
 	vaesenc	%zmm1, %zmm10, %zmm10
 	vaesenc	%zmm26, %zmm10, %zmm10
 	vaesenc	%zmm27, %zmm10, %zmm10
@@ -1804,7 +1811,7 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vaesenclast	%zmm15, %zmm10, %zmm10
 	vpxorq	%zmm3, %zmm10, %zmm3
 	vpaddd	%zmm7, %zmm11, %zmm10
-	vpxorq	%zmm0, %zmm10, %zmm10
+	vpxorq	%zmm21, %zmm10, %zmm10
 	vpxorq	%zmm23, %zmm3, %zmm11
 	vaesenc	%zmm1, %zmm10, %zmm10
 	vpunpcklqdq	%zmm11, %zmm2, %zmm12
@@ -1832,7 +1839,7 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpxorq	(%rdi), %zmm10, %zmm10
 	vmovdqu64	%zmm3, (%rax)
 	vxorpd	%zmm13, %zmm14, %zmm3
-	leaq	64(%rcx), %rax
+	leaq	64(%rdx), %rax
 	vpclmulqdq	$16, %zmm8, %zmm3, %zmm13
 	vpshufd	$78, %zmm3, %zmm3
 	vpxorq	%zmm3, %zmm13, %zmm3
@@ -1840,8 +1847,8 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpshufd	$78, %zmm3, %zmm14
 	vmovdqu64	64(%rdi), %zmm3
 	subq	$-128, %rdi
-	vmovdqu64	%zmm10, (%rcx)
-	subq	$-128, %rcx
+	vmovdqu64	%zmm10, (%rdx)
+	subq	$-128, %rdx
 	vpternlogq	$150, %zmm11, %zmm12, %zmm13
 	vpternlogq	$150, %zmm14, %zmm10, %zmm13
 	vpunpcklqdq	%zmm13, %zmm2, %zmm10
@@ -1861,30 +1868,29 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpshufd	$78, %zmm11, %zmm11
 	vpxorq	%zmm12, %zmm13, %zmm23
 	vpternlogd	$150, %zmm10, %zmm11, %zmm23
-	cmpq	$63, %rdx
-	ja	.LBB0_39
+	cmpq	$63, %rcx
+	ja	.LBB0_36
 	vmovupd	560(%rsp), %zmm12
 	vmovupd	496(%rsp), %zmm13
 	vmovupd	432(%rsp), %zmm14
 	vpbroadcastq	.LCPI0_13(%rip), %xmm11
 	vmovdqa	-128(%rsp), %xmm9
-	vmovdqu64	48(%rsp), %zmm10
-	leaq	-64(%rcx), %rsi
+	vmovdqu64	368(%rsp), %zmm10
+	leaq	-64(%rdx), %rsi
 	movq	%rdi, %r9
-.LBB0_41:
-	vmovdqa64	%zmm3, %zmm4
-.LBB0_42:
-	vpaddd	.LCPI0_0(%rip), %xmm21, %xmm2
-	vpaddd	.LCPI0_1(%rip), %xmm21, %xmm3
-	vpaddd	.LCPI0_2(%rip), %xmm21, %xmm5
-	vmovdqa	-64(%rsp), %xmm8
-	movq	%rcx, %rax
-	movq	%rdx, %r10
-	vinserti32x4	$1, %xmm2, %ymm21, %ymm2
-	vinserti128	$1, %xmm5, %ymm3, %ymm3
-	vpaddd	.LCPI0_3(%rip), %xmm21, %xmm21
+	vmovdqa	%xmm0, %xmm4
+	vmovdqa64	%zmm3, %zmm5
+	vmovdqa64	%zmm21, %zmm7
+.LBB0_38:
+	vpaddd	.LCPI0_0(%rip), %xmm4, %xmm2
+	vpaddd	.LCPI0_1(%rip), %xmm4, %xmm3
+	vpaddd	.LCPI0_2(%rip), %xmm4, %xmm6
+	movq	%rdx, %rax
+	movq	%rcx, %r10
+	vinserti128	$1, %xmm6, %ymm3, %ymm3
+	vinserti128	$1, %xmm2, %ymm4, %ymm2
 	vinserti64x4	$1, %ymm3, %zmm2, %zmm2
-	vpxorq	%zmm0, %zmm2, %zmm2
+	vpxorq	%zmm7, %zmm2, %zmm2
 	vaesenc	%zmm1, %zmm2, %zmm0
 	vaesenc	%zmm26, %zmm0, %zmm0
 	vmovupd	1136(%rsp), %zmm26
@@ -1910,66 +1916,67 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vaesenc	%zmm25, %zmm0, %zmm0
 	vmovapd	-32(%rsp), %xmm25
 	vaesenclast	%zmm15, %zmm0, %zmm0
-	vpxorq	%zmm4, %zmm0, %zmm0
-	vpxord	%zmm0, %zmm23, %zmm1
-	vmovdqu64	%zmm0, (%rsi)
+	vpxorq	%zmm5, %zmm0, %zmm8
+	vpaddd	.LCPI0_3(%rip), %xmm4, %xmm0
+	vpxord	%zmm8, %zmm23, %zmm1
+	vmovdqu64	%zmm8, (%rsi)
+	vmovdqa	-64(%rsp), %xmm8
 	vpclmulqdq	$1, %xmm1, %xmm28, %xmm3
-	vpclmulqdq	$16, %xmm1, %xmm28, %xmm5
+	vpclmulqdq	$16, %xmm1, %xmm28, %xmm6
 	vpclmulqdq	$0, %xmm1, %xmm28, %xmm2
-	vextracti128	$1, %ymm1, %xmm4
-	vpxor	%xmm3, %xmm5, %xmm3
-	vpclmulqdq	$17, %xmm1, %xmm28, %xmm5
-	vpslldq	$8, %xmm3, %xmm6
+	vextracti128	$1, %ymm1, %xmm5
+	vpxor	%xmm3, %xmm6, %xmm3
+	vpclmulqdq	$17, %xmm1, %xmm28, %xmm6
+	vpslldq	$8, %xmm3, %xmm7
 	vpsrldq	$8, %xmm3, %xmm3
-	vpxor	%xmm6, %xmm2, %xmm2
-	vpclmulqdq	$16, %xmm11, %xmm2, %xmm6
+	vpxor	%xmm7, %xmm2, %xmm2
+	vpclmulqdq	$16, %xmm11, %xmm2, %xmm7
 	vpshufd	$78, %xmm2, %xmm2
-	vpxor	%xmm2, %xmm6, %xmm2
-	vpclmulqdq	$16, %xmm11, %xmm2, %xmm6
+	vpxor	%xmm2, %xmm7, %xmm2
+	vpclmulqdq	$16, %xmm11, %xmm2, %xmm7
 	vpshufd	$78, %xmm2, %xmm2
-	vpternlogq	$150, %xmm4, %xmm5, %xmm6
-	vextracti32x4	$2, %zmm1, %xmm5
+	vpternlogq	$150, %xmm5, %xmm6, %xmm7
+	vextracti32x4	$2, %zmm1, %xmm6
 	vextracti32x4	$3, %zmm1, %xmm1
-	vpternlogq	$150, %xmm3, %xmm6, %xmm2
-	vpclmulqdq	$1, %xmm2, %xmm28, %xmm4
+	vpternlogq	$150, %xmm3, %xmm7, %xmm2
+	vpclmulqdq	$1, %xmm2, %xmm28, %xmm5
+	vpclmulqdq	$16, %xmm2, %xmm28, %xmm7
+	vpclmulqdq	$0, %xmm2, %xmm28, %xmm3
+	vpclmulqdq	$17, %xmm2, %xmm28, %xmm2
+	vpxor	%xmm5, %xmm7, %xmm5
+	vpslldq	$8, %xmm5, %xmm7
+	vpsrldq	$8, %xmm5, %xmm5
+	vpxor	%xmm7, %xmm3, %xmm3
+	vpclmulqdq	$16, %xmm11, %xmm3, %xmm7
+	vpshufd	$78, %xmm3, %xmm3
+	vpxor	%xmm3, %xmm7, %xmm3
+	vpclmulqdq	$16, %xmm11, %xmm3, %xmm7
+	vpternlogq	$150, %xmm6, %xmm2, %xmm7
+	vpshufd	$78, %xmm3, %xmm2
+	vpternlogq	$150, %xmm5, %xmm7, %xmm2
+	vpclmulqdq	$1, %xmm2, %xmm28, %xmm5
 	vpclmulqdq	$16, %xmm2, %xmm28, %xmm6
 	vpclmulqdq	$0, %xmm2, %xmm28, %xmm3
 	vpclmulqdq	$17, %xmm2, %xmm28, %xmm2
-	vpxor	%xmm4, %xmm6, %xmm4
-	vpslldq	$8, %xmm4, %xmm6
-	vpsrldq	$8, %xmm4, %xmm4
+	vpxor	%xmm5, %xmm6, %xmm5
+	vpslldq	$8, %xmm5, %xmm6
+	vpsrldq	$8, %xmm5, %xmm5
 	vpxor	%xmm6, %xmm3, %xmm3
 	vpclmulqdq	$16, %xmm11, %xmm3, %xmm6
 	vpshufd	$78, %xmm3, %xmm3
 	vpxor	%xmm3, %xmm6, %xmm3
 	vpclmulqdq	$16, %xmm11, %xmm3, %xmm6
-	vpternlogq	$150, %xmm5, %xmm2, %xmm6
-	vpshufd	$78, %xmm3, %xmm2
-	vpternlogq	$150, %xmm4, %xmm6, %xmm2
-	vpclmulqdq	$1, %xmm2, %xmm28, %xmm4
-	vpclmulqdq	$16, %xmm2, %xmm28, %xmm5
-	vpclmulqdq	$0, %xmm2, %xmm28, %xmm3
-	vpclmulqdq	$17, %xmm2, %xmm28, %xmm2
-	vpxor	%xmm4, %xmm5, %xmm4
-	vpslldq	$8, %xmm4, %xmm5
-	vpsrldq	$8, %xmm4, %xmm4
-	vpxor	%xmm5, %xmm3, %xmm3
-	vpclmulqdq	$16, %xmm11, %xmm3, %xmm5
-	vpshufd	$78, %xmm3, %xmm3
-	vpxor	%xmm3, %xmm5, %xmm3
-	vpclmulqdq	$16, %xmm11, %xmm3, %xmm5
-	vpternlogq	$150, %xmm1, %xmm2, %xmm5
+	vpternlogq	$150, %xmm1, %xmm2, %xmm6
 	vpshufd	$78, %xmm3, %xmm1
-	vpternlogq	$150, %xmm4, %xmm5, %xmm1
+	vpternlogq	$150, %xmm5, %xmm6, %xmm1
 	vmovdqa	-112(%rsp), %xmm5
 	vpclmulqdq	$1, %xmm1, %xmm28, %xmm3
 	vpclmulqdq	$16, %xmm1, %xmm28, %xmm4
 	vpclmulqdq	$0, %xmm1, %xmm28, %xmm2
 	vpclmulqdq	$17, %xmm1, %xmm28, %xmm1
-	vpxor	%xmm3, %xmm4, %xmm0
-	vmovdqa	-96(%rsp), %xmm4
-	vpslldq	$8, %xmm0, %xmm3
-	vpsrldq	$8, %xmm0, %xmm0
+	vpxor	%xmm3, %xmm4, %xmm4
+	vpslldq	$8, %xmm4, %xmm3
+	vpsrldq	$8, %xmm4, %xmm4
 	vpxor	%xmm3, %xmm2, %xmm2
 	vpclmulqdq	$16, %xmm11, %xmm2, %xmm3
 	vpshufd	$78, %xmm2, %xmm2
@@ -1977,15 +1984,16 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpclmulqdq	$16, %xmm11, %xmm2, %xmm3
 	vpshufd	$78, %xmm2, %xmm2
 	vpxor	%xmm1, %xmm3, %xmm1
-	vpternlogq	$150, %xmm0, %xmm1, %xmm2
-.LBB0_43:
-	vpunpcklqdq	%xmm4, %xmm5, %xmm0
+	vpternlogq	$150, %xmm4, %xmm1, %xmm2
+	vmovdqa	-96(%rsp), %xmm4
+.LBB0_39:
+	vpunpcklqdq	%xmm4, %xmm5, %xmm15
 	cmpq	$16, %r10
-	jb	.LBB0_50
+	jb	.LBB0_46
 	leaq	-16(%r10), %rdx
 	testb	$16, %dl
-	jne	.LBB0_46
-	vpxorq	%xmm22, %xmm21, %xmm1
+	jne	.LBB0_41
+	vpxorq	%xmm22, %xmm0, %xmm1
 	leaq	16(%r9), %rsi
 	leaq	16(%rax), %rcx
 	movq	%rdx, %r10
@@ -2004,12 +2012,12 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vaesenc	%xmm17, %xmm1, %xmm1
 	vaesenclast	%xmm10, %xmm1, %xmm1
 	vpxor	(%r9), %xmm1, %xmm3
-	vpaddd	.LCPI0_0(%rip), %xmm21, %xmm1
+	vpaddd	.LCPI0_0(%rip), %xmm0, %xmm1
 	movq	%rsi, %r9
 	vpxor	%xmm2, %xmm3, %xmm2
 	vmovdqu	%xmm3, (%rax)
 	movq	%rcx, %rax
-	vmovdqa64	%xmm1, %xmm21
+	vmovdqa	%xmm1, %xmm0
 	vpclmulqdq	$1, %xmm2, %xmm28, %xmm5
 	vpclmulqdq	$16, %xmm2, %xmm28, %xmm3
 	vpclmulqdq	$0, %xmm2, %xmm28, %xmm4
@@ -2025,19 +2033,19 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpxor	%xmm2, %xmm5, %xmm5
 	vpshufd	$78, %xmm4, %xmm2
 	vpternlogq	$150, %xmm3, %xmm5, %xmm2
-	jmp	.LBB0_47
-.LBB0_46:
-.LBB0_47:
+	jmp	.LBB0_43
+.LBB0_41:
+.LBB0_43:
 	cmpq	$16, %rdx
-	jb	.LBB0_51
+	jb	.LBB0_47
 	vpmovsxbq	.LCPI0_28(%rip), %xmm1
 	vpmovsxbq	.LCPI0_29(%rip), %xmm3
 	.p2align	4
-.LBB0_49:
-	vpxorq	%xmm22, %xmm21, %xmm4
-	vpaddd	%xmm1, %xmm21, %xmm7
+.LBB0_45:
+	vpxorq	%xmm22, %xmm0, %xmm4
+	vpaddd	%xmm1, %xmm0, %xmm7
 	addq	$-32, %r10
-	vpaddd	%xmm3, %xmm21, %xmm21
+	vpaddd	%xmm3, %xmm0, %xmm0
 	vaesenc	%xmm25, %xmm4, %xmm4
 	vaesenc	%xmm27, %xmm4, %xmm4
 	vaesenc	%xmm29, %xmm4, %xmm4
@@ -2105,17 +2113,17 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpshufd	$78, %xmm5, %xmm2
 	vpternlogq	$150, %xmm4, %xmm6, %xmm2
 	cmpq	$15, %r10
-	ja	.LBB0_49
-.LBB0_50:
+	ja	.LBB0_45
+.LBB0_46:
 	movq	%rax, %rcx
 	movq	%r9, %rsi
-	vmovdqa64	%xmm21, %xmm1
+	vmovdqa	%xmm0, %xmm1
 	movq	%r10, %rdx
-.LBB0_51:
+.LBB0_47:
 	vpunpcklqdq	%xmm8, %xmm20, %xmm3
-	vpsllq	$3, %xmm0, %xmm0
+	vpsllq	$3, %xmm15, %xmm0
 	testq	%rdx, %rdx
-	je	.LBB0_53
+	je	.LBB0_49
 	vpxorq	%xmm22, %xmm1, %xmm1
 	movl	$-1, %eax
 	vaesenc	%xmm25, %xmm1, %xmm1
@@ -2154,7 +2162,7 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vpxor	%xmm2, %xmm6, %xmm5
 	vpshufd	$78, %xmm4, %xmm2
 	vpternlogq	$150, %xmm1, %xmm5, %xmm2
-.LBB0_53:
+.LBB0_49:
 	vpxor	%xmm0, %xmm2, %xmm0
 	xorl	%eax, %eax
 	vpclmulqdq	$1, %xmm0, %xmm28, %xmm2
@@ -2193,7 +2201,7 @@ haberdashery_aes256gcmsiv_zen4_decrypt:
 	vmovq	%xmm0, %rcx
 	testq	%rcx, %rcx
 	sete	%al
-.LBB0_54:
+.LBB0_50:
 	addq	$1784, %rsp
 	.cfi_def_cfa_offset 8
 	vzeroupper
@@ -4345,7 +4353,7 @@ haberdashery_aes256gcmsiv_zen4_is_supported:
 	xorl	%ecx, %ecx
 	notl	%r9d
 	notl	%r8d
-	movl	$1, %esi
+	xorl	%esi, %esi
 	#APP
 
 	movq	%rbx, %r10
@@ -4356,7 +4364,7 @@ haberdashery_aes256gcmsiv_zen4_is_supported:
 	movl	%ecx, %edi
 	movl	$7, %eax
 	movl	$1, %ecx
-	andl	$920130051, %r8d
+	andl	$1054347779, %r8d
 	andl	$125829120, %r9d
 	#APP
 
@@ -4366,24 +4374,27 @@ haberdashery_aes256gcmsiv_zen4_is_supported:
 
 	#NO_APP
 	orl	%r8d, %r9d
-	jne	.LBB3_4
+	jne	.LBB3_5
 	notl	%r10d
 	testl	$-240451287, %r10d
-	jne	.LBB3_4
+	jne	.LBB3_5
 	andl	$4218698, %edi
 	cmpl	$4218698, %edi
-	jne	.LBB3_4
+	jne	.LBB3_5
 	andl	$32, %eax
-	je	.LBB3_4
-	movl	%esi, %eax
-	retq
-.LBB3_4:
+	je	.LBB3_5
+	xorl	%ecx, %ecx
+	xgetbv
 	xorl	%esi, %esi
+	notl	%eax
+	testb	$-26, %al
+	sete	%sil
+.LBB3_5:
 	movl	%esi, %eax
 	retq
 .Lfunc_end3:
 	.size	haberdashery_aes256gcmsiv_zen4_is_supported, .Lfunc_end3-haberdashery_aes256gcmsiv_zen4_is_supported
 	.cfi_endproc
 
-	.ident	"rustc version 1.97.0-nightly (e96c36b6f 2026-05-21)"
+	.ident	"rustc version 1.98.0-nightly (c397dae80 2026-07-02)"
 	.section	".note.GNU-stack","",@progbits

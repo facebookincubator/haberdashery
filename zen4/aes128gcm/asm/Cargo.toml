@@ -1,0 +1,22 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is dual-licensed under either the MIT license found in the
+# LICENSE-MIT file in the root directory of this source tree or the Apache
+# License, Version 2.0 found in the LICENSE-APACHE file in the root directory
+# of this source tree. You may select, at your option, one of the above-listed licenses.
+
+[package]
+name = "aes128gcm-zen4-asm"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+asm = []
+
+[dependencies]
+intrinsics-x86_64 = { path = "../../../rust/intrinsics-x86_64" }
+target-support-x86 = { path = "../../../rust/target-support/x86_64", features = ["zen4"] }
+
+[dev-dependencies]
+aes128gcm-zen4 = { path = ".." }
