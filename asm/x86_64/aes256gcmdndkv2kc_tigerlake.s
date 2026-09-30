@@ -2896,10 +2896,10 @@ haberdashery_aes256gcmdndkv2kc_tigerlake_is_supported:
 	xchgq	%rbx, %rbx
 
 	#NO_APP
-	andl	$920130051, %r9d
+	andl	$1054347779, %r9d
 	andl	$125829120, %r10d
 	orl	%r9d, %r10d
-	jne	.LBB3_2
+	jne	.LBB3_3
 	notl	%r8d
 	notl	%r11d
 	andl	$-240451287, %r11d
@@ -2909,8 +2909,15 @@ haberdashery_aes256gcmdndkv2kc_tigerlake_is_supported:
 	shrl	$8, %edi
 	andl	$1, %edi
 	andb	%al, %dil
-	movzbl	%dil, %esi
-.LBB3_2:
+	cmpb	$1, %dil
+	jne	.LBB3_3
+	xorl	%ecx, %ecx
+	xgetbv
+	notl	%eax
+	xorl	%esi, %esi
+	testb	$-26, %al
+	sete	%sil
+.LBB3_3:
 	movl	%esi, %eax
 	popq	%rbx
 	.cfi_def_cfa_offset 8
@@ -2919,5 +2926,5 @@ haberdashery_aes256gcmdndkv2kc_tigerlake_is_supported:
 	.size	haberdashery_aes256gcmdndkv2kc_tigerlake_is_supported, .Lfunc_end3-haberdashery_aes256gcmdndkv2kc_tigerlake_is_supported
 	.cfi_endproc
 
-	.ident	"rustc version 1.97.0-nightly (e96c36b6f 2026-05-21)"
+	.ident	"rustc version 1.98.0-nightly (c397dae80 2026-07-02)"
 	.section	".note.GNU-stack","",@progbits

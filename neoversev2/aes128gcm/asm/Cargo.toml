@@ -1,0 +1,24 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is dual-licensed under either the MIT license found in the
+# LICENSE-MIT file in the root directory of this source tree or the Apache
+# License, Version 2.0 found in the LICENSE-APACHE file in the root directory
+# of this source tree. You may select, at your option, one of the above-listed licenses.
+
+[package]
+name = "aes128gcm-neoversev2-asm"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+asm = []
+pure-intrinsics = []
+
+[dependencies]
+intrinsics-aarch64 = { path = "../../../rust/intrinsics-aarch64" }
+transliteral-aarch64 = { path = "../../../rust/transliteral-aarch64" }
+target-support-aarch64 = { path = "../../../rust/target-support/aarch64", features = ["neoversev2"] }
+
+[dev-dependencies]
+test-vectors = { path = "../../../rust/test-vectors" }

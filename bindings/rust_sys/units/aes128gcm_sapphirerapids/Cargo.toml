@@ -1,0 +1,11 @@
+# @generated
+
+[package]
+name = "aes128gcm_sapphirerapids"
+edition = "2024"
+
+[features]
+asm-path = []
+
+[lib]
+doctest = false

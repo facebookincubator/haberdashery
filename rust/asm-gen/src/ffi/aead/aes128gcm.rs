@@ -16,7 +16,6 @@ use crate::ffi::writer::Writer;
     prefix: haberdashery,
     arch: x86_64,
     profile: broadwell,
-    profile: skylakex,
     profile: tigerlake,
 )]
 mod x86_64 {

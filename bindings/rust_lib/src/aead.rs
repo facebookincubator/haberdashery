@@ -2,10 +2,16 @@
 
 #[cfg(all(feature = "aes128gcm_broadwell", target_arch = "x86_64"))]
 pub mod aes128gcm_broadwell;
+#[cfg(all(feature = "aes128gcm_neoversev2", target_arch = "aarch64"))]
+pub mod aes128gcm_neoversev2;
+#[cfg(all(feature = "aes128gcm_sapphirerapids", target_arch = "x86_64"))]
+pub mod aes128gcm_sapphirerapids;
 #[cfg(all(feature = "aes128gcm_skylakex", target_arch = "x86_64"))]
 pub mod aes128gcm_skylakex;
 #[cfg(all(feature = "aes128gcm_tigerlake", target_arch = "x86_64"))]
 pub mod aes128gcm_tigerlake;
+#[cfg(all(feature = "aes128gcm_zen4", target_arch = "x86_64"))]
+pub mod aes128gcm_zen4;
 #[cfg(all(feature = "aes192gcm_broadwell", target_arch = "x86_64"))]
 pub mod aes192gcm_broadwell;
 #[cfg(all(feature = "aes192gcm_skylakex", target_arch = "x86_64"))]

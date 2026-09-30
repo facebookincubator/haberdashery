@@ -4272,5 +4272,5 @@ haberdashery_aes256gcmdndk_neoversev2_is_supported:
 	.size	haberdashery_aes256gcmdndk_neoversev2_is_supported, .Lfunc_end3-haberdashery_aes256gcmdndk_neoversev2_is_supported
 	.cfi_endproc
 
-	.ident	"rustc version 1.97.0-nightly (e96c36b6f 2026-05-21)"
+	.ident	"rustc version 1.98.0-nightly (c397dae80 2026-07-02)"
 	.section	".note.GNU-stack","",@progbits

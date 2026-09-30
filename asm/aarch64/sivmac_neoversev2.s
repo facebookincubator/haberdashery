@@ -935,8 +935,8 @@ haberdashery_sivmac_neoversev2_sign:
 	b.hs	.LBB2_7
 	b	.LBB2_9
 .LBB2_6:
-	movi	v30.2d, #0000000000000000
 	movi	v31.2d, #0000000000000000
+	movi	v30.2d, #0000000000000000
 	movi	v9.2d, #0000000000000000
 	mov	x19, x2
 	cmp	x2, #16
@@ -1297,8 +1297,8 @@ haberdashery_sivmac_neoversev2_verify:
 	b.hs	.LBB3_7
 	b	.LBB3_9
 .LBB3_6:
-	movi	v30.2d, #0000000000000000
 	movi	v31.2d, #0000000000000000
+	movi	v30.2d, #0000000000000000
 	movi	v9.2d, #0000000000000000
 	mov	x19, x2
 	cmp	x2, #16
@@ -1491,5 +1491,5 @@ haberdashery_sivmac_neoversev2_verify:
 	.size	haberdashery_sivmac_neoversev2_verify, .Lfunc_end3-haberdashery_sivmac_neoversev2_verify
 	.cfi_endproc
 
-	.ident	"rustc version 1.97.0-nightly (e96c36b6f 2026-05-21)"
+	.ident	"rustc version 1.98.0-nightly (c397dae80 2026-07-02)"
 	.section	".note.GNU-stack","",@progbits

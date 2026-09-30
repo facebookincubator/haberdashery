@@ -11,11 +11,14 @@ doctest = false
 [features]
 default = []
 aes128gcm_broadwell = ["dep:aes128gcm_broadwell"]
+aes128gcm_neoversev2 = ["dep:aes128gcm_neoversev2"]
+aes128gcm_sapphirerapids = ["dep:aes128gcm_sapphirerapids"]
 aes128gcm_skylakex = ["dep:aes128gcm_skylakex"]
 aes128gcm_streaming_broadwell = ["dep:aes128gcm_streaming_broadwell"]
 aes128gcm_streaming_skylakex = ["dep:aes128gcm_streaming_skylakex"]
 aes128gcm_streaming_tigerlake = ["dep:aes128gcm_streaming_tigerlake"]
 aes128gcm_tigerlake = ["dep:aes128gcm_tigerlake"]
+aes128gcm_zen4 = ["dep:aes128gcm_zen4"]
 aes192gcm_broadwell = ["dep:aes192gcm_broadwell"]
 aes192gcm_skylakex = ["dep:aes192gcm_skylakex"]
 aes192gcm_tigerlake = ["dep:aes192gcm_tigerlake"]
@@ -51,11 +54,13 @@ sivmac_tigerlake = ["dep:sivmac_tigerlake"]
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 aes128gcm_broadwell = { path = "units/aes128gcm_broadwell", optional = true }
+aes128gcm_sapphirerapids = { path = "units/aes128gcm_sapphirerapids", optional = true }
 aes128gcm_skylakex = { path = "units/aes128gcm_skylakex", optional = true }
 aes128gcm_streaming_broadwell = { path = "units/aes128gcm_streaming_broadwell", optional = true }
 aes128gcm_streaming_skylakex = { path = "units/aes128gcm_streaming_skylakex", optional = true }
 aes128gcm_streaming_tigerlake = { path = "units/aes128gcm_streaming_tigerlake", optional = true }
 aes128gcm_tigerlake = { path = "units/aes128gcm_tigerlake", optional = true }
+aes128gcm_zen4 = { path = "units/aes128gcm_zen4", optional = true }
 aes192gcm_broadwell = { path = "units/aes192gcm_broadwell", optional = true }
 aes192gcm_skylakex = { path = "units/aes192gcm_skylakex", optional = true }
 aes192gcm_tigerlake = { path = "units/aes192gcm_tigerlake", optional = true }
@@ -84,6 +89,7 @@ sivmac_skylakex = { path = "units/sivmac_skylakex", optional = true }
 sivmac_tigerlake = { path = "units/sivmac_tigerlake", optional = true }
 
 [target.'cfg(target_arch = "aarch64")'.dependencies]
+aes128gcm_neoversev2 = { path = "units/aes128gcm_neoversev2", optional = true }
 aes256gcm_neoversev2 = { path = "units/aes256gcm_neoversev2", optional = true }
 aes256gcmdndk_neoversev2 = { path = "units/aes256gcmdndk_neoversev2", optional = true }
 aes256gcmdndkv2_neoversev2 = { path = "units/aes256gcmdndkv2_neoversev2", optional = true }
