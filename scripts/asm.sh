@@ -57,7 +57,7 @@ gen_skylakex_aes128gcm() {
   "${SOURCE_DIR}/asm.sh" release
   mkdir -p "${PROJECT_DIR}/asm/x86_64/sha256"
   mkdir -p "${PROJECT_DIR}/descriptors/aead"
-  cp "${SOURCE_DIR}/src/aes128gcm.s" \
+  cp "${SOURCE_DIR}/sys/src/aes128gcm.s" \
     "${PROJECT_DIR}/asm/x86_64/${FILENAME}.s"
   cp "${SOURCE_DIR}/descriptor.txt" \
     "${PROJECT_DIR}/descriptors/aead/${FILENAME}.txt"
@@ -71,7 +71,7 @@ gen_zen4_aes128gcm() {
   "${SOURCE_DIR}/asm.sh" release
   mkdir -p "${PROJECT_DIR}/asm/x86_64/sha256"
   mkdir -p "${PROJECT_DIR}/descriptors/aead"
-  cp "${SOURCE_DIR}/src/aes128gcm.s" \
+  cp "${SOURCE_DIR}/sys/src/aes128gcm.s" \
     "${PROJECT_DIR}/asm/x86_64/${FILENAME}.s"
   cp "${SOURCE_DIR}/descriptor.txt" \
     "${PROJECT_DIR}/descriptors/aead/${FILENAME}.txt"
@@ -85,7 +85,7 @@ gen_sapphirerapids_aes128gcm() {
   "${SOURCE_DIR}/asm.sh" release
   mkdir -p "${PROJECT_DIR}/asm/x86_64/sha256"
   mkdir -p "${PROJECT_DIR}/descriptors/aead"
-  cp "${SOURCE_DIR}/src/aes128gcm.s" \
+  cp "${SOURCE_DIR}/sys/src/aes128gcm.s" \
     "${PROJECT_DIR}/asm/x86_64/${FILENAME}.s"
   cp "${SOURCE_DIR}/descriptor.txt" \
     "${PROJECT_DIR}/descriptors/aead/${FILENAME}.txt"
@@ -99,7 +99,7 @@ gen_neoversev2_aes128gcm() {
   "${SOURCE_DIR}/asm.sh" release
   mkdir -p "${PROJECT_DIR}/asm/aarch64/sha256"
   mkdir -p "${PROJECT_DIR}/descriptors/aead"
-  cp "${SOURCE_DIR}/src/aes128gcm.s" \
+  cp "${SOURCE_DIR}/sys/src/aes128gcm.s" \
     "${PROJECT_DIR}/asm/aarch64/${FILENAME}.s"
   cp "${SOURCE_DIR}/descriptor.txt" \
     "${PROJECT_DIR}/descriptors/aead/${FILENAME}.txt"

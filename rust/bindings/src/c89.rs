@@ -11,7 +11,7 @@ mod mac;
 use std::path::Path;
 
 use crate::Descriptors;
-use crate::get_descriptors_from_flag;
+use crate::get_all_descriptors_from_flag;
 use crate::write_generated;
 
 pub fn bindings() {
@@ -22,7 +22,7 @@ pub fn bindings() {
 }
 
 pub fn unit_bindings2(path: &Path, primitive: &str, files: &[(&str, &str)]) -> Descriptors {
-    let descriptors = get_descriptors_from_flag(primitive);
+    let descriptors = get_all_descriptors_from_flag(primitive);
 
     let path = path.join(primitive);
     std::fs::create_dir_all(&path).unwrap_or_else(|e| panic!("{e}: Couldn't make path {path:?}"));
@@ -47,7 +47,7 @@ pub fn unit_bindings(
     header_source: &str,
     test_source: &str,
 ) -> Descriptors {
-    let descriptors = get_descriptors_from_flag(primitive);
+    let descriptors = get_all_descriptors_from_flag(primitive);
     let path = path.join(primitive);
     std::fs::create_dir_all(&path).unwrap_or_else(|e| panic!("{e}: Couldn't make path {path:?}"));
     for descriptor in descriptors.iter() {
@@ -69,8 +69,10 @@ pub fn unit_bindings(
 const MAKEFILE: &str = r#"CXX = cc
 CXX_FLAGS = -pedantic -ansi
 PRIMITIVE = $(shell basename $(CURDIR))
+ARCH = $(shell uname -m)
 
-HDRS = $(wildcard *.h)
+ASMS = $(notdir $(wildcard ../../../asm/$(ARCH)/*.s))
+HDRS = $(filter $(ASMS:.s=.h),$(wildcard *.h))
 TARGETS = $(HDRS:.h=)
 TESTS = $(HDRS:.h=.test.o)
 
@@ -84,7 +86,7 @@ $(TARGETS): $(TESTS)
 %.test.o: %.o %_test.c %.h
 	@$(CXX) $(CXX_FLAGS) -o $@ $^
 
-%.o: ../../../asm/x86_64/%.s
+%.o: ../../../asm/$(ARCH)/%.s
 	@$(CXX) $(CXX_FLAGS) -o $@ -c $^
 
 clean:

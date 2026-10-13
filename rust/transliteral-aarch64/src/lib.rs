@@ -27,18 +27,25 @@
 //!   literal of temporaries
 //! - statements: `*arg = ...` (`&mut` vectors), `arg = ...` (`mut` by-value
 //!   vectors), `arr[i] = ...` (`&mut` or `mut` by-value arrays), and
-//!   `let [mut] tmp = ...`; a temporary read by its own writer becomes an
-//!   `inout` operand
-//! - right-hand sides: `obj.method(args...)` or `a ^ b`
+//!   `let [mut] tmp = ...`. Temporaries are `out` operands: each is written
+//!   by the template before any read, and an `out` register is never shared
+//!   with an input
+//! - right-hand sides: `obj.method(args...)`, `a ^ b`, `a & b`, or
+//!   `uint8x16_t::ZERO` (MOVI #0)
 //! - methods: `intrinsics_aarch64` intrinsics, one instruction each:
 //!   `vaeseq_u8` (AESE), `vaesmcq_u8` (AESMC), `veor3q_u8` (EOR3),
-//!   `vtrn1q_u64`/`vtrn2q_u64` (TRN1/TRN2), `vmull_high_p64` (PMULL2), and
+//!   `vbcaxq_u8` (BCAX),
+//!   `vtrn1q_u64`/`vtrn2q_u64` (TRN1/TRN2), `vmull_high_p64` (PMULL2),
+//!   `vaddq_u32` (ADD .4s), `vsha256hq_u32`/`vsha256h2q_u32` (SHA256H/
+//!   SHA256H2), `vsha256su0q_u32`/`vsha256su1q_u32` (SHA256SU0/SHA256SU1),
+//!   and
 //!   `uint8x16_t::vmull_p64(a.vgetq_lane_p64::<0>(), b.vgetq_lane_p64::<0>())`
 //!   (PMULL; ACLE has only the scalar form).
 //!   An AES round is two statements, `a = a.vaeseq_u8(k)` then
 //!   `a = a.vaesmcq_u8()`; keep each pair adjacent so the core fuses them
-//! - tied destinations (AESE reads and writes its first operand): the
-//!   target must be the receiver, e.g. `*a = a.vaeseq_u8(rk)`
+//! - tied destinations (AESE and the SHA-256 instructions read and write
+//!   their first operand): the target must be the receiver, e.g.
+//!   `*a = a.vaeseq_u8(rk)`
 
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -90,6 +97,10 @@ fn mnemonic(method: &str) -> Option<Op> {
             template: "eor3 {d:v}.16b, {0:v}.16b, {1:v}.16b, {2:v}.16b",
             tied: false,
         }),
+        "vbcaxq_u8" => Some(Op {
+            template: "bcax {d:v}.16b, {0:v}.16b, {1:v}.16b, {2:v}.16b",
+            tied: false,
+        }),
         "vtrn1q_u64" => Some(Op {
             template: "trn1 {d:v}.2d, {0:v}.2d, {1:v}.2d",
             tied: false,
@@ -101,6 +112,26 @@ fn mnemonic(method: &str) -> Option<Op> {
         "vmull_high_p64" => Some(Op {
             template: "pmull2 {d:v}.1q, {0:v}.2d, {1:v}.2d",
             tied: false,
+        }),
+        "vaddq_u32" => Some(Op {
+            template: "add {d:v}.4s, {0:v}.4s, {1:v}.4s",
+            tied: false,
+        }),
+        "vsha256hq_u32" => Some(Op {
+            template: "sha256h {d:q}, {1:q}, {2:v}.4s",
+            tied: true,
+        }),
+        "vsha256h2q_u32" => Some(Op {
+            template: "sha256h2 {d:q}, {1:q}, {2:v}.4s",
+            tied: true,
+        }),
+        "vsha256su0q_u32" => Some(Op {
+            template: "sha256su0 {d:v}.4s, {1:v}.4s",
+            tied: true,
+        }),
+        "vsha256su1q_u32" => Some(Op {
+            template: "sha256su1 {d:v}.4s, {1:v}.4s, {2:v}.4s",
+            tied: true,
         }),
         _ => None,
     }
@@ -116,6 +147,18 @@ const PMULL: Op = Op {
 
 const XOR: Op = Op {
     template: "eor {d:v}.16b, {0:v}.16b, {1:v}.16b",
+    tied: false,
+};
+
+const AND: Op = Op {
+    template: "and {d:v}.16b, {0:v}.16b, {1:v}.16b",
+    tied: false,
+};
+
+/// `uint8x16_t::ZERO`, e.g. a fresh destination for `vaeseq_u8` so the
+/// state it reads needs no copy.
+const ZERO: Op = Op {
+    template: "movi {d:v}.2d, #0",
     tied: false,
 };
 
@@ -462,8 +505,6 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
     let mut readable: HashSet<String> = analysis.by_key.keys().cloned().collect();
     let mut templates: Vec<String> = Vec::new();
     let mut temps: Vec<syn::Ident> = Vec::new();
-    // Temps read by the instruction that writes them need `inout` operands.
-    let mut inout_temps: HashSet<String> = HashSet::new();
 
     // A non-unit return takes its values from a trailing expression, which
     // is not a template.
@@ -606,6 +647,18 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
                 XOR,
                 vec![analysis.place_key(&b.left)?, analysis.place_key(&b.right)?],
             ),
+            Expr::Binary(b) if matches!(b.op, syn::BinOp::BitAnd(_)) => (
+                AND,
+                vec![analysis.place_key(&b.left)?, analysis.place_key(&b.right)?],
+            ),
+            Expr::Path(ref p)
+                if p.qself.is_none()
+                    && p.path.segments.len() == 2
+                    && p.path.segments[0].ident == "uint8x16_t"
+                    && p.path.segments[1].ident == "ZERO" =>
+            {
+                (ZERO, Vec::new())
+            }
             Expr::MethodCall(m) => {
                 if let Some(turbofish) = &m.turbofish {
                     return Err(syn::Error::new_spanned(
@@ -616,7 +669,7 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
                 let Some(op) = mnemonic(&m.method.to_string()) else {
                     return Err(syn::Error::new_spanned(
                         &m.method,
-                        "transliteral: unsupported intrinsic (supported: vaeseq_u8, vaesmcq_u8, veor3q_u8, vtrn1q_u64, vtrn2q_u64, vmull_high_p64, uint8x16_t::vmull_p64 of lane 0s)",
+                        "transliteral: unsupported intrinsic (supported: vaeseq_u8, vaesmcq_u8, veor3q_u8, vbcaxq_u8, vtrn1q_u64, vtrn2q_u64, vmull_high_p64, vaddq_u32, vsha256hq_u32, vsha256h2q_u32, vsha256su0q_u32, vsha256su1q_u32, uint8x16_t::vmull_p64 of lane 0s)",
                     ));
                 };
                 let mut inputs = vec![analysis.place_key(&m.receiver)?];
@@ -630,7 +683,7 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
                 return Err(syn::Error::new_spanned(
                     other,
                     "transliteral: right-hand side must be an intrinsic method call, \
-                     uint8x16_t::vmull_p64 of lane 0s, or a ^ b",
+                     uint8x16_t::vmull_p64 of lane 0s, a ^ b, a & b, or uint8x16_t::ZERO",
                 ));
             }
         };
@@ -666,11 +719,6 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
             temps.push(name);
         } else {
             let index = analysis.by_key[&target];
-            // A temporary read by the instruction that writes it (in-place
-            // update) needs an `inout` operand; pure writes stay `out`.
-            if index >= arg_slots && inputs.iter().any(|i| *i == target) {
-                inout_temps.insert(target.clone());
-            }
             analysis.slots[index].written = true;
         }
 
@@ -760,8 +808,6 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
             } else {
                 quote!(in)
             }
-        } else if inout_temps.contains(&slot.operand) {
-            quote!(inout)
         } else {
             // Every temporary gets a named `out` place. Anonymous
             // `out ... _` tells rustc the value is discarded, but later

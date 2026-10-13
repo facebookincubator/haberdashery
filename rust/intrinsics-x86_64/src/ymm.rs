@@ -346,4 +346,133 @@ impl __m256i {
     pub fn _mm256_blendv_epi8(self, b: Self, mask: Self) -> Self {
         Self(unsafe { core::arch::x86_64::_mm256_blendv_epi8(self.0, b.0, mask.0) })
     }
+
+    #[inline]
+    pub fn _mm256_set1_epi32(a: i32) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm256_set1_epi32(a) })
+    }
+
+    #[inline]
+    pub fn _mm256_setr_epi32(
+        e0: i32,
+        e1: i32,
+        e2: i32,
+        e3: i32,
+        e4: i32,
+        e5: i32,
+        e6: i32,
+        e7: i32,
+    ) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm256_setr_epi32(e0, e1, e2, e3, e4, e5, e6, e7) })
+    }
+
+    #[inline]
+    pub fn _mm256_add_epi32(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm256_add_epi32(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm256_alignr_epi8<const IMM8: i32>(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm256_alignr_epi8::<IMM8>(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm256_ror_epi32<const IMM8: i32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm256_ror_epi32::<IMM8>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm256_srli_epi32<const IMM8: i32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm256_srli_epi32::<IMM8>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm256_extract_epi32<const INDEX: i32>(self) -> i32 {
+        unsafe { core::arch::x86_64::_mm256_extract_epi32::<INDEX>(self.0) }
+    }
+
+    // ── Memory-operand forms ───────────────────────────────────────
+
+    /// `vpblendvb` with a memory operand: byte `i` is `(*ptr)[i]` where the
+    /// top bit of `mask[i]` is set, else `self[i]`; all 32 bytes at `ptr` are
+    /// always read. From `_mm256_loadu_si256` + `_mm256_blendv_epi8`, LLVM may
+    /// emit an AVX-512 masked load, which does not access masked-off bytes, so
+    /// constant-time table scans need the asm. The `pure-intrinsics` feature
+    /// selects the intrinsics, which lose that guarantee.
+    #[inline]
+    pub unsafe fn vpblendvb(self, ptr: *const __m256i, mask: Self) -> Self {
+        #[cfg(feature = "pure-intrinsics")]
+        {
+            unsafe { self.vpblendvb_intrinsics(ptr, mask) }
+        }
+        #[cfg(not(feature = "pure-intrinsics"))]
+        {
+            unsafe { self.vpblendvb_asm(ptr, mask) }
+        }
+    }
+
+    #[inline]
+    #[target_feature(enable = "avx2")]
+    pub unsafe fn vpblendvb_asm(self, ptr: *const __m256i, mask: Self) -> Self {
+        let mut out = self.0;
+        unsafe {
+            core::arch::asm!(
+                "vpblendvb {out}, {out}, ymmword ptr [{ptr}], {mask}",
+                out = inout(ymm_reg) out,
+                ptr = in(reg) ptr,
+                mask = in(ymm_reg) mask.0,
+                options(pure, readonly, nostack, preserves_flags),
+            );
+        }
+        Self(out)
+    }
+
+    #[inline]
+    pub unsafe fn vpblendvb_intrinsics(self, ptr: *const __m256i, mask: Self) -> Self {
+        self._mm256_blendv_epi8(unsafe { Self::_mm256_loadu_si256(ptr.cast()) }, mask)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    extern crate std;
+
+    use super::__m256i;
+
+    fn bytes(v: __m256i) -> [u8; 32] {
+        unsafe { core::mem::transmute(v) }
+    }
+
+    fn from_bytes(b: [u8; 32]) -> __m256i {
+        unsafe { core::mem::transmute(b) }
+    }
+
+    #[test]
+    fn vpblendvb_asm_matches_intrinsics() {
+        if !std::arch::is_x86_feature_detected!("avx2") {
+            return;
+        }
+        let src1 = from_bytes(core::array::from_fn(|i| i as u8));
+        let row = from_bytes(core::array::from_fn(|i| 0xa0 ^ (i as u8).wrapping_mul(7)));
+        let masks: [[u8; 32]; 4] = [
+            [0x00; 32],
+            [0xff; 32],
+            core::array::from_fn(|i| if i % 3 == 0 { 0x80 } else { 0x7f }),
+            core::array::from_fn(|i| (i as u8).wrapping_mul(37)),
+        ];
+        for m in masks {
+            let mask = from_bytes(m);
+            let asm = unsafe { src1.vpblendvb_asm(&row, mask) };
+            let reference = unsafe { src1.vpblendvb_intrinsics(&row, mask) };
+            assert_eq!(bytes(asm), bytes(reference));
+            let expected: [u8; 32] = core::array::from_fn(|i| {
+                if m[i] & 0x80 != 0 {
+                    bytes(row)[i]
+                } else {
+                    bytes(src1)[i]
+                }
+            });
+            assert_eq!(bytes(asm), expected);
+        }
+    }
 }

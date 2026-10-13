@@ -6748,7 +6748,7 @@ haberdashery_aes128gcm_zen4_is_supported:
 	notl	%edx
 	notl	%ecx
 	xorl	%esi, %esi
-	andl	$2128097795, %ecx
+	andl	$1054355971, %ecx
 	andl	$117440512, %edx
 	orl	%ecx, %edx
 	jne	.LBB3_8
@@ -6770,7 +6770,7 @@ haberdashery_aes128gcm_zen4_is_supported:
 	notl	%ecx
 	notl	%edi
 	xorl	%esi, %esi
-	andl	$-265354968, %edi
+	andl	$-265617112, %edi
 	andl	$24386, %ecx
 	orl	%edi, %ecx
 	jne	.LBB3_8
@@ -6869,5 +6869,5 @@ HABERDASHERY_AES128GCM_ZEN4_TAG_SIZE:
 	.asciz	"\020\000\000\000\000\000\000"
 	.size	HABERDASHERY_AES128GCM_ZEN4_TAG_SIZE, 8
 
-	.ident	"rustc version 1.98.1 (48a229cea 2026-09-01)"
+	.ident	"rustc version 1.98.0-nightly (c397dae80 2026-07-02)"
 	.section	".note.GNU-stack","",@progbits

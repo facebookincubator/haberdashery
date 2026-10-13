@@ -5,14 +5,34 @@
 // License, Version 2.0 found in the LICENSE-APACHE file in the root directory
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 
-#[cfg(any(feature = "skylakex", feature = "zen4", feature = "sapphirerapids"))]
+#[cfg(any(
+    feature = "skylakex",
+    feature = "zen4",
+    feature = "zen5",
+    feature = "sapphirerapids"
+))]
 use core::arch::x86_64::__cpuid;
-#[cfg(any(feature = "skylakex", feature = "zen4", feature = "sapphirerapids"))]
+#[cfg(any(
+    feature = "skylakex",
+    feature = "zen4",
+    feature = "zen5",
+    feature = "sapphirerapids"
+))]
 use core::arch::x86_64::__cpuid_count;
-#[cfg(any(feature = "skylakex", feature = "zen4", feature = "sapphirerapids"))]
+#[cfg(any(
+    feature = "skylakex",
+    feature = "zen4",
+    feature = "zen5",
+    feature = "sapphirerapids"
+))]
 use core::arch::x86_64::_xgetbv;
 
-#[cfg(not(any(feature = "skylakex", feature = "zen4", feature = "sapphirerapids")))]
+#[cfg(not(any(
+    feature = "skylakex",
+    feature = "zen4",
+    feature = "zen5",
+    feature = "sapphirerapids"
+)))]
 #[inline(always)]
 pub fn is_supported() -> bool {
     false
@@ -20,7 +40,7 @@ pub fn is_supported() -> bool {
 
 #[cfg(all(
     feature = "skylakex",
-    not(any(feature = "zen4", feature = "sapphirerapids"))
+    not(any(feature = "zen4", feature = "zen5", feature = "sapphirerapids"))
 ))]
 #[inline(always)]
 pub fn is_supported() -> bool {
@@ -79,7 +99,7 @@ pub fn is_supported() -> bool {
     }
 }
 
-#[cfg(any(feature = "zen4", feature = "sapphirerapids"))]
+#[cfg(any(feature = "zen4", feature = "zen5", feature = "sapphirerapids"))]
 #[inline(always)]
 pub fn is_supported() -> bool {
     const LEAF_1_ECX: u32 = (1 << 0)  // SSE3
@@ -96,7 +116,11 @@ pub fn is_supported() -> bool {
         | (1 << 27) // OSXSAVE
         | (1 << 28) // AVX
         | (1 << 29) // F16C
-        | (1 << 30); // RDRAND
+        | if cfg!(target_feature = "rdrand") {
+            1 << 30 // RDRAND
+        } else {
+            0
+        };
     const LEAF_1_EDX: u32 = (1 << 24) // FXSR
         | (1 << 25) // SSE
         | (1 << 26); // SSE2
@@ -105,7 +129,11 @@ pub fn is_supported() -> bool {
         | (1 << 8)  // BMI2
         | (1 << 16) // AVX512F
         | (1 << 17) // AVX512DQ
-        | (1 << 18) // RDSEED
+        | if cfg!(target_feature = "rdseed") {
+            1 << 18 // RDSEED
+        } else {
+            0
+        }
         | (1 << 19) // ADX
         | (1 << 21) // AVX512IFMA
         | (1 << 28) // AVX512CD
@@ -121,11 +149,16 @@ pub fn is_supported() -> bool {
         | (1 << 12) // AVX512BITALG
         | (1 << 14); // AVX512VPOPCNTDQ
     const LEAF_7_1_EAX: u32 = (1 << 5) // AVX512BF16
-        | if cfg!(feature = "sapphirerapids") {
+        | if cfg!(any(feature = "sapphirerapids", feature = "zen5")) {
             1 << 4 // AVX-VNNI
         } else {
             0
         };
+    const LEAF_7_EDX: u32 = if cfg!(feature = "zen5") {
+        1 << 8 // AVX512_VP2INTERSECT
+    } else {
+        0
+    };
     const LEAF_7_1_EDX: u32 =
         if cfg!(feature = "sapphirerapids") && cfg!(target_feature = "avx512fp16") {
             1 << 23 // AVX512-FP16
@@ -136,7 +169,7 @@ pub fn is_supported() -> bool {
         | (1 << 1) // XSAVEC
         | (1 << 3); // XSAVES
     const EXTENDED_1_ECX: u32 = (1 << 5) // LZCNT
-        | if cfg!(feature = "zen4") {
+        | if cfg!(any(feature = "zen4", feature = "zen5")) {
             1 << 6 // SSE4A
         } else {
             0
@@ -164,7 +197,10 @@ pub fn is_supported() -> bool {
         }
 
         let leaf_7 = __cpuid_count(7, 0);
-        if leaf_7.ebx & LEAF_7_EBX != LEAF_7_EBX || leaf_7.ecx & LEAF_7_ECX != LEAF_7_ECX {
+        if leaf_7.ebx & LEAF_7_EBX != LEAF_7_EBX
+            || leaf_7.ecx & LEAF_7_ECX != LEAF_7_ECX
+            || leaf_7.edx & LEAF_7_EDX != LEAF_7_EDX
+        {
             return false;
         }
 

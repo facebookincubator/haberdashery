@@ -10,4 +10,9 @@ name = "intrinsics-x86_64"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+# Replace the asm forms with their intrinsic equivalents (reference/debug only:
+# loses the full-load guarantee of the memory-operand forms).
+pure-intrinsics = []
+
 [dependencies]

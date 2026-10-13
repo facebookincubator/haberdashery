@@ -10,10 +10,9 @@ name = "aes128gcm-sapphirerapids"
 version = "0.1.0"
 edition = "2024"
 
-[features]
-canonical = []
-
 [dependencies]
+aes128gcm-sapphirerapids-sys = { path = "sys" }
+zeroing-x86_64 = { path = "../../rust/zeroing-x86_64" }
 
 [dev-dependencies]
 test-vectors = { path = "../../rust/test-vectors" }

@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 assert_cmd = "2.0.14"
+

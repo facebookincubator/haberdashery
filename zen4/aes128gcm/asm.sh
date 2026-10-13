@@ -9,8 +9,8 @@
 set -euo pipefail
 
 # Usage: asm.sh [release|debug] [--features SPEC]
-#   asm.sh          — produce src/aes128gcm.s and asm/aes128gcm_debug.s
-#   asm.sh release  — produce only src/aes128gcm.s (plus symbols and descriptor)
+#   asm.sh          — produce sys/src/aes128gcm.s and asm/aes128gcm_debug.s
+#   asm.sh release  — produce only sys/src/aes128gcm.s (plus symbols and descriptor)
 #   asm.sh debug    — produce only asm/aes128gcm_debug.s (source-line annotations)
 #   --features SPEC — extra asm-crate features for codegen (e.g. pure-intrinsics)
 #
@@ -150,7 +150,7 @@ EOF
 
 release() {
   local -r object_path="${TARGET_DIR}/${ALG}.o"
-  rm -f ../src/aes128gcm.s
+  rm -f ../sys/src/aes128gcm.s
 
   ASM=$(build_asm)
   if [[ -z "$ASM" || ! -f "$ASM" ]]; then
@@ -161,10 +161,10 @@ release() {
   {
     generated_header
     awk '$1 != ".file"' "$ASM"
-  } > ../src/aes128gcm.s
-  echo "Wrote aes128gcm.s ($(wc -l < ../src/aes128gcm.s) lines)"
+  } > ../sys/src/aes128gcm.s
+  echo "Wrote aes128gcm.s ($(wc -l < ../sys/src/aes128gcm.s) lines)"
 
-  awk '/^[[:space:]]*callq([[:space:]]|$)/ { $1 = $1; print }' ../src/aes128gcm.s > callq.txt
+  awk '/^[[:space:]]*callq([[:space:]]|$)/ { $1 = $1; print }' ../sys/src/aes128gcm.s > callq.txt
   if [[ ! -s callq.txt ]]; then
     rm callq.txt
   fi
@@ -173,7 +173,7 @@ release() {
     echo "Host is $(uname -m), not ${TARGET%%-*}: kept symbols.txt and descriptor.txt as they were" >&2
     return
   fi
-  as ../src/aes128gcm.s -o "$object_path"
+  as ../sys/src/aes128gcm.s -o "$object_path"
   nm -g --defined-only "$object_path" | awk '{print $3}' | LC_ALL=C sort -u > symbols.txt
   echo "Symbols:"
   cat symbols.txt
@@ -196,9 +196,34 @@ debug() {
   echo "Wrote aes128gcm_debug.s ($(wc -l < aes128gcm_debug.s) lines)"
 }
 
+readonly RUST_TOOLCHAIN=nightly-2026-07-05
+readonly ASM_SH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Regenerating with an older rustc release than the one that produced the
+# checked-in assembly would silently downgrade it; refuse instead. Releases
+# compare by major.minor: an X.Y nightly is the code that ships as stable X.Y,
+# so nightlies and point releases of X.Y count as the same release.
+check_rustc_version() {
+  local -r current="$(rustc -vV | awk '$1 == "release:" { print $2 }')"
+  local -r current_release="$(awk '{ split($1, v, /[.-]/); print v[1] "." v[2] }' <<< "$current")"
+  local file version release
+  while IFS= read -r file; do
+    version="$(grep -m1 -o 'rustc version [^ "]*' "$file" | awk '{ print $3 }')" || continue
+    [[ -n "$version" ]] || continue
+    release="$(awk '{ split($1, v, /[.-]/); print v[1] "." v[2] }' <<< "$version")"
+    if [[ "$release" != "$current_release" \
+      && "$(printf '%s\n%s\n' "$release" "$current_release" | sort -V | tail -n 1)" == "$release" ]]; then
+      echo "error: rustc $current is an older release than rustc $version, which generated ${file#"$ASM_SH_DIR"/}" >&2
+      exit 1
+    fi
+  done < <(find "$ASM_SH_DIR" -name '*.s' ! -name '*_canonical.s' ! -name '*_debug.s' ! -path '*/target/*')
+}
+
 main() {
   cd "$IMPL_DIR/asm"
   export PATH="$HOME/.cargo/bin:$PATH"
+  export RUSTUP_TOOLCHAIN="$RUST_TOOLCHAIN"
+  check_rustc_version
 
   check_source
 

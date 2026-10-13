@@ -11,52 +11,7 @@
 
 #![allow(unused_unsafe)]
 
-#[cfg(not(feature = "canonical"))]
-core::arch::global_asm!(include_str!("aes128gcm.s"), options(raw, att_syntax));
-
-#[cfg(feature = "canonical")]
-core::arch::global_asm!(
-    include_str!("aes128gcm_canonical.s"),
-    options(raw, att_syntax)
-);
-
-unsafe extern "C" {
-    static HABERDASHERY_AES128GCM_SAPPHIRERAPIDS_STRUCT_SIZE: usize;
-    static HABERDASHERY_AES128GCM_SAPPHIRERAPIDS_STRUCT_ALIGN: usize;
-
-    fn haberdashery_aes128gcm_sapphirerapids_is_supported() -> i32;
-    fn haberdashery_aes128gcm_sapphirerapids_init(
-        out: *mut Aes128Gcm,
-        key: *const u8,
-        key_len: usize,
-    ) -> i32;
-    fn haberdashery_aes128gcm_sapphirerapids_encrypt(
-        this: *const Aes128Gcm,
-        nonce: *const u8,
-        nonce_len: usize,
-        aad: *const u8,
-        aad_len: usize,
-        pt: *const u8,
-        pt_len: usize,
-        ct_out: *mut u8,
-        ct_out_len: usize,
-        tag_out: *mut u8,
-        tag_len: usize,
-    ) -> i32;
-    fn haberdashery_aes128gcm_sapphirerapids_decrypt(
-        this: *const Aes128Gcm,
-        nonce: *const u8,
-        nonce_len: usize,
-        aad: *const u8,
-        aad_len: usize,
-        ct: *const u8,
-        ct_len: usize,
-        tag: *const u8,
-        tag_len: usize,
-        out: *mut u8,
-        out_len: usize,
-    ) -> i32;
-}
+use aes128gcm_sapphirerapids_sys::*;
 
 /// AES-128-GCM context. Opaque — initialized by assembly.
 #[repr(C, align(64))]
@@ -82,14 +37,24 @@ impl Aes128Gcm {
         );
         unsafe {
             let mut ctx = std::mem::MaybeUninit::<Aes128Gcm>::uninit();
-            haberdashery_aes128gcm_sapphirerapids_init(ctx.as_mut_ptr(), key.as_ptr(), key.len());
+            haberdashery_aes128gcm_sapphirerapids_init(
+                ctx.as_mut_ptr().cast(),
+                key.as_ptr(),
+                key.len(),
+            );
             ctx.assume_init()
         }
     }
 
     #[inline]
     pub fn init(&mut self, key: &[u8; 16]) -> bool {
-        unsafe { haberdashery_aes128gcm_sapphirerapids_init(self, key.as_ptr(), key.len()) != 0 }
+        unsafe {
+            haberdashery_aes128gcm_sapphirerapids_init(
+                core::ptr::from_mut(self).cast(),
+                key.as_ptr(),
+                key.len(),
+            ) != 0
+        }
     }
 
     #[inline]
@@ -103,7 +68,7 @@ impl Aes128Gcm {
     ) -> bool {
         unsafe {
             haberdashery_aes128gcm_sapphirerapids_encrypt(
-                self,
+                core::ptr::from_ref(self).cast(),
                 nonce.as_ptr(),
                 nonce.len(),
                 aad.as_ptr(),
@@ -129,7 +94,7 @@ impl Aes128Gcm {
     ) -> bool {
         unsafe {
             haberdashery_aes128gcm_sapphirerapids_decrypt(
-                self,
+                core::ptr::from_ref(self).cast(),
                 nonce.as_ptr(),
                 nonce.len(),
                 aad.as_ptr(),
@@ -142,5 +107,12 @@ impl Aes128Gcm {
                 plaintext.len(),
             ) != 0
         }
+    }
+}
+
+impl Drop for Aes128Gcm {
+    #[inline]
+    fn drop(&mut self) {
+        unsafe { zeroing_x86_64::haberdashery_zero(self._data.as_mut_ptr(), self._data.len()) }
     }
 }

@@ -155,9 +155,68 @@ impl uint8x16_t {
         Self(unsafe { arch::veor3q_u8(self.0, b.0, c.0) })
     }
 
+    /// BCAX: `self ^ (b & !c)` (SHA3 extension).
+    #[inline]
+    pub fn vbcaxq_u8(self, b: Self, c: Self) -> Self {
+        Self(unsafe { arch::vbcaxq_u8(self.0, b.0, c.0) })
+    }
+
+    #[inline]
+    pub fn vsha256hq_u32(self, hash_efgh: Self, wk: Self) -> Self {
+        let a = unsafe { arch::vreinterpretq_u32_u8(self.0) };
+        let b = unsafe { arch::vreinterpretq_u32_u8(hash_efgh.0) };
+        let c = unsafe { arch::vreinterpretq_u32_u8(wk.0) };
+        Self(unsafe { arch::vreinterpretq_u8_u32(arch::vsha256hq_u32(a, b, c)) })
+    }
+
+    #[inline]
+    pub fn vsha256h2q_u32(self, hash_abcd: Self, wk: Self) -> Self {
+        let a = unsafe { arch::vreinterpretq_u32_u8(self.0) };
+        let b = unsafe { arch::vreinterpretq_u32_u8(hash_abcd.0) };
+        let c = unsafe { arch::vreinterpretq_u32_u8(wk.0) };
+        Self(unsafe { arch::vreinterpretq_u8_u32(arch::vsha256h2q_u32(a, b, c)) })
+    }
+
+    #[inline]
+    pub fn vsha256su0q_u32(self, w4_7: Self) -> Self {
+        let a = unsafe { arch::vreinterpretq_u32_u8(self.0) };
+        let b = unsafe { arch::vreinterpretq_u32_u8(w4_7.0) };
+        Self(unsafe { arch::vreinterpretq_u8_u32(arch::vsha256su0q_u32(a, b)) })
+    }
+
+    #[inline]
+    pub fn vsha256su1q_u32(self, w8_11: Self, w12_15: Self) -> Self {
+        let a = unsafe { arch::vreinterpretq_u32_u8(self.0) };
+        let b = unsafe { arch::vreinterpretq_u32_u8(w8_11.0) };
+        let c = unsafe { arch::vreinterpretq_u32_u8(w12_15.0) };
+        Self(unsafe { arch::vreinterpretq_u8_u32(arch::vsha256su1q_u32(a, b, c)) })
+    }
+
     #[inline]
     pub fn vmaxvq_u8(self) -> u8 {
         unsafe { arch::vmaxvq_u8(self.0) }
+    }
+}
+
+/// PRFM PLDL1KEEP: prefetch the line at `ptr` into L1 for reading. Prefetches
+/// never fault, so any address is allowed.
+#[inline]
+pub fn prefetch_load(ptr: *const u8) {
+    // SAFETY: PRFM only hints the memory system; it reads no memory
+    // architecturally and cannot fault.
+    unsafe {
+        core::arch::asm!("prfm pldl1keep, [{0}]", in(reg) ptr, options(nostack, preserves_flags, readonly));
+    }
+}
+
+/// PRFM PSTL1KEEP: prefetch the line at `ptr` into L1 for writing. Prefetches
+/// never fault, so any address is allowed.
+#[inline]
+pub fn prefetch_store(ptr: *const u8) {
+    // SAFETY: PRFM only hints the memory system; it writes no memory
+    // architecturally and cannot fault.
+    unsafe {
+        core::arch::asm!("prfm pstl1keep, [{0}]", in(reg) ptr, options(nostack, preserves_flags, readonly));
     }
 }
 

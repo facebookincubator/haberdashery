@@ -7778,5 +7778,5 @@ HABERDASHERY_AES128GCM_SAPPHIRERAPIDS_TAG_SIZE:
 	.asciz	"\020\000\000\000\000\000\000"
 	.size	HABERDASHERY_AES128GCM_SAPPHIRERAPIDS_TAG_SIZE, 8
 
-	.ident	"rustc version 1.98.1 (48a229cea 2026-09-01)"
+	.ident	"rustc version 1.98.0-nightly (c397dae80 2026-07-02)"
 	.section	".note.GNU-stack","",@progbits

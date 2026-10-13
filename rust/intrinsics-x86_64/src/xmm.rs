@@ -137,6 +137,11 @@ impl __m128i {
     }
 
     #[inline]
+    pub fn _mm_add_epi64(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm_add_epi64(self.0, b.0) })
+    }
+
+    #[inline]
     pub fn _mm_aesenc_si128(self, round_key: Self) -> Self {
         Self(unsafe { core::arch::x86_64::_mm_aesenc_si128(self.0, round_key.0) })
     }
@@ -236,5 +241,50 @@ impl __m128i {
     #[inline]
     pub fn _mm_ternarylogic_epi64<const IMM8: i32>(self, b: Self, c: Self) -> Self {
         Self(unsafe { core::arch::x86_64::_mm_ternarylogic_epi64::<IMM8>(self.0, b.0, c.0) })
+    }
+
+    #[inline]
+    pub fn _mm_cvtsi128_si64(self) -> i64 {
+        unsafe { core::arch::x86_64::_mm_cvtsi128_si64(self.0) }
+    }
+
+    #[inline]
+    pub fn _mm_alignr_epi8<const IMM8: i32>(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm_alignr_epi8::<IMM8>(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm_blend_epi16<const IMM8: i32>(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm_blend_epi16::<IMM8>(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm_blend_epi32<const IMM4: i32>(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm_blend_epi32::<IMM4>(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm_ror_epi32<const IMM8: i32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm_ror_epi32::<IMM8>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm_srli_epi32<const IMM8: i32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm_srli_epi32::<IMM8>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm_sha256msg1_epu32(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm_sha256msg1_epu32(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm_sha256msg2_epu32(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm_sha256msg2_epu32(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm_sha256rnds2_epu32(self, b: Self, k: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm_sha256rnds2_epu32(self.0, b.0, k.0) })
     }
 }

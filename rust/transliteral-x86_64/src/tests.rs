@@ -217,3 +217,61 @@ fn rejects_returning_arg() {
     );
     assert!(assembly_internal(func).is_err());
 }
+
+#[test]
+fn gpr_round_shapes() {
+    let func = quote!(
+        unsafe fn f(e: u64, f: u64, g: u64, h: &mut u64) -> u64 {
+            let s = e.rotate_right(14);
+            let t = !e & g;
+            let u = e;
+            u = u & f;
+            *h = (*h).wrapping_add(t);
+            *h = (*h).wrapping_add(u);
+            s = s ^ u;
+            let v = s.wrapping_add(t);
+            v
+        }
+    );
+    let out = norm(&assembly_internal(func).expect("expand"));
+    for needle in [
+        "\"rorx $14, {e}, {s}\"",
+        "\"andn {g}, {e}, {t}\"",
+        "\"mov {e}, {u}\"",
+        "\"and {f}, {u}\"",
+        "\"add {t}, {h}\"",
+        "\"add {u}, {h}\"",
+        "\"xor {u}, {s}\"",
+        "\"lea ({s},{t}), {v}\"",
+        "e=in(reg)e",
+        "h=inout(reg)*h",
+        "u=out(reg)u_out",
+        "s=out(reg)s_out",
+        "t=out(reg)t_out",
+        "letu_out:u64;",
+    ] {
+        let needle: String = needle.split_whitespace().collect();
+        assert!(out.contains(&needle), "missing {needle} in:\n{out}");
+    }
+}
+
+#[test]
+fn rejects_gpr_two_operand_detached_target() {
+    let func = quote!(
+        unsafe fn f(a: u64, b: u64) -> u64 {
+            let t = a ^ b;
+            t
+        }
+    );
+    assert!(assembly_internal(func).is_err());
+}
+
+#[test]
+fn rejects_mixed_kinds() {
+    let func = quote!(
+        unsafe fn f(a: &mut u64, b: __m512i) {
+            *a = (*a).wrapping_add(b);
+        }
+    );
+    assert!(assembly_internal(func).is_err());
+}
