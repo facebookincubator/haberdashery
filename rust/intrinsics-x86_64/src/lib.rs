@@ -7,10 +7,17 @@
 // of this source tree. You may select, at your option, one of the above-listed licenses.
 #![allow(non_camel_case_types)]
 
+mod bmi2;
+mod prefetch;
 mod xmm;
 mod ymm;
 mod zmm;
 
+pub use bmi2::_bzhi_u64;
+pub use prefetch::_MM_HINT_ET0;
+pub use prefetch::_MM_HINT_T0;
+pub use prefetch::_mm_prefetch;
+pub use prefetch::_mm_sfence;
 pub use xmm::__m128i;
 pub use ymm::__m256i;
 pub use zmm::__m512i;

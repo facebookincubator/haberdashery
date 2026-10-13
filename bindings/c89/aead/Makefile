@@ -3,8 +3,10 @@
 CXX = cc
 CXX_FLAGS = -pedantic -ansi
 PRIMITIVE = $(shell basename $(CURDIR))
+ARCH = $(shell uname -m)
 
-HDRS = $(wildcard *.h)
+ASMS = $(notdir $(wildcard ../../../asm/$(ARCH)/*.s))
+HDRS = $(filter $(ASMS:.s=.h),$(wildcard *.h))
 TARGETS = $(HDRS:.h=)
 TESTS = $(HDRS:.h=.test.o)
 
@@ -18,7 +20,7 @@ $(TARGETS): $(TESTS)
 %.test.o: %.o %_test.c %.h
 	@$(CXX) $(CXX_FLAGS) -o $@ $^
 
-%.o: ../../../asm/x86_64/%.s
+%.o: ../../../asm/$(ARCH)/%.s
 	@$(CXX) $(CXX_FLAGS) -o $@ -c $^
 
 clean:

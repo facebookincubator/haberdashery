@@ -14,6 +14,7 @@ edition = "2024"
 default = []
 skylakex = []
 zen4 = []
+zen5 = []
 sapphirerapids = []
 
 [dependencies]

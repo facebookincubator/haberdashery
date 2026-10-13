@@ -8,6 +8,7 @@
 [build]
 rustflags = [
     "-C", "target-cpu=znver4",
+    "-C", "target-feature=-rdrand,-rdseed",
     "-C", "llvm-args=--inline-threshold=999999",
     "-C", "overflow-checks=no",
 ]

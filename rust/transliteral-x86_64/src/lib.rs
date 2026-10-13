@@ -26,6 +26,14 @@
 //!   `_mm512_shuffle_epi32`, `_mm512_ternarylogic_epi64` (immediates required)
 //! - tied destinations (`vpternlogq` aliases dst with its last input):
 //!   the target must be the last argument, with no separate position
+//!
+//! `u64` arguments, temporaries and returns go in general-purpose registers,
+//! spelled as plain Rust so the original body is the reference:
+//! - `t = x` → `mov`; `x.rotate_right(n)` → `rorx`; `!x & y` → `andn`
+//! - `t = t ^ y`, `t = t & y`, `t = t.wrapping_add(y)` → two-operand
+//!   `xor`/`and`/`add`; the target must be one of the operands
+//! - `let t = x.wrapping_add(y)` into a fresh target → `lea`
+//! - `&mut u64` arguments are read as `*x` and written as `*x = ...`
 
 use proc_macro::TokenStream as ProcTokenStream;
 use proc_macro2::TokenStream;
@@ -114,6 +122,38 @@ fn is_m512i(ty: &Type) -> bool {
     }
 }
 
+fn is_u64(ty: &Type) -> bool {
+    match ty {
+        Type::Path(p) => p.qself.is_none() && p.path.is_ident("u64"),
+        _ => false,
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Kind {
+    Zmm,
+    Gpr,
+}
+
+fn kind_of(ty: &Type) -> Option<Kind> {
+    if is_m512i(ty) {
+        Some(Kind::Zmm)
+    } else if is_u64(ty) {
+        Some(Kind::Gpr)
+    } else {
+        None
+    }
+}
+
+/// A plain variable, optionally dereferenced or parenthesized: `x`, `*x`, `(*x)`.
+fn var_of(expr: &Expr) -> syn::Result<syn::Ident> {
+    match expr {
+        Expr::Unary(u) if matches!(u.op, UnOp::Deref(_)) => var_of(&u.expr),
+        Expr::Paren(p) => var_of(&p.expr),
+        _ => ident_of(expr),
+    }
+}
+
 /// Single-identifier path expression, e.g. `rk`.
 fn ident_of(expr: &Expr) -> syn::Result<syn::Ident> {
     match expr {
@@ -134,6 +174,7 @@ fn ident_of(expr: &Expr) -> syn::Result<syn::Ident> {
 struct Arg {
     name: syn::Ident,
     inout: bool,
+    kind: Kind,
 }
 
 fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
@@ -143,25 +184,21 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
     // of __m512i. `single` tracks the bare-ident tail of the single form.
     let mut arity = 0usize;
     let mut single = false;
+    let mut ret_kinds: Vec<Kind> = Vec::new();
+    let ret_err = "transliteral: return type must be (), __m512i, u64, or a tuple of them";
     if let ReturnType::Type(_, ty) = &func.sig.output {
         if let Type::Tuple(t) = &**ty {
             for elem in &t.elems {
-                if !is_m512i(elem) {
-                    return Err(syn::Error::new_spanned(
-                        elem,
-                        "transliteral: return type must be (), __m512i, or a tuple of __m512i",
-                    ));
-                }
+                ret_kinds
+                    .push(kind_of(elem).ok_or_else(|| syn::Error::new_spanned(elem, ret_err))?);
             }
             arity = t.elems.len();
-        } else if is_m512i(ty) {
+        } else if let Some(k) = kind_of(ty) {
+            ret_kinds.push(k);
             arity = 1;
             single = true;
         } else {
-            return Err(syn::Error::new_spanned(
-                &func.sig.output,
-                "transliteral: return type must be (), __m512i, or a tuple of __m512i",
-            ));
+            return Err(syn::Error::new_spanned(&func.sig.output, ret_err));
         }
     }
 
@@ -185,17 +222,19 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
                 ));
             }
         };
-        let inout = match &*typed.ty {
-            Type::Reference(r) if r.mutability.is_some() && is_m512i(&r.elem) => true,
-            t if is_m512i(t) => false,
+        let (inout, kind) = match &*typed.ty {
+            Type::Reference(r) if r.mutability.is_some() && kind_of(&r.elem).is_some() => {
+                (true, kind_of(&r.elem).unwrap())
+            }
+            t if kind_of(t).is_some() => (false, kind_of(t).unwrap()),
             _ => {
                 return Err(syn::Error::new_spanned(
                     &typed.ty,
-                    "transliteral: arguments must be __m512i or &mut __m512i",
+                    "transliteral: arguments must be __m512i, u64, or &mut of either",
                 ));
             }
         };
-        args.push(Arg { name, inout });
+        args.push(Arg { name, inout, kind });
     }
 
     use std::collections::HashSet;
@@ -206,6 +245,8 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
     let mut temps: Vec<syn::Ident> = Vec::new();
     // Temps read by the instruction that writes them need `inout` operands.
     let mut inout_temps: HashSet<String> = HashSet::new();
+    let mut kinds: std::collections::HashMap<String, Kind> =
+        args.iter().map(|a| (a.name.to_string(), a.kind)).collect();
 
     // A non-unit return takes its values from a trailing tuple expression,
     // e.g. `(lo, hi, mid)`, which is not a template.
@@ -302,13 +343,102 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
             }
         };
 
-        let (op, template_imm, tied, inputs) = match rhs {
-            Expr::Binary(b) if matches!(b.op, syn::BinOp::BitXor(_)) => {
+        let target_s = target.to_string();
+        let kind_of_var = |v: &str| kinds.get(v).copied();
+        // GPR statements produce a finished template; vector ones fall through.
+        let mut gpr: Option<(String, Vec<String>)> = None;
+        let gpr_rhs = match &rhs {
+            Expr::Path(_) | Expr::Unary(_) | Expr::Paren(_) => var_of(&rhs)
+                .ok()
+                .filter(|v| kind_of_var(&v.to_string()) == Some(Kind::Gpr))
+                .is_some(),
+            Expr::Binary(b) => var_of(&b.right)
+                .ok()
+                .is_some_and(|v| kind_of_var(&v.to_string()) == Some(Kind::Gpr)),
+            Expr::MethodCall(m) => {
+                matches!(
+                    m.method.to_string().as_str(),
+                    "wrapping_add" | "rotate_right"
+                )
+            }
+            _ => false,
+        };
+        if gpr_rhs {
+            let two_op = |mnem: &str, l: String, r: String| -> syn::Result<(String, Vec<String>)> {
+                if l == target_s {
+                    Ok((format!("{mnem} {{{r}}}, {{{target_s}}}"), vec![l, r]))
+                } else if r == target_s {
+                    Ok((format!("{mnem} {{{l}}}, {{{target_s}}}"), vec![l, r]))
+                } else {
+                    Err(syn::Error::new_spanned(
+                        stmt,
+                        "transliteral: two-operand op must write one of its operands; copy first with `let t = x;`",
+                    ))
+                }
+            };
+            gpr = Some(match &rhs {
+                Expr::Binary(b) => match (&b.op, &*b.left) {
+                    (syn::BinOp::BitAnd(_), Expr::Unary(u)) if matches!(u.op, UnOp::Not(_)) => {
+                        let x = var_of(&u.expr)?.to_string();
+                        let y = var_of(&b.right)?.to_string();
+                        (format!("andn {{{y}}}, {{{x}}}, {{{target_s}}}"), vec![x, y])
+                    }
+                    (syn::BinOp::BitAnd(_), _) => two_op(
+                        "and",
+                        var_of(&b.left)?.to_string(),
+                        var_of(&b.right)?.to_string(),
+                    )?,
+                    (syn::BinOp::BitXor(_), _) => two_op(
+                        "xor",
+                        var_of(&b.left)?.to_string(),
+                        var_of(&b.right)?.to_string(),
+                    )?,
+                    _ => {
+                        return Err(syn::Error::new_spanned(
+                            &rhs,
+                            "transliteral: u64 operators are ^, &, and !x & y",
+                        ));
+                    }
+                },
+                Expr::MethodCall(m) if m.method == "wrapping_add" && m.args.len() == 1 => {
+                    let l = var_of(&m.receiver)?.to_string();
+                    let r = var_of(&m.args[0])?.to_string();
+                    if l == target_s || r == target_s {
+                        two_op("add", l, r)?
+                    } else {
+                        (format!("lea ({{{l}}},{{{r}}}), {{{target_s}}}"), vec![l, r])
+                    }
+                }
+                Expr::MethodCall(m) if m.method == "rotate_right" && m.args.len() == 1 => {
+                    let x = var_of(&m.receiver)?.to_string();
+                    let n = match &m.args[0] {
+                        Expr::Lit(syn::ExprLit {
+                            lit: syn::Lit::Int(n),
+                            ..
+                        }) => n.base10_parse::<u32>()?,
+                        other => {
+                            return Err(syn::Error::new_spanned(
+                                other,
+                                "transliteral: rotate_right needs an integer literal",
+                            ));
+                        }
+                    };
+                    (format!("rorx ${n}, {{{x}}}, {{{target_s}}}"), vec![x])
+                }
+                _ => {
+                    let x = var_of(&rhs)?.to_string();
+                    (format!("mov {{{x}}}, {{{target_s}}}"), vec![x])
+                }
+            });
+        }
+        let (op, template_imm, tied, inputs) = match (&gpr, rhs) {
+            (Some((_, inputs)), _) => (String::new(), None, false, inputs.clone()),
+            (None, Expr::Binary(b)) if matches!(b.op, syn::BinOp::BitXor(_)) => {
                 let lhs = ident_of(&b.left)?.to_string();
                 let rhs = ident_of(&b.right)?.to_string();
                 ("vpxorq".to_string(), None, false, vec![lhs, rhs])
             }
-            Expr::MethodCall(m) => {
+            (None, Expr::MethodCall(m)) => {
                 let imm = immediate(&m)?;
                 let Some((op, template_imm, receiver_first, tied)) =
                     mnemonic(&m.method.to_string(), imm)
@@ -331,7 +461,7 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
                 }
                 (op, template_imm, tied, inputs)
             }
-            ref other => {
+            (None, ref other) => {
                 return Err(syn::Error::new_spanned(
                     other,
                     "transliteral: right-hand side must be an intrinsic method call or a ^ b",
@@ -347,7 +477,6 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
             }
         }
 
-        let target_s = target.to_string();
         let is_arg = args.iter().any(|a| a.name == target);
         if is_arg {
             let inout = args
@@ -379,6 +508,31 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
             inout_temps.insert(target_s.clone());
         }
 
+        let new_kind = if gpr.is_some() { Kind::Gpr } else { Kind::Zmm };
+        for input in &inputs {
+            if kind_of_var(input) != Some(new_kind) {
+                return Err(syn::Error::new_spanned(
+                    stmt,
+                    "transliteral: cannot mix __m512i and u64 operands",
+                ));
+            }
+        }
+        if !is_let && kind_of_var(&target_s) != Some(new_kind) {
+            return Err(syn::Error::new_spanned(
+                stmt,
+                "transliteral: cannot mix __m512i and u64 operands",
+            ));
+        }
+        if let Some((template, _)) = &gpr {
+            templates.push(template.clone());
+            if is_let {
+                known.insert(target_s.clone());
+                temps.push(target);
+                kinds.insert(target_s.clone(), Kind::Gpr);
+            }
+            readable.insert(target_s);
+            continue;
+        }
         let mut parts: Vec<String> = inputs.iter().map(|i| format!("{{{i}}}")).collect();
         if tied {
             // Destination aliases the last input (e.g. `vpternlogq` reads
@@ -401,6 +555,7 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
         if is_let {
             known.insert(target_s.clone());
             temps.push(target);
+            kinds.insert(target_s.clone(), Kind::Zmm);
         }
         readable.insert(target_s);
     }
@@ -426,11 +581,12 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
     let mut operands: Vec<TokenStream> = Vec::new();
     for arg in &args {
         let n = &arg.name;
-        if arg.inout {
-            operands.push(quote!(#n = inout(zmm_reg) #n.0));
-        } else {
-            operands.push(quote!(#n = in(zmm_reg) #n.0));
-        }
+        operands.push(match (arg.kind, arg.inout) {
+            (Kind::Zmm, true) => quote!(#n = inout(zmm_reg) #n.0),
+            (Kind::Zmm, false) => quote!(#n = in(zmm_reg) #n.0),
+            (Kind::Gpr, true) => quote!(#n = inout(reg) *#n),
+            (Kind::Gpr, false) => quote!(#n = in(reg) #n),
+        });
     }
     // Every temporary gets a named `out` place. Anonymous `out ... _`
     // tells rustc the value is discarded, but later template lines may
@@ -441,15 +597,22 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
     let mut out_decls: Vec<TokenStream> = Vec::new();
     for temp in &temps {
         let binding = format_ident!("{}_out", temp);
-        if inout_temps.contains(&temp.to_string()) {
-            operands.push(quote!(#temp = inout(zmm_reg) #binding.0));
-        } else {
-            operands.push(quote!(#temp = out(zmm_reg) #binding.0));
-        }
+        let gpr = kinds.get(&temp.to_string()) == Some(&Kind::Gpr);
+        operands.push(match (gpr, inout_temps.contains(&temp.to_string())) {
+            (false, true) => quote!(#temp = inout(zmm_reg) #binding.0),
+            (false, false) => quote!(#temp = out(zmm_reg) #binding.0),
+            // An `out` register never aliases an input, and every temp is
+            // written before it is read, so GPR temps need no initial value.
+            (true, _) => quote!(#temp = out(reg) #binding),
+        });
         // Fully initialized so the field projection is a mutation, not a
         // partial init; the zeroing is a dead store (overwritten before any
         // read). Never-read bindings are covered by the fn's `#[allow(unused)]`.
-        out_decls.push(quote!(let mut #binding: __m512i = __m512i::ZERO;));
+        out_decls.push(if gpr {
+            quote!(let #binding: u64;)
+        } else {
+            quote!(let mut #binding: __m512i = __m512i::ZERO;)
+        });
     }
     // A single __m512i return hands back the bare binding; tuples wrap.
     let ret_tail = if single {
@@ -481,17 +644,22 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
     let mut asserts: Vec<TokenStream> = Vec::new();
     for (i, arg) in args.iter().enumerate() {
         let vals: Vec<i64> = (0..8).map(|k| i as i64 * 8 + k).collect();
+        let gpr_val = 0x9e37_79b9_7f4a_7c15u64.wrapping_mul(i as u64 + 1);
+        let (ty, init) = match arg.kind {
+            Kind::Zmm => (quote!(__m512i), quote!(__m512i::from([#(#vals),*]))),
+            Kind::Gpr => (quote!(u64), quote!(#gpr_val)),
+        };
         let n = &arg.name;
         if arg.inout {
             let n_asm = format_ident!("{}_asm", n);
             let n_ref = format_ident!("{}_ref", n);
-            test_inputs.push(quote!(let mut #n_asm: __m512i = __m512i::from([#(#vals),*]);));
-            test_inputs.push(quote!(let mut #n_ref: __m512i = __m512i::from([#(#vals),*]);));
+            test_inputs.push(quote!(let mut #n_asm: #ty = #init;));
+            test_inputs.push(quote!(let mut #n_ref: #ty = #init;));
             asm_call_args.push(quote!(&mut #n_asm));
             ref_call_args.push(quote!(&mut #n_ref));
             asserts.push(quote!(assert_eq!(#n_asm, #n_ref);));
         } else {
-            test_inputs.push(quote!(let #n: __m512i = __m512i::from([#(#vals),*]);));
+            test_inputs.push(quote!(let #n: #ty = #init;));
             asm_call_args.push(quote!(#n));
             ref_call_args.push(quote!(#n));
         }

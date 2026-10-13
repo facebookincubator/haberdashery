@@ -256,6 +256,11 @@ impl __m512i {
     }
 
     #[inline]
+    pub fn _mm512_ror_epi64<const IMM8: i32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_ror_epi64::<IMM8>(self.0) })
+    }
+
+    #[inline]
     pub fn _mm512_mask_blend_epi64(self, k: u8, b: Self) -> Self {
         Self(unsafe { core::arch::x86_64::_mm512_mask_blend_epi64(k, self.0, b.0) })
     }
@@ -280,6 +285,11 @@ impl __m512i {
     #[inline]
     pub fn _mm512_add_epi32(self, b: Self) -> Self {
         Self(unsafe { core::arch::x86_64::_mm512_add_epi32(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_add_epi64(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_add_epi64(self.0, b.0) })
     }
 
     #[inline]
@@ -357,6 +367,12 @@ impl __m512i {
         unsafe { core::arch::x86_64::_mm512_mask_storeu_epi8(ptr as *mut i8, mask, self.0) }
     }
 
+    /// `vmovntdq`: non-temporal store; `ptr` must be 64-byte aligned.
+    #[inline]
+    pub unsafe fn _mm512_stream_si512(self, ptr: *mut u8) {
+        unsafe { core::arch::x86_64::_mm512_stream_si512(ptr.cast(), self.0) }
+    }
+
     #[inline]
     pub unsafe fn _mm512_storeu_si512(self, ptr: *mut u8) {
         unsafe { core::arch::x86_64::_mm512_storeu_si512(ptr as *mut _, self.0) }
@@ -388,5 +404,203 @@ impl __m512i {
             core::arch::x86_64::_mm512_storeu_epi64(tmp.as_mut_ptr() as *mut _, self.0);
         }
         tmp[IDX]
+    }
+
+    #[inline]
+    pub fn _mm512_broadcastq_epi64(a: __m128i) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_broadcastq_epi64(a.into()) })
+    }
+
+    #[inline]
+    pub fn _mm512_sub_epi64(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_sub_epi64(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_mullo_epi64(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_mullo_epi64(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_mask_mullo_epi64(self, k: u8, a: Self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_mask_mullo_epi64(self.0, k, a.0, b.0) })
+    }
+
+    /// Multiply-add low 52 bits: dst[i] = self[i] + lo52(a[i] * b[i]).
+    #[inline]
+    pub fn _mm512_madd52lo_epu64(self, a: Self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_madd52lo_epu64(self.0, a.0, b.0) })
+    }
+
+    /// Multiply-add high 52 bits: dst[i] = self[i] + (a[i] * b[i] >> 52).
+    #[inline]
+    pub fn _mm512_madd52hi_epu64(self, a: Self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_madd52hi_epu64(self.0, a.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_permutex2var_epi64(self, idx: Self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_permutex2var_epi64(self.0, idx.0, b.0) })
+    }
+
+    /// `valignq zmm`: result[i] = concat[IMM8 + i] where concat = [b[0..8], self[0..8]].
+    #[inline]
+    pub fn _mm512_alignr_epi64<const IMM8: i32>(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_alignr_epi64::<IMM8>(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_unpacklo_epi64(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_unpacklo_epi64(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_unpackhi_epi64(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_unpackhi_epi64(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_maskz_mov_epi64(self, k: u8) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_maskz_mov_epi64(k, self.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_mask_set1_epi64(self, k: u8, a: i64) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_mask_set1_epi64(self.0, k, a) })
+    }
+
+    #[inline]
+    pub fn _mm512_maskz_shuffle_epi32<const MASK: i32>(self, k: u16) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_maskz_shuffle_epi32::<MASK>(k, self.0) })
+    }
+
+    #[inline]
+    pub unsafe fn _mm512_load_si512(ptr: *const u8) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_load_si512(ptr as *const _) })
+    }
+
+    #[inline]
+    pub fn _mm512_set1_epi16(a: i16) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_set1_epi16(a) })
+    }
+
+    #[inline]
+    pub fn _mm512_set1_epi32(a: i32) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_set1_epi32(a) })
+    }
+
+    #[inline]
+    pub fn _mm512_maskz_set1_epi8(k: u64, a: i8) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_maskz_set1_epi8(k, a) })
+    }
+
+    #[inline]
+    pub fn _mm512_cvtepi16_epi32(a: __m256i) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_cvtepi16_epi32(a.into()) })
+    }
+
+    #[inline]
+    pub fn _mm512_castsi512_si256(self) -> __m256i {
+        __m256i::from(unsafe { core::arch::x86_64::_mm512_castsi512_si256(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_extracti64x4_epi64<const IMM1: i32>(self) -> __m256i {
+        __m256i::from(unsafe { core::arch::x86_64::_mm512_extracti64x4_epi64::<IMM1>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_add_epi16(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_add_epi16(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_sub_epi16(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_sub_epi16(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_sub_epi32(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_sub_epi32(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_mullo_epi16(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_mullo_epi16(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_mulhi_epi16(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_mulhi_epi16(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_mullo_epi32(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_mullo_epi32(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_mul_epi32(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_mul_epi32(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_packs_epi32(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_packs_epi32(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_srai_epi16<const IMM8: u32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_srai_epi16::<IMM8>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_slli_epi32<const IMM8: u32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_slli_epi32::<IMM8>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_srli_epi32<const IMM8: u32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_srli_epi32::<IMM8>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_srai_epi32<const IMM8: u32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_srai_epi32::<IMM8>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_srai_epi64<const IMM8: u32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_srai_epi64::<IMM8>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_ror_epi32<const IMM8: i32>(self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_ror_epi32::<IMM8>(self.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_alignr_epi8<const IMM8: i32>(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_alignr_epi8::<IMM8>(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_shuffle_i32x4<const MASK: i32>(self, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_shuffle_i32x4::<MASK>(self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_mask_blend_epi16(self, k: u32, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_mask_blend_epi16(k, self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_mask_blend_epi32(self, k: u16, b: Self) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_mask_blend_epi32(k, self.0, b.0) })
+    }
+
+    #[inline]
+    pub fn _mm512_maskz_mov_epi16(self, mask: u32) -> Self {
+        Self(unsafe { core::arch::x86_64::_mm512_maskz_mov_epi16(mask, self.0) })
     }
 }

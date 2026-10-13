@@ -101,8 +101,9 @@ fn pmull2_return_shape() {
 }
 
 #[test]
-fn single_return_and_temp_inout() {
-    // A temporary read by its own writer becomes an `inout` operand.
+fn single_return_and_temp_out() {
+    // A temporary read by its own writer stays `out`: the template writes it
+    // first.
     let func = quote!(
         fn f(rk: uint8x16_t, a: uint8x16_t) -> uint8x16_t {
             let mut m = a ^ rk;
@@ -117,7 +118,7 @@ fn single_return_and_temp_inout() {
         &[
             "\"eor {m:v}.16b, {a:v}.16b, {rk:v}.16b\"",
             "\"aese {m:v}.16b, {rk:v}.16b\", \"aesmc {m:v}.16b, {m:v}.16b\"",
-            "m=inout(vreg)m_out.0",
+            "m=out(vreg)m_out.0",
             "fnf_asm(rk:uint8x16_t,a:uint8x16_t)->uint8x16_t",
             "}m_out}",
             "letret_asm=f_asm(",
@@ -325,7 +326,7 @@ fn rejects_tied_detached_target() {
 fn rejects_unknown_intrinsic() {
     let func = quote!(
         fn f(a: &mut uint8x16_t, b: uint8x16_t) {
-            *a = a.vaddq_u32(b);
+            *a = a.vrev32q_u8();
         }
     );
     assert!(assembly_internal(func).is_err());
@@ -405,6 +406,21 @@ fn pmull_pattern_and_eor3() {
 }
 
 #[test]
+fn bcax() {
+    let func = quote!(
+        fn keystream(a: uint8x16_t, b: uint8x16_t, c: uint8x16_t) -> uint8x16_t {
+            let z = a.vbcaxq_u8(b, c);
+            z
+        }
+    );
+    let out = norm(&assembly_internal(func).expect("expand"));
+    assert_contains(
+        &out,
+        &["\"bcax {z:v}.16b, {a:v}.16b, {b:v}.16b, {c:v}.16b\""],
+    );
+}
+
+#[test]
 fn rejects_pmull_pattern_variants() {
     let cases = [
         // lane 1 is not a PMULL
@@ -426,4 +442,89 @@ fn rejects_pmull_pattern_variants() {
         let source = func.to_string();
         assert!(assembly_internal(func).is_err(), "accepted: {source}");
     }
+}
+
+#[test]
+fn sha256_rounds_and_schedule() {
+    let func = quote!(
+        fn rounds(
+            mut abcd: uint8x16_t,
+            mut efgh: uint8x16_t,
+            w: uint8x16_t,
+            k: uint8x16_t,
+            zero: uint8x16_t,
+        ) -> (uint8x16_t, uint8x16_t) {
+            let wk = w.vaddq_u32(k);
+            let saved = abcd.veor3q_u8(zero, zero);
+            abcd = abcd.vsha256hq_u32(efgh, wk);
+            efgh = efgh.vsha256h2q_u32(saved, wk);
+            (abcd, efgh)
+        }
+    );
+    let out = norm(&assembly_internal(func).expect("expand"));
+    assert_contains(
+        &out,
+        &[
+            "\"add {wk:v}.4s, {w:v}.4s, {k:v}.4s\"",
+            "\"eor3 {saved:v}.16b, {abcd:v}.16b, {zero:v}.16b, {zero:v}.16b\"",
+            "\"sha256h {abcd:q}, {efgh:q}, {wk:v}.4s\"",
+            "\"sha256h2 {efgh:q}, {saved:q}, {wk:v}.4s\"",
+            "abcd=inout(vreg)abcd.0",
+            "efgh=inout(vreg)efgh.0",
+            "(abcd,efgh)",
+        ],
+    );
+
+    let func = quote!(
+        fn schedule(
+            mut w0: uint8x16_t,
+            w1: uint8x16_t,
+            w2: uint8x16_t,
+            w3: uint8x16_t,
+        ) -> uint8x16_t {
+            w0 = w0.vsha256su0q_u32(w1);
+            w0 = w0.vsha256su1q_u32(w2, w3);
+            w0
+        }
+    );
+    let out = norm(&assembly_internal(func).expect("expand"));
+    assert_contains(
+        &out,
+        &[
+            "\"sha256su0 {w0:v}.4s, {w1:v}.4s\", \"sha256su1 {w0:v}.4s, {w2:v}.4s, {w3:v}.4s\"",
+            "w0=inout(vreg)w0.0",
+        ],
+    );
+
+    // SHA256H overwrites its first operand, so the target must be the receiver.
+    let func = quote!(
+        fn f(abcd: uint8x16_t, efgh: uint8x16_t, wk: uint8x16_t) -> uint8x16_t {
+            let next = abcd.vsha256hq_u32(efgh, wk);
+            next
+        }
+    );
+    assert!(assembly_internal(func).is_err());
+}
+
+#[test]
+fn and_and_zero() {
+    let func = quote!(
+        fn f(a: uint8x16_t, b: uint8x16_t) -> uint8x16_t {
+            let t = uint8x16_t::ZERO;
+            t = t.vaeseq_u8(a);
+            let m = a & b;
+            t = t ^ m;
+            t
+        }
+    );
+    let out = norm(&assembly_internal(func).expect("expand"));
+    assert_contains(
+        &out,
+        &[
+            "\"movi {t:v}.2d, #0\"",
+            "\"aese {t:v}.16b, {a:v}.16b\"",
+            "\"and {m:v}.16b, {a:v}.16b, {b:v}.16b\"",
+            "\"eor {t:v}.16b, {t:v}.16b, {m:v}.16b\"",
+        ],
+    );
 }

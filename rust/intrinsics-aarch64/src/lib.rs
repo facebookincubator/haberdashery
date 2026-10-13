@@ -12,4 +12,6 @@ compile_error!("intrinsics-aarch64 only supports aarch64");
 
 mod neon;
 
+pub use neon::prefetch_load;
+pub use neon::prefetch_store;
 pub use neon::uint8x16_t;

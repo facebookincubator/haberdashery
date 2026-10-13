@@ -78,10 +78,12 @@ c89() {
     --bindings-path="${BINDINGS_DIR}"  \
     --descriptor-path="${DESCRIPTOR_DIR}" \
     --name=c89
-  if [ "${DEFAULT_ARCH}" == "x86_64" ]; then
-    echo_with_date "bindings/c89 testing"
-    cd "${PROJECT_DIR}"
-    ./scripts/make.sh bindings/c89
+  echo_with_date "bindings/c89 testing"
+  cd "${PROJECT_DIR}"
+  ./scripts/make.sh bindings/c89/aead
+  ./scripts/make.sh bindings/c89/mac
+  if [ -d "${BINDINGS_DIR}/c89/aead_streaming/${DEFAULT_ARCH}" ]; then
+    ./scripts/make.sh "bindings/c89/aead_streaming/${DEFAULT_ARCH}"
   fi
 }
 

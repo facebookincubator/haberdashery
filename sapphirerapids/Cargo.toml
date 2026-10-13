@@ -6,8 +6,5 @@
 # of this source tree. You may select, at your option, one of the above-listed licenses.
 
 [workspace]
-members = ["aes128gcm", "aes128gcm/asm"]
+members = ["aes128gcm", "aes128gcm/asm", "aes128gcm/sys"]
 resolver = "2"
-
-[profile.canonical]
-inherits = "release"
