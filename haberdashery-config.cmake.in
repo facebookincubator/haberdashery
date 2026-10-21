@@ -1,0 +1,19 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is dual-licensed under either the MIT license found in the
+# LICENSE-MIT file in the root directory of this source tree or the Apache
+# License, Version 2.0 found in the LICENSE-APACHE file in the root directory
+# of this source tree. You may select, at your option, one of the above-listed
+# licenses.
+
+@PACKAGE_INIT@
+
+if(NOT @HABERDASHERY_SUPPORTED@)
+  set(haberdashery_FOUND FALSE)
+  set(haberdashery_NOT_FOUND_MESSAGE
+    "haberdashery was built for @CMAKE_SYSTEM_NAME@ @CMAKE_SYSTEM_PROCESSOR@, which has no assembly; only x86_64 and aarch64 Linux are supported")
+  return()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/haberdashery-targets.cmake")
+check_required_components(haberdashery)

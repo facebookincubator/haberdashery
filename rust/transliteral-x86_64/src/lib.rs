@@ -504,7 +504,7 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
         }
         // A temporary read by the instruction that writes it (in-place
         // update) needs an `inout` operand; pure writes stay `out`.
-        if !is_let && !is_arg && inputs.iter().any(|i| *i == target_s) {
+        if !is_let && !is_arg && inputs.contains(&target_s) {
             inout_temps.insert(target_s.clone());
         }
 
