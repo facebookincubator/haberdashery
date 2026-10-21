@@ -735,7 +735,7 @@ fn assembly_internal(item: TokenStream) -> syn::Result<TokenStream> {
     // is sound) or an array literal of temporaries.
     let temp_out = |expr: &Expr| -> syn::Result<TokenStream> {
         let name = ident_of(expr)?;
-        if !temps.iter().any(|t| *t == name) {
+        if !temps.contains(&name) {
             return Err(syn::Error::new_spanned(
                 expr,
                 "transliteral: can only return temporaries",

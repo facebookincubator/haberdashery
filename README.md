@@ -17,6 +17,12 @@ Test rust bindings: `scripts/cargo.sh bindings/rust_lib`
 
 Test c89 bindings: `scripts/make.sh`
 
+Build and test the c89 bindings with CMake (x86_64 or aarch64 Linux):
+`cmake -S . -B build && cmake --build build && ctest --test-dir build`.
+Installing exports a `haberdashery::haberdashery` target via
+`find_package(haberdashery CONFIG)`; headers are included as
+`<haberdashery/aead/aes128gcm_skylakex.h>`.
+
 Run benchmarks (dry run): `cargo bench --manifest-path=bindings/rust_bench/Cargo.toml -- --filter=profile=skylakex --dry-run`
 
 Run benchmarks: `cargo bench --manifest-path=bindings/rust_bench/Cargo.toml -- --filter=profile=skylakex`
